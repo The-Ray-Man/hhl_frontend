@@ -2,6 +2,17 @@ package viper.HHLVerifier.typing
 
 import viper.HHLVerifier.management.PrettyPrinter
 
+
+sealed trait HyperType{
+  override def toString: String = {
+    PrettyPrinter.formatHyperType(this)
+  }
+}
+
+case class Low() extends HyperType
+case class High() extends HyperType
+
+
 /** Parent for all types */
 sealed trait Type {
   override def toString: String = {
@@ -12,9 +23,9 @@ sealed trait Type {
 /** Unknown Type, used as default before a type was determined */
 case class UnknownType() extends Type
 /** Integer type */
-case class IntType() extends Type
+case class IntType(hypertype: Option[List[HyperType]] = None) extends Type
 /** Boolean type */
-case class BoolType() extends Type
+case class BoolType(hypertype: Option[List[HyperType]] = None) extends Type
 
 /** State type */
 case class StateType() extends Type

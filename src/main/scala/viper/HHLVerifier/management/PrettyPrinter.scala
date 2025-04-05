@@ -3,6 +3,9 @@ package viper.HHLVerifier.management
 import viper.HHLVerifier._
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BinaryExpr, BoolLit, CombExpr, CompositeStmt, DeclareStmt, Expr, FrameStmt, HavocStmt, Hint, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, ImpliesExpr, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, StateExistsExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, StateType, StmtBlockType, Type, UnknownType}
+import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.Low
+import viper.HHLVerifier.typing.High
 
 object PrettyPrinter {
 
@@ -94,13 +97,30 @@ object PrettyPrinter {
   def formatType(typ: Type): String = {
     typ match {
       case _: UnknownType => "unknown"
-      case _: IntType => "int"
-      case _: BoolType => "bool"
+      case t: IntType => {
+        t.hypertype match {
+          case Some(hyper) => f"int[${hyper.map(h => formatHyperType(h)).mkString(", ")}]"
+          case None => "int"
+        }
+      }
+      case t: BoolType => {
+        t.hypertype match {
+          case Some(hyper) => f"bool[${hyper.map(h => formatHyperType(h)).mkString(", ")}]"
+          case None => "bool"
+        }
+      }
       case _: StateType => "state"
       case _: StmtBlockType => "StmtBlock"
       case t: SetType => f"set_${formatType(t.sType)}_"
       case t: SeqType => f"seq_${formatType(t.sType)}_"
       case t: MapType => f"map_${formatType(t.kType)}1${formatType(t.vType)}_"
+    }
+  }
+
+  def formatHyperType(t: HyperType): String = {
+    t match {
+      case _: Low => "low"
+      case _: High => "high"
     }
   }
 
