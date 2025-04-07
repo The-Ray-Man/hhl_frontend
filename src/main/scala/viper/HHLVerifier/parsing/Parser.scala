@@ -5,6 +5,7 @@ import fastparse._
 import viper.HHLVerifier.parsing.Mappings._
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BoolLit, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
+import viper.HHLVerifier.typing.HyperType
 
 /** The Parser object
  *
@@ -217,7 +218,13 @@ object Parser {
 
   // Typing
   /** Programing Types: Parent class for all types which are used by program variables. */
-  def progTypes[$: P] : P[Type] = P(primitiveTypes | seqOrSetType | mapType)
+  def progTypes[$: P] : P[Type] = P(primitiveHyperTypes | seqOrSetType | mapType)
+
+  def primitiveHyperTypes[$: P] : P[Type] = P(primitiveTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => mapPrimitiveHyperType(t, hyperType)})
+
+  def HyperTypeList[$: P] : P[Seq[HyperType]] = P(mapHyperType.rep(sep=","))
+  def mapHyperType[$: P] : P[HyperType] = P("low"| "high").!.map(mapHyperTypeName)
+
   /** Primitive Types: Parent for all primitive types. */
   def primitiveTypes[$: P] : P[Type] = P("Int" | "Bool").!.map(mapPrimitiveTypeName)
 

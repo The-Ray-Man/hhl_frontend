@@ -23,9 +23,9 @@ sealed trait Type {
 /** Unknown Type, used as default before a type was determined */
 case class UnknownType() extends Type
 /** Integer type */
-case class IntType(hypertype: Option[List[HyperType]] = None) extends Type
+case class IntType(hypertype: Option[Seq[HyperType]] = None) extends Type
 /** Boolean type */
-case class BoolType(hypertype: Option[List[HyperType]] = None) extends Type
+case class BoolType(hypertype: Option[Seq[HyperType]] = None) extends Type
 
 /** State type */
 case class StateType() extends Type

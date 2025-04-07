@@ -210,9 +210,15 @@ object Mappings {
 
   def mapLengthExpr(expr: Expr): LengthExpr = LengthExpr(expr)
 
-  def mapPrimitiveTypeName(name: String): Type = name match {
+  def mapPrimitiveTypeName(name: String): Type = {
+  name match {
     case "Int" => IntType()
     case "Bool" => BoolType()
+  }}
+
+  def mapHyperTypeName(name: String) : HyperType = name match {
+    case "low" => Low()
+    case "high" => High()
   }
 
   def mapSeqOrSetType(name: String, t: Type): Type = name match {
@@ -222,4 +228,12 @@ object Mappings {
   }
 
   def mapMapType(t1: Type, t2: Type): MapType = MapType(t1, t2)
+
+  def mapPrimitiveHyperType(t: Type, ht: Option[Seq[HyperType]]) : Type = {
+    t match {
+      case _: IntType => IntType(ht)
+      case _ : BoolType => BoolType(ht)
+      case _ => throw UnknownException("Critical error occurred while parsing hyper type declarations")
+    }
+  }
 }
