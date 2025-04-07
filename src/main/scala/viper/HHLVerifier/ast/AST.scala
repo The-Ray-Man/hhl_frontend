@@ -200,6 +200,10 @@ case class MethodCallStmt(methodName: String, args: Seq[Id]) extends Stmt {
   var paramsToArgs: Map[String, String] = Map.empty
 }
 
+/** Encodes the unfold statement  */
+case class UnfoldStmt(t: Type, id: Id) extends Stmt {}
+
+
 /**
  * Encodes a method
  * @param mName identifier

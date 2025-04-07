@@ -31,6 +31,7 @@ object ParseTest {
       if (parsed.isSuccess) {
         println(f"Parsed ${f.getPath} successfully")
         success = success :+ f.getPath
+        // println(parsed.get.value.methods(0).body.toString())
       } else {
         println(f"Failed to parse ${f.getPath}")
         failed = failed :+ f.getPath

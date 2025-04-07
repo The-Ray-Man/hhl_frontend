@@ -91,6 +91,7 @@ object Mappings {
   }
   def mapFrame(items: (Expr, CompositeStmt)): FrameStmt = FrameStmt(items._1, items._2)
   def mapUseHintStmt(e: Expr): UseHintStmt = UseHintStmt(e)
+  def mapUnfoldStmt(t: Type, id: Id) = UnfoldStmt(t, id)
   def mapMethodCallStmt(items: (String, Seq[Id])): MethodCallStmt = MethodCallStmt(items._1, items._2)
 
   def mapNormalAssertVarDecl(items: (AssertVar, Type)): AssertVarDecl = AssertVarDecl(items._1, items._2)

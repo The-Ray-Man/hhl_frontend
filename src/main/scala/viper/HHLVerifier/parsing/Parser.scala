@@ -6,6 +6,7 @@ import viper.HHLVerifier.parsing.Mappings._
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BoolLit, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.ast.UnfoldStmt
 
 /** The Parser object
  *
@@ -61,7 +62,8 @@ object Parser {
     varDecl | proofVarDecl |
     multiAssign | methodCallStmt | assign |
     ifElse | whileLoop |
-    assume | assert | havoc | frame | hyperAssume | hyperAssert | useHintStmt
+    assume | assert | havoc | frame | hyperAssume | hyperAssert | useHintStmt | 
+    unfoldStmt
   ) ~ Index).map { case (oL, stmt, oR) => mapStmt(oL, stmt, oR) }
 
   /** MultiAssign Statement
@@ -115,6 +117,8 @@ object Parser {
   def frame[$: P]: P[FrameStmt] = P("frame" ~~ spaces ~ expr ~ "{" ~ stmts ~ "}").map(mapFrame)
   /** UseHint Statement: Use a hint declare trigger for havoc statments. */
   def useHintStmt[$: P]: P[UseHintStmt] = P("use" ~~ spaces ~ expr).map(mapUseHintStmt)
+
+  def unfoldStmt[$ : P] : P[UnfoldStmt] = P("unfold" ~~ spaces ~ progTypes ~~ spaces ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id)}
 
   // Utils for statements
   /** LoopInvariant: Declares an invariant in a while loop. */

@@ -6,6 +6,7 @@ import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, S
 import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.typing.Low
 import viper.HHLVerifier.typing.High
+import viper.HHLVerifier.ast.UnfoldStmt
 
 object PrettyPrinter {
 
@@ -64,6 +65,7 @@ object PrettyPrinter {
       case ReuseStmt(blockName) => "reuse " + formatExpr(blockName)
       case UseHintStmt(hint) => "use " + formatExpr(hint)
       case MethodCallStmt(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
+      case UnfoldStmt(t, id) => "unfold " + formatType(t) + " " + formatExpr(id) + "\n"
     }
   }
 
