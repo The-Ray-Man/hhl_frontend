@@ -67,7 +67,7 @@ object Mappings {
 
   def mapStmt(oL: Int, stmt: Stmt, oR: Int): Stmt = stmt.setOffsets(oL, oR)
   def mapMultiAssign(items: (Seq[Id], MethodCallExpr)): MultiAssignStmt = MultiAssignStmt(items._1, items._2)
-  def mapAssign(e: (Id, Expr)): AssignStmt = AssignStmt(e._1, e._2)
+  def mapAssign(e: (Id, Option[Type], Expr)): AssignStmt = AssignStmt(e._1, e._3, e._2)
   def mapHavoc(v: Id, hintDecl: Option[HintDecl]): HavocStmt = hintDecl match {
     case None => HavocStmt(v, Option.empty)
     case Some(hintDecl) => HavocStmt(v, Some(hintDecl))

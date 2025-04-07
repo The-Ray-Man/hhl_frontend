@@ -157,7 +157,7 @@ case class CompositeStmt(stmts: Seq[Stmt]) extends Stmt {
   var modifiedProgVars: Map[String, Type] = Map.empty
 }
 /** Encodes an assignment to a variable */
-case class AssignStmt(left: Id, right: Expr) extends Stmt
+case class AssignStmt(left: Id, right: Expr, cast: Option[Type] = None) extends Stmt
 /** Encodes an assignment to at least a variable after a method call */
 case class MultiAssignStmt(left: Seq[Id], right: MethodCallExpr) extends Stmt
 /** Randomly initializes a variable */

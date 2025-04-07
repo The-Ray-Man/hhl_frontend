@@ -84,7 +84,7 @@ object Parser {
    *   var a: Int
    *   a := (2 * 3) + 4
    * }}}*/
-  def assign[$: P] : P[AssignStmt] = P(progVar ~ ":=" ~ implicationExpr).map(mapAssign)
+  def assign[$: P] : P[AssignStmt] = P(progVar ~ ":=" ~ ("(" ~ progTypes ~ ")").? ~implicationExpr).map(mapAssign)
   /** Havoc Statement
    *
    * Randomly assigns a value to a program variable.

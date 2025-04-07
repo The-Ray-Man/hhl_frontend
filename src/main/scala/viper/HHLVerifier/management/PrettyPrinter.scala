@@ -14,9 +14,13 @@ object PrettyPrinter {
     stmt match {
       case CompositeStmt(stmts) => stmts.map(s => formatStmt(s)).mkString("\n")
       // Composite statement will be matched on individual parts
-      case AssignStmt(left, right) =>
+      case AssignStmt(left, right, cast) =>
         // Assign Expression
-        formatExpr(left) + " := " + formatExpr(right)
+        val cast_str = cast match {
+          case Some(c) => "(" + formatType(c) + ") ";
+          case None => "";
+        };
+        formatExpr(left) + " := "+ cast_str + formatExpr(right)
       case MultiAssignStmt(left, right) =>
         // Multi Assign Expression
         left.map(l => formatExpr(l)).mkString(", ") + " := " + formatExpr(right)
