@@ -414,8 +414,7 @@ object Generator {
         newStmts = newStmts ++ Seq(assert)
         (newStmts, Seq.empty)
 
-      case AssignStmt(left, right, cast) =>
-        // TODO: Cast must be translated into a viper
+      case AssignStmt(left, right) =>
         val leftVar = vpr.LocalVarDecl(left.name, vpr.Int)()
 
         val s0 = vpr.LocalVar(s0VarName, state.typ)()

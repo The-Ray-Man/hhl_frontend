@@ -7,6 +7,7 @@ import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BoolLit, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.ast.UnfoldStmt
+import viper.HHLVerifier.ast.FoldStmt
 
 /** The Parser object
  *
@@ -24,7 +25,9 @@ object Parser {
   def precondition[$: P]: P[Expr] = P("requires" ~~ spaces ~ expr)
   def postcondition[$: P]: P[Expr] = P("ensures" ~~ spaces ~ expr)
   def methodName[$: P]: P[String] = P(CharIn("a-zA-Z_") ~~ CharsWhileIn("a-zA-Z0-9_", 0)).!
-  def methodVarDecl[$: P]: P[Id] = P(progVar ~ ":" ~ progTypes).map(mapMethodVarDecl)
+  def methodVarDecl[$: P]: P[Id] = P(progVar ~ ":" ~ methodVarType).map(mapMethodVarDecl)
+
+  def methodVarType[$ : P] : P[(Type, Option[Seq[HyperType]])] = P(progTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => (t, hyperType)})
 
   /** General identifier object: Refers to all entries of the symbol table except methods. */
   def identifier[$: P]: P[Expr] = P(progVar | assertVar | proofVar)
@@ -60,10 +63,9 @@ object Parser {
   def stmts[$: P] : P[CompositeStmt] = P(stmt.rep).map(CompositeStmt)
   def stmt[$: P] : P[Stmt] = P(Index ~ (
     varDecl | proofVarDecl |
-    multiAssign | methodCallStmt | assign |
+    multiAssign | unfoldStmt | foldStmt | methodCallStmt | assign |
     ifElse | whileLoop |
-    assume | assert | havoc | frame | hyperAssume | hyperAssert | useHintStmt | 
-    unfoldStmt
+    assume | assert | havoc | frame | hyperAssume | hyperAssert | useHintStmt
   ) ~ Index).map { case (oL, stmt, oR) => mapStmt(oL, stmt, oR) }
 
   /** MultiAssign Statement
@@ -86,7 +88,7 @@ object Parser {
    *   var a: Int
    *   a := (2 * 3) + 4
    * }}}*/
-  def assign[$: P] : P[AssignStmt] = P(progVar ~ ":=" ~ ("(" ~ progTypes ~ ")").? ~implicationExpr).map(mapAssign)
+  def assign[$: P] : P[AssignStmt] = P(progVar ~ ":="  ~implicationExpr).map(mapAssign)
   /** Havoc Statement
    *
    * Randomly assigns a value to a program variable.
@@ -118,7 +120,9 @@ object Parser {
   /** UseHint Statement: Use a hint declare trigger for havoc statments. */
   def useHintStmt[$: P]: P[UseHintStmt] = P("use" ~~ spaces ~ expr).map(mapUseHintStmt)
 
-  def unfoldStmt[$ : P] : P[UnfoldStmt] = P("unfold" ~~ spaces ~ progTypes ~~ spaces ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id)}
+  def unfoldStmt[$ : P] : P[UnfoldStmt] = P("unfold"  ~ "("  ~ mapHyperType  ~ ")" ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id)}
+  def foldStmt[$ : P] : P[FoldStmt] = P("fold"  ~ "(" ~ mapHyperType ~ ")" ~ progVar).map { case (t, id) => mapFoldStmt(t, id)}
+
 
   // Utils for statements
   /** LoopInvariant: Declares an invariant in a while loop. */
@@ -222,12 +226,12 @@ object Parser {
 
   // Typing
   /** Programing Types: Parent class for all types which are used by program variables. */
-  def progTypes[$: P] : P[Type] = P(primitiveHyperTypes | seqOrSetType | mapType)
+  def progTypes[$: P] : P[Type] = P(primitiveTypes | seqOrSetType | mapType)
 
-  def primitiveHyperTypes[$: P] : P[Type] = P(primitiveTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => mapPrimitiveHyperType(t, hyperType)})
+  // def primitiveHyperTypes[$: P] : P[Type] = P(primitiveTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => mapPrimitiveHyperType(t, hyperType)})
 
   def HyperTypeList[$: P] : P[Seq[HyperType]] = P(mapHyperType.rep(sep=","))
-  def mapHyperType[$: P] : P[HyperType] = P("low"| "high").!.map(mapHyperTypeName)
+  def mapHyperType[$: P] : P[HyperType] = P("low" | "high").!.map(mapHyperTypeName)
 
   /** Primitive Types: Parent for all primitive types. */
   def primitiveTypes[$: P] : P[Type] = P("Int" | "Bool").!.map(mapPrimitiveTypeName)

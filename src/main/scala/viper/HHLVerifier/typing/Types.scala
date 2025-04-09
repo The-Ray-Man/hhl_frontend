@@ -3,16 +3,6 @@ package viper.HHLVerifier.typing
 import viper.HHLVerifier.management.PrettyPrinter
 
 
-sealed trait HyperType{
-  override def toString: String = {
-    PrettyPrinter.formatHyperType(this)
-  }
-}
-
-case class Low() extends HyperType
-case class High() extends HyperType
-
-
 /** Parent for all types */
 sealed trait Type {
   override def toString: String = {
@@ -23,9 +13,9 @@ sealed trait Type {
 /** Unknown Type, used as default before a type was determined */
 case class UnknownType() extends Type
 /** Integer type */
-case class IntType(hypertype: Option[Seq[HyperType]] = None) extends Type
+case class IntType() extends Type
 /** Boolean type */
-case class BoolType(hypertype: Option[Seq[HyperType]] = None) extends Type
+case class BoolType() extends Type
 
 /** State type */
 case class StateType() extends Type

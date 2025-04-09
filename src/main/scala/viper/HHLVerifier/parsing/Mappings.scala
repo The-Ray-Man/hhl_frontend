@@ -31,8 +31,9 @@ object Mappings {
     Method(items._2, args, res, pre, post, items._8).setOffsets(items._1, items._3)
   }
 
-  def mapMethodVarDecl(items: (Id, Type)): Id = {
-    items._1.typ = items._2
+  def mapMethodVarDecl(items: (Id, (Type, Option[Seq[HyperType]]))): Id = {
+    items._1.typ = items._2._1
+    items._1.hyperType = items._2._2
     items._1
   }
 
@@ -67,7 +68,7 @@ object Mappings {
 
   def mapStmt(oL: Int, stmt: Stmt, oR: Int): Stmt = stmt.setOffsets(oL, oR)
   def mapMultiAssign(items: (Seq[Id], MethodCallExpr)): MultiAssignStmt = MultiAssignStmt(items._1, items._2)
-  def mapAssign(e: (Id, Option[Type], Expr)): AssignStmt = AssignStmt(e._1, e._3, e._2)
+  def mapAssign(e: (Id, Expr)): AssignStmt = AssignStmt(e._1, e._2)
   def mapHavoc(v: Id, hintDecl: Option[HintDecl]): HavocStmt = hintDecl match {
     case None => HavocStmt(v, Option.empty)
     case Some(hintDecl) => HavocStmt(v, Some(hintDecl))
@@ -91,7 +92,8 @@ object Mappings {
   }
   def mapFrame(items: (Expr, CompositeStmt)): FrameStmt = FrameStmt(items._1, items._2)
   def mapUseHintStmt(e: Expr): UseHintStmt = UseHintStmt(e)
-  def mapUnfoldStmt(t: Type, id: Id) = UnfoldStmt(t, id)
+  def mapUnfoldStmt(t: HyperType, id: Id) = UnfoldStmt(t, id)
+  def mapFoldStmt(t: HyperType, id: Id) = FoldStmt(t, id)
   def mapMethodCallStmt(items: (String, Seq[Id])): MethodCallStmt = MethodCallStmt(items._1, items._2)
 
   def mapNormalAssertVarDecl(items: (AssertVar, Type)): AssertVarDecl = AssertVarDecl(items._1, items._2)
@@ -217,7 +219,8 @@ object Mappings {
     case "Bool" => BoolType()
   }}
 
-  def mapHyperTypeName(name: String) : HyperType = name match {
+  def mapHyperTypeName(name: String) : HyperType = 
+    name match {
     case "low" => Low()
     case "high" => High()
   }
@@ -229,12 +232,4 @@ object Mappings {
   }
 
   def mapMapType(t1: Type, t2: Type): MapType = MapType(t1, t2)
-
-  def mapPrimitiveHyperType(t: Type, ht: Option[Seq[HyperType]]) : Type = {
-    t match {
-      case _: IntType => IntType(ht)
-      case _ : BoolType => BoolType(ht)
-      case _ => throw UnknownException("Critical error occurred while parsing hyper type declarations")
-    }
-  }
 }

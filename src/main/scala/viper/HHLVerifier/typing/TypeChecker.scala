@@ -60,8 +60,7 @@ object TypeChecker {
           val stmtIsTotal = typeCheckStmt(stmt, isInLoop)
           isTotal = isTotal && stmtIsTotal
         })
-      case e@AssignStmt(left, right, cast) =>
-        // TODO: cast must be taken into account!
+      case e@AssignStmt(left, right) =>
         typeCheckExprWithChecks(s, left, false)
         typeCheckExprWithChecks(s, right, false)
         res = checkIfTypeMatch(left.typ, right.typ)

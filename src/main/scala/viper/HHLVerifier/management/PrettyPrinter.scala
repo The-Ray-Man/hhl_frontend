@@ -7,6 +7,7 @@ import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.typing.Low
 import viper.HHLVerifier.typing.High
 import viper.HHLVerifier.ast.UnfoldStmt
+import viper.HHLVerifier.typing.Type
 
 object PrettyPrinter {
 
@@ -15,13 +16,9 @@ object PrettyPrinter {
     stmt match {
       case CompositeStmt(stmts) => stmts.map(s => formatStmt(s)).mkString("\n")
       // Composite statement will be matched on individual parts
-      case AssignStmt(left, right, cast) =>
+      case AssignStmt(left, right) =>
         // Assign Expression
-        val cast_str = cast match {
-          case Some(c) => "(" + formatType(c) + ") ";
-          case None => "";
-        };
-        formatExpr(left) + " := "+ cast_str + formatExpr(right)
+        formatExpr(left) + " := " + formatExpr(right)
       case MultiAssignStmt(left, right) =>
         // Multi Assign Expression
         left.map(l => formatExpr(l)).mkString(", ") + " := " + formatExpr(right)
@@ -65,7 +62,8 @@ object PrettyPrinter {
       case ReuseStmt(blockName) => "reuse " + formatExpr(blockName)
       case UseHintStmt(hint) => "use " + formatExpr(hint)
       case MethodCallStmt(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
-      case UnfoldStmt(t, id) => "unfold " + formatType(t) + " " + formatExpr(id) + "\n"
+      case UnfoldStmt(t, id) => "unfold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
+      case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
     }
   }
 
@@ -103,18 +101,8 @@ object PrettyPrinter {
   def formatType(typ: Type): String = {
     typ match {
       case _: UnknownType => "unknown"
-      case t: IntType => {
-        t.hypertype match {
-          case Some(hyper) => f"int[${hyper.map(h => formatHyperType(h)).mkString(", ")}]"
-          case None => "int"
-        }
-      }
-      case t: BoolType => {
-        t.hypertype match {
-          case Some(hyper) => f"bool[${hyper.map(h => formatHyperType(h)).mkString(", ")}]"
-          case None => "bool"
-        }
-      }
+      case _: IntType => "int"
+      case _: BoolType => "bool"
       case _: StateType => "state"
       case _: StmtBlockType => "StmtBlock"
       case t: SetType => f"set_${formatType(t.sType)}_"
@@ -123,8 +111,8 @@ object PrettyPrinter {
     }
   }
 
-  def formatHyperType(t: HyperType): String = {
-    t match {
+  def formatHyperType(typ: HyperType): String = {
+    typ match {
       case _: Low => "low"
       case _: High => "high"
     }

@@ -33,6 +33,8 @@ sealed class Expr() extends ErrorData {
    * operations with composite objects. For example, for intSeq[0] the type is Int, while the base type is Seq[Int] */
   var baseType: Type = UnknownType() // Additional type information needed to generate (e.g. type of map from which value is accessed)
 
+  var hyperType: Option[Seq[HyperType]] = null
+
   /** Relates an expression to an earlier, untransformed expression
    * used in the generator */
   var debugId: Option[Int] = None
@@ -157,7 +159,7 @@ case class CompositeStmt(stmts: Seq[Stmt]) extends Stmt {
   var modifiedProgVars: Map[String, Type] = Map.empty
 }
 /** Encodes an assignment to a variable */
-case class AssignStmt(left: Id, right: Expr, cast: Option[Type] = None) extends Stmt
+case class AssignStmt(left: Id, right: Expr) extends Stmt
 /** Encodes an assignment to at least a variable after a method call */
 case class MultiAssignStmt(left: Seq[Id], right: MethodCallExpr) extends Stmt
 /** Randomly initializes a variable */
@@ -201,7 +203,10 @@ case class MethodCallStmt(methodName: String, args: Seq[Id]) extends Stmt {
 }
 
 /** Encodes the unfold statement  */
-case class UnfoldStmt(t: Type, id: Id) extends Stmt {}
+case class UnfoldStmt(t: HyperType, id: Id) extends Stmt {}
+
+/** Encodes the fold statement  */
+case class FoldStmt(t: HyperType, id: Id) extends Stmt {}
 
 
 /**

@@ -106,7 +106,7 @@ object SymbolChecker {
         }
         (allVarsInP, Seq.empty)
 
-      case stmt@AssignStmt(id, exp, _) =>
+      case stmt@AssignStmt(id, exp) =>
         // Do not allow assignment to method arguments
         if (allArgNames.contains(id.name))
           throw new Logger("Cannot reassign to method argument " + id.name)
