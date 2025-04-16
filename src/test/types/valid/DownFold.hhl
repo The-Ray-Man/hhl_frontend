@@ -1,0 +1,5 @@
+method testFoldHighResult(s1: Int[low], b2: Map[Int, Int][high]) returns (o : Int[low])
+{
+    o := b2[s1]
+    fold (low) o
+}

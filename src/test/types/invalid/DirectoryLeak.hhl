@@ -1,0 +1,5 @@
+// invalid
+method testDirectLeak(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    o := s2
+}

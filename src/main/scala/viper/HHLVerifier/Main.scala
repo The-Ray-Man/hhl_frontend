@@ -10,6 +10,7 @@ import viper.HHLVerifier.typing.TypeChecker
 
 import java.io.FileWriter
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
+import viper.HHLVerifier.typing.HyperTypeChecker
 
 /** Main Method */
 object Main {
@@ -71,6 +72,10 @@ object Main {
         // Type checking
         TypeChecker.typeCheckProg(parsedProgram)
         new Logger("Type checking successful.").log()
+
+        // HyperType checking
+        HyperTypeChecker.typeCheckProg(parsedProgram)
+        new Logger("HyperType checking successful.").log()
 
         // Generate the Viper program
         val viperProgram = Generator.generate(parsedProgram, program)

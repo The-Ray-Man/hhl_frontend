@@ -63,7 +63,7 @@ object PrettyPrinter {
       case UseHintStmt(hint) => "use " + formatExpr(hint)
       case MethodCallStmt(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
       case UnfoldStmt(t, id) => "unfold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
-      case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
+      // case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
     }
   }
 
