@@ -21,16 +21,19 @@ import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.PVarDecl
 import viper.HHLVerifier.ast.MultiAssignStmt
 import viper.silver.plugin.standard.adt.PAdtOpApp.typecheck
+import viper.HHLVerifier.ast.MethodCallExpr
+import viper.HHLVerifier.typing.TypeChecker.typeCheckExpr
 
 object HyperTypeChecker {
 
   val declaredVariables: Map[String, HyperType] = Map()
 
-  val program : HHLProgram = HHLProgram(Seq.empty)
+  var program : HHLProgram = HHLProgram(Seq.empty)
 
 
   def typeCheckProg(p: HHLProgram): Unit = {
-        p.content.foreach(m => typeCheckMethod(m))
+      program = p
+      program.content.foreach(m => typeCheckMethod(m))
   }
 
   def typeCheckMethod(m: Method): Unit = {
@@ -45,7 +48,7 @@ object HyperTypeChecker {
     finalMapping.mapping.foreach({case (name, value) =>
       // println(s"Variable: $name, Type: $value")
   })
-
+    println(finalMapping.mapping)
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
       val retType = finalMapping.getUnsafe(r.name)
@@ -63,6 +66,14 @@ object HyperTypeChecker {
          val hyperType = HyperLattice.join(rightHyperType, pc)
          mapping.set(left.name, hyperType)
          mapping
+      }
+      case MultiAssignStmt(left, right) => {
+        val rightHyperType = typeCheckMethodExpr(mapping, right)
+        for ((name, ty) <- left.zip(rightHyperType)) {
+          val hyperType = HyperLattice.join(ty, pc)
+          mapping.set(name.name, hyperType)
+        }
+        mapping
       }
       case CompositeStmt(stmts) => {
         stmts.foldLeft(mapping)((acc, stmt) => typeCheckStmt(acc, stmt, pc))
@@ -103,6 +114,9 @@ object HyperTypeChecker {
         mapping.set(id.name, HyperLattice.maximum())
         mapping
       }
+      
+
+
       case PVarDecl(_, _) => {
         mapping
       }
@@ -111,6 +125,22 @@ object HyperTypeChecker {
         throw new Exception("Type error: cannot yet type check statement " + s)
       }
     }
+  }
+
+  def typeCheckMethodExpr(mapping: HyperMapping, e: MethodCallExpr) : Seq[HyperTypeCollection] = {
+    val method = program.methods.find(_.mName == e.methodName) match {
+      case None => throw new Exception("Method not found: " + e.methodName + " in " + program.methods.map(_.mName).mkString(", "))
+      case Some(value) => value
+    }
+    val methodArgTypes = method.params.map(p => HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))
+   
+    for ((name, ty) <- e.args.zip(methodArgTypes)) {
+      val actual_type = typeCheckExpression(mapping, name)
+      if (!HyperLattice.lteq(actual_type, ty)) {
+        throw new Exception("Type error: argument " + name + " of type " + actual_type + " does not match expected type " + ty)
+      }
+    }
+    method.res.map(r => HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq())))
   }
 
 
@@ -144,24 +174,6 @@ object HyperTypeChecker {
         val indexType = typeCheckExpression(mapping, index)
         HyperLattice.join(idType, indexType)
       }
-      // case MethodCallExpr(methodName, args) => {
-      //   val method = program.methods.find(_.mName == methodName) match {
-      //     case None => throw new Exception("Method not found: " + methodName)
-      //     case Some(value) => value
-      //   }
-      //   val methodArgTypes = method.params.map(p => p.hyperType.get(0))
-      //   val argTypes = args.map(arg => typeCheckExpression(mapping, arg))
-      //   if (methodArgTypes.length != argTypes.length) {
-      //     throw new Exception("Method " + methodName + " called with wrong number of arguments")
-      //   }
-      //   for (i <- 0 until methodArgTypes.length) {
-      //     if (!HyperLattice.lteq(argTypes(i), thodArgTypes(i))) {
-      //       throw new Exception("Method " + methodName + " called with wrong argument type: expected " + methodArgTypes(i) + " but got " + argTypes(i))
-      //     }
-      //   }
-      //   method.res.map(_.hyperType.get(0))
-
-      // }
       case _ => {
         throw new Exception("Type error: cannot yet type check expression " + e)
       }
