@@ -19,6 +19,8 @@ import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.PVarDecl
+import viper.HHLVerifier.ast.MultiAssignStmt
+import viper.silver.plugin.standard.adt.PAdtOpApp.typecheck
 
 object HyperTypeChecker {
 
@@ -33,9 +35,9 @@ object HyperTypeChecker {
 
   def typeCheckMethod(m: Method): Unit = {
     // Type check the method body
-    val pc = Low()
+    val pc = new HyperTypeCollection(Some(Low()))
 
-    val mapping = m.params.map(p => (p.name -> p.hyperType.get(0))).toMap
+    val mapping = m.params.map(p => (p.name -> HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))).toMap
     val hyperMapping = new HyperMapping()
     hyperMapping.mapping = mapping
 
@@ -45,7 +47,7 @@ object HyperTypeChecker {
   })
 
     m.res.foreach(r => {
-      val declaredRetType = r.hyperType.get(0)
+      val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
       val retType = finalMapping.getUnsafe(r.name)
       // println(s"Dseclared return type: $declaredRetType, Actual return type: $retType")
       if (!HyperLattice.lteq(retType, declaredRetType)) {
@@ -54,11 +56,12 @@ object HyperTypeChecker {
     })
   }
 
-  def typeCheckStmt(mapping: HyperMapping, s : Stmt, pc: HyperType) : HyperMapping = {
+  def typeCheckStmt(mapping: HyperMapping, s : Stmt, pc: HyperTypeCollection) : HyperMapping = {
     s match {
       case AssignStmt(left, right) => {
          val rightHyperType = typeCheckExpression(mapping, right)
-         mapping.set(left.name, HyperLattice.join(rightHyperType, pc))
+         val hyperType = HyperLattice.join(rightHyperType, pc)
+         mapping.set(left.name, hyperType)
          mapping
       }
       case CompositeStmt(stmts) => {
@@ -72,8 +75,9 @@ object HyperTypeChecker {
         mappingIf.join(mappingElse)
       }
       case UnfoldStmt(t, id) => {
+        val ty = HyperTypeCollection.fromSeq(Seq(t))
         val var_type = mapping.getUnsafe(id.name)
-        if (HyperLattice.lteq(var_type, t)) {
+        if (HyperLattice.lteq(var_type, ty)) {
           mapping
         } else {
           throw new Exception("Type error: cannot unfold " + id.name + " of type " + var_type + " to type " + t)
@@ -81,7 +85,8 @@ object HyperTypeChecker {
         mapping
       }
       case FoldStmt(t, id) => {
-        mapping.set(id.name, t)
+        val ty = HyperTypeCollection.fromSeq(Seq(t))
+        mapping.set(id.name, ty)
         mapping
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
@@ -109,13 +114,13 @@ object HyperTypeChecker {
   }
 
 
-  def typeCheckExpression(mapping: HyperMapping, e: Expr) : HyperType = {
+  def typeCheckExpression(mapping: HyperMapping, e: Expr) : HyperTypeCollection = {
     e match {
       case BoolLit(_) => {
-        Low()
+        new HyperTypeCollection(Some(Low()))
       }
       case Num(_) => {
-        Low()
+        new HyperTypeCollection(Some(Low()))
       }
       case Id(name) => {
         mapping.getUnsafe(name)
@@ -124,7 +129,7 @@ object HyperTypeChecker {
         {
           val type1 = typeCheckExpression(mapping, e1)
           val type2 = typeCheckExpression(mapping, e2)
-          type1.join(type2)
+          HyperLattice.join(type1, type2)
         }
 
       case LengthExpr(id) => {

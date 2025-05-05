@@ -8,6 +8,7 @@ import viper.HHLVerifier.parsing.Parser
 import java.io.{BufferedWriter, File, FileWriter}
 import scala.jdk.CollectionConverters._
 import viper.HHLVerifier.typing.HyperTypeChecker
+import viper.HHLVerifier.generation.Generator
 
 
 
@@ -37,7 +38,9 @@ object ParseTest {
   }
 
   def runTests(tests: List[(File, TestExpected)]): Unit = {
+    Generator.autoSelectRules = true
     for (f <- tests) {
+      println(s"starting with ${f._1.getPath}")
       totalNum = totalNum + 1
       val program = getDataForTestCase(f._1.getPath)
 
@@ -71,7 +74,7 @@ object ParseTest {
         }
         // println(parsed.get.value.methods(0).body.toString())
       } else {
-        // println(f"Failed to parse ${f._1.getPath}")
+        println(f"Failed to parse ${f._1.getPath}")
         failed = failed :+ f._1.getPath
         failedLog = failedLog :+ f"Failed to parse ${f._1.getPath} with error: ${parsed.toString()}"
       }

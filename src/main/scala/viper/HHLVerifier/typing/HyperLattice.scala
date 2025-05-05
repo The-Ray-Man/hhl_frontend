@@ -15,19 +15,22 @@ trait FiniteLattice[T] extends Lattice[T] {
 }
 
 
-object HyperLattice extends FiniteLattice[HyperType] with PartialOrdering[HyperType] {
+object HyperLattice extends FiniteLattice[HyperTypeCollection] with PartialOrdering[HyperTypeCollection] {
 
-  override def tryCompare(x: HyperType, y: HyperType): Option[Int] = {
-    (x, y) match {
-        case (Low(), Low()) => Some(0)
-        case (Low(), _) => Some(-1)
-        case (_, Low()) => Some(1)
-        case (High(), High()) => Some(0)
-        case _ => None
+  override def tryCompare(x: HyperTypeCollection, y: HyperTypeCollection): Option[Int] = {
+    // Compare two sets of hyper types
+    (x.informationFlow, y.informationFlow) match {
+      case (None, _) => None
+      case (_, None) => None
+      case (Some(Low()), Some(Low())) => Some(0)
+      case (Some(Low()), Some(High())) => Some(-1)
+      case (Some(High()), Some(Low())) => Some(1)
+      case (Some(High()), Some(High())) => Some(0)
     }
+
   }
 
-  override def lteq(x: HyperType, y: HyperType): Boolean = {
+  override def lteq(x: HyperTypeCollection, y: HyperTypeCollection): Boolean = {
     tryCompare(x, y) match {
        case Some(x) => x <= 0
         case None => false
@@ -35,25 +38,29 @@ object HyperLattice extends FiniteLattice[HyperType] with PartialOrdering[HyperT
   }
 
 
-  override def minimum(): HyperType = Low()
+  override def minimum(): HyperTypeCollection = new HyperTypeCollection(Some(Low()))
 
-  override def maximum(): HyperType = High()
+  override def maximum(): HyperTypeCollection = new HyperTypeCollection(Some(High()))
 
 
-  override def join(x: HyperType, y: HyperType): HyperType = {
-    (x, y) match {
-        case (Low(), _) => y
-        case (_, Low()) => x
-        case (High(), _) => High()
+  override def join(x: HyperTypeCollection, y: HyperTypeCollection): HyperTypeCollection = {
+    (x.informationFlow, y.informationFlow) match {
+        case (None, _) => new HyperTypeCollection(Some(High()))
+        case (_, None) => new HyperTypeCollection(Some(High()))
+        case (Some(Low()), _) => y
+        case (_, Some(Low())) => x
+        case (Some(High()), _) => new HyperTypeCollection(Some(High()))
         case _ => throw UnknownException("Not implemented")
     }
   }
 
-  override def meet(x: HyperType, y: HyperType): HyperType = {
-    (x, y) match {
-        case (Low(), _) => Low()
-        case (_, Low()) => Low()
-        case (High(), _) => x
+  override def meet(x: HyperTypeCollection, y: HyperTypeCollection): HyperTypeCollection = {
+      (x.informationFlow, y.informationFlow) match {
+        case (None, _) => new HyperTypeCollection(Some(Low()))
+        case (_, None) => new HyperTypeCollection(Some(Low()))
+        case (Some(Low()), _) => x
+        case (_, Some(Low())) => y
+        case (Some(High()), Some(High())) => new HyperTypeCollection(Some(High()))
         case _ => throw UnknownException("Not implemented")
     }
   }
@@ -61,10 +68,20 @@ object HyperLattice extends FiniteLattice[HyperType] with PartialOrdering[HyperT
 
 
 
-class HyperMapping extends Lattice[HyperMapping] {
+
+
+class HyperMapping extends Lattice[HyperMapping]  {
 
   
-  var mapping : Map[String, HyperType] = Map()
+  var mapping : Map[String, HyperTypeCollection] = Map()
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: HyperMapping => 
+        this.mapping == that.mapping
+      case _ => false
+    }
+  }
 
   override def join(x: HyperMapping, y: HyperMapping): HyperMapping = {
     val keys = x.mapping.keySet ++ y.mapping.keySet
@@ -90,6 +107,8 @@ class HyperMapping extends Lattice[HyperMapping] {
     result
   }
 
+
+
   def meet(other: HyperMapping): HyperMapping = {
     meet(this, other)
   }
@@ -98,15 +117,16 @@ class HyperMapping extends Lattice[HyperMapping] {
     join(this, other)
   }
 
-  def set(key: String, value: HyperType): Unit = {
+  def set(key: String, value: HyperTypeCollection): Unit = {
     mapping = mapping + (key -> value)
   }
 
-  def get(key: String): Option[HyperType] = {
+  def get(key: String): Option[HyperTypeCollection] = {
+    // mapping.get(key)
     mapping.get(key)
   }
 
-  def getUnsafe(key: String): HyperType = {
+  def getUnsafe(key: String): HyperTypeCollection = {
     mapping.get(key) match {
       case Some(value) => value
       case None => throw new NoSuchElementException(s"Key $key not found in mapping")
