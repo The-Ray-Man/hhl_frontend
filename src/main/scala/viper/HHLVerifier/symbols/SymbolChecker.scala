@@ -3,6 +3,8 @@ package viper.HHLVerifier.symbols
 import viper.HHLVerifier.management.Logger
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BinaryExpr, BoolLit, CombExpr, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, Hint, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, ImpliesExpr, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, StateExistsExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.typing.Type
+import viper.HHLVerifier.ast.FoldStmt
+import viper.HHLVerifier.ast.UnfoldStmt
 
 object SymbolChecker {
   // This map is used to keep track of the declared program variables + assertion variables for each method
@@ -237,6 +239,15 @@ object SymbolChecker {
         val paramNames = stmt.method.params.map(p => p.name)
         stmt.paramsToArgs = paramNames.zip(argNames).toMap
         (varsInArgs, Seq.empty)
+
+      case FoldStmt(_, variable) => {
+        (checkSymbolsExpr(variable, false, false), Seq.empty)
+      }
+
+      case UnfoldStmt(_, variable) => {
+        (checkSymbolsExpr(variable, false, false), Seq.empty)
+      }
+
 
       case stmt => throw new Logger("Statement " + stmt + " is of unexpected type " + stmt.getClass()).addTitle("Symbol Checker Error").addOffset((stmt.offsetLeft, stmt.offsetRight))
     }
