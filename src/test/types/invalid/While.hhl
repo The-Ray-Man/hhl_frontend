@@ -1,0 +1,8 @@
+method testSafeLoop(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    o := 0
+    while (s1 < 10) {
+        o := o + 1
+        s1 := s2 + 1
+    }
+}

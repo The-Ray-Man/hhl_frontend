@@ -1,0 +1,12 @@
+method testHighLoopWithHighOut(s1: Int[low], s2: Int[high]) returns (o : Int[high])
+{
+    o := 0
+    while (s2 > 0) {
+        if (s2 % 2 == 0) {
+            o := o + 1
+        } else {
+            o := o + 2
+        }
+        s2 := s2 - 1
+    }
+}

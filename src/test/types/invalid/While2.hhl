@@ -1,0 +1,8 @@
+method testWhileHighAffectsLow(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    o := s1
+    while (s2 > 0) {
+        o := o + 1
+        s2 := s2 - 1
+    }
+}

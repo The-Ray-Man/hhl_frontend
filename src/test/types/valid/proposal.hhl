@@ -1,0 +1,30 @@
+method secure(l : Int[low], h : Int[high]) returns (o : Int[low])
+    requires forall <_s1>, <_s2> :: (_s1[l] ==_s2[l])
+    ensures forall <_s1>, <_s2> :: (_s1[o] ==_s2[o])
+{
+
+    var z : Int
+    var x : Int
+    z := 1
+    x := l
+    while (x > z)
+    invariant forall <_s1>, <_s2> :: _s1[x] == _s2[x] &&_s1[x] +_s1[o] == _s2[x] +_s2[o]
+    {
+        x := x - 1
+        z := z + 1
+    }
+
+    unfold (low) x
+ 
+    o := 0
+    while (x > 0)
+        invariant forall <_s1>, <_s2> :: _s1[x] == _s2[x] && (_s1[x] +_s1[o] == _s2[x] +_s2[o])
+    {
+        o := o + h
+        o := o + 1
+        x := x - 1
+        o := o - h
+    }
+
+    fold (low) o
+}

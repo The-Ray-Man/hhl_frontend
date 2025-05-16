@@ -1,0 +1,12 @@
+method testMixedControlLeak(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    o := 0
+    while (s1 < 5) {
+        if (s2 > 10) {
+            o := o + 2
+        } else {
+            o := o + 1
+        }
+        s1 := s1 + 1
+    }
+}

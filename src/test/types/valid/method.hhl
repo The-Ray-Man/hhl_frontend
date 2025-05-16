@@ -1,0 +1,26 @@
+
+
+method foo(x : Int[low], y : Int[high]) returns (o : Int[low]) 
+{
+    var z : Int
+    o := 0
+    z := x
+    while (z < 10) {
+        o := o + 1
+        z := z + 1
+    }
+}
+
+method bar(y: Int[low], z:Seq[Int][high]) returns (o : Int[high])
+{
+    var i : Int
+    var e : Int
+    var k : Int
+    i := 0
+    o := 0
+    while (i< |z|){
+        e := z[i]
+        k := foo(y, e)
+        o := o + k
+    } 
+}
