@@ -8,6 +8,7 @@ import viper.HHLVerifier.typing.Low
 import viper.HHLVerifier.typing.High
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
+import viper.HHLVerifier.typing.HyperTypeCollection
 
 object PrettyPrinter {
 
@@ -115,6 +116,14 @@ object PrettyPrinter {
     typ match {
       case _: Low => "low"
       case _: High => "high"
+    }
+  }
+
+  def formatHyperTypeCollection(col: HyperTypeCollection) : String = {
+    col.informationFlow match {
+      case Some(Low()) => "low"
+      case Some(High()) => "high"
+      case None => "unknown"
     }
   }
 
