@@ -70,7 +70,7 @@ object HyperLattice extends FiniteLattice[HyperTypeCollection] with PartialOrder
 
 
 
-class HyperMapping extends Lattice[HyperMapping]  {
+class HyperMapping() extends Lattice[HyperMapping]  {
 
   
   var mapping : Map[String, HyperTypeCollection] = Map()
@@ -132,5 +132,12 @@ class HyperMapping extends Lattice[HyperMapping]  {
       case None => throw new NoSuchElementException(s"Key $key not found in mapping")
     }
   }
+
+  def deepcopy() : HyperMapping = {
+    val new_mapping = new HyperMapping()
+    new_mapping.mapping = this.mapping.map { case (k, v) => (k, v.deepcopy()) }
+    new_mapping
+  }
+
 
 }

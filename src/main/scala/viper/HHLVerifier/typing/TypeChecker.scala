@@ -5,6 +5,8 @@ import viper.HHLVerifier.management.Logger
 import viper.HHLVerifier.symbols.SymbolChecker
 import viper.HHLVerifier._
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BinaryExpr, BoolLit, CombExpr, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, Hint, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, ImpliesExpr, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, StateExistsExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
+import viper.HHLVerifier.ast.FoldStmt
+import viper.HHLVerifier.ast.UnfoldStmt
 
 object TypeChecker {
   val boolOp = List("==", "!=", "&&", "||", "forall", "exists", "==>")
@@ -145,6 +147,8 @@ object TypeChecker {
           res = res && checkIfTypeMatch(a.typ, call.method.params(args.indexOf(a)).typ)
         })
         if (!res) throw new Logger("The types of the arguments in the call to method " + name + " do not match with the types of the method parameters").addTitle("Type Checker Error").addOffset((call.offsetLeft, call.offsetRight))
+      case FoldStmt(_, _) | UnfoldStmt(_, _) => {} 
+      
       case _ => throw new Logger("Unkown statement detected").addTitle("Type Checker Error").addOffset((s.offsetLeft, s.offsetRight))
     }
     if (!res) throw new Logger("The statement has a type error: " + s).addTitle("Type Checker Error").addOffset((s.offsetLeft, s.offsetRight))

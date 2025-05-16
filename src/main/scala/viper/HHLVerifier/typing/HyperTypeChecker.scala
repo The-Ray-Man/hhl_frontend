@@ -101,14 +101,17 @@ object HyperTypeChecker {
         mapping
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
-        val previous_mapping = mapping
+        val initial_mapping = mapping.deepcopy()
+        var previous_mapping = mapping
         var new_mapping = mapping
         do {
+          previous_mapping = new_mapping.deepcopy()
           val condType = typeCheckExpression(mapping, cond)
           val new_pc = HyperLattice.join(condType, pc)
-          new_mapping = typeCheckStmt(mapping, body, new_pc)
+          new_mapping = typeCheckStmt(new_mapping, body, new_pc)
         } while (new_mapping != previous_mapping)
-          previous_mapping
+
+        previous_mapping.join(initial_mapping)
         }
       case HavocStmt(id, _) => {
         mapping.set(id.name, HyperLattice.maximum())

@@ -31,6 +31,15 @@ class HyperTypeCollection(var informationFlow: Option[HyperType] = None) {
       case _ => false
     }
   }
+
+  // print
+  override def toString: String = {
+    PrettyPrinter.formatHyperTypeCollection(this)
+  }
+
+  def deepcopy() : HyperTypeCollection = {
+    new HyperTypeCollection(informationFlow)
+  }
  
 }
 
