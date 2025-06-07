@@ -935,32 +935,29 @@ object Generator {
 
       // With the fold we add a hyper assert
       case FoldStmt(hty, id) => {
-        val s0 = State.localVarDecl(s0VarName)
-        val s1 = State.localVarDecl(s1VarName)
-        val stmt = vpr.Exhale(
-          vpr.Forall(Seq(s0, s1), Seq.empty, 
-          vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
-          )(), vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
-        )()
-        )()
-        )()
-        newStmts = newStmts :+ stmt
-        (newStmts, Seq.empty)
-       
+      val (stmt, aux_vars) = hty match {
+        case High() =>  High().semantic()
+        case Low() => Low().semantic(id, s0VarName, s1VarName, STmp)
+      }
+      
+      if (!stmt.isEmpty) {
+        val newStmt = vpr.Exhale(stmt.get)()
+        newStmts = newStmts :+ newStmt
+      }
+      (newStmts, aux_vars)
       }
       // With unfold we add a hyper assume
       case UnfoldStmt(hty, id) => {
-        val s0 = State.localVarDecl(s0VarName)
-        val s1 = State.localVarDecl(s1VarName)
-        val stmt = vpr.Inhale(
-          vpr.Forall(Seq(s0, s1), Seq.empty, 
-          vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
-          )(), vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
-        )()
-        )()
-        )()
-        newStmts = newStmts :+ stmt
-        (newStmts, Seq.empty)
+      val (stmt, aux_vars) = hty match {
+        case High() =>  High().semantic()
+        case Low() => Low().semantic(id, s0VarName, s1VarName, STmp)
+      }
+
+      if (!stmt.isEmpty) {
+        val newStmt = vpr.Inhale(stmt.get)()
+        newStmts = newStmts :+ newStmt
+      }
+      (newStmts, aux_vars)
       }
     }
     
