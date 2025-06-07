@@ -20,9 +20,9 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.PVarDecl
 import viper.HHLVerifier.ast.MultiAssignStmt
-import viper.silver.plugin.standard.adt.PAdtOpApp.typecheck
 import viper.HHLVerifier.ast.MethodCallExpr
-import viper.HHLVerifier.typing.TypeChecker.typeCheckExpr
+import viper.HHLVerifier.ast.HyperAssertStmt
+import viper.HHLVerifier.ast.HyperAssumeStmt
 
 object HyperTypeChecker {
 
@@ -51,10 +51,13 @@ object HyperTypeChecker {
     println(finalMapping.mapping)
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
+      if (!declaredRetType.is_empty()) {
+        
       val retType = finalMapping.getUnsafe(r.name)
       // println(s"Dseclared return type: $declaredRetType, Actual return type: $retType")
       if (!HyperLattice.lteq(retType, declaredRetType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
+      }
       }
     })
   }
@@ -110,7 +113,6 @@ object HyperTypeChecker {
           val new_pc = HyperLattice.join(condType, pc)
           new_mapping = typeCheckStmt(new_mapping, body, new_pc)
         } while (new_mapping != previous_mapping)
-
         previous_mapping.join(initial_mapping)
         }
       case HavocStmt(id, _) => {
@@ -118,9 +120,14 @@ object HyperTypeChecker {
         mapping
       }
       
-
-
       case PVarDecl(_, _) => {
+        mapping
+      }
+
+      case HyperAssertStmt(e) => {
+        mapping
+      } 
+      case HyperAssumeStmt(e) => {
         mapping
       }
 

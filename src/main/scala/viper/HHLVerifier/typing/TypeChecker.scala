@@ -147,7 +147,13 @@ object TypeChecker {
           res = res && checkIfTypeMatch(a.typ, call.method.params(args.indexOf(a)).typ)
         })
         if (!res) throw new Logger("The types of the arguments in the call to method " + name + " do not match with the types of the method parameters").addTitle("Type Checker Error").addOffset((call.offsetLeft, call.offsetRight))
-      case FoldStmt(_, _) | UnfoldStmt(_, _) => {} 
+      case fold@FoldStmt(hty, id)  => {
+        typeCheckExprWithChecks(fold, id, false)
+      } 
+      case unfold@UnfoldStmt(hty, id) => {
+        typeCheckExprWithChecks(unfold, id, false)
+
+      } 
       
       case _ => throw new Logger("Unkown statement detected").addTitle("Type Checker Error").addOffset((s.offsetLeft, s.offsetRight))
     }
