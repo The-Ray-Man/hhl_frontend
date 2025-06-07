@@ -932,7 +932,34 @@ object Generator {
           SetState.getSetUnionApp(Seq(currFailureStates, tempFailedStates)))()
         newStmts = newStmts ++ Seq(updateSFail, updateProgStates)
         (newStmts, Seq.empty)
+
+      // With the fold we add a hyper assert
+      case FoldStmt(hty, id) => {
+        val s0 = State.localVarDecl(s0VarName)
+        val s1 = State.localVarDecl(s1VarName)
+        val stmt = vpr.Exhale(
+          vpr.Forall(Seq(s0, s1), Seq.empty, 
+          vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+        )()
+        )()
+        newStmts = newStmts :+ stmt
+        (newStmts, Seq.empty)
+       
+      }
+      // WiCh unfold we add a hyper assume
+      case UnfoldStmt(hty, id) => {
+        val s0 = State.localVarDecl(s0VarName)
+        val s1 = State.localVarDecl(s1VarName)
+        val stmt = vpr.Inhale(
+          vpr.Forall(Seq(s0, s1), Seq.empty, 
+          vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+        )()
+        )()
+        newStmts = newStmts :+ stmt
+        (newStmts, Seq.empty)
+      }
     }
+    
   }
 
   def transformExpr(e: Expr, loopGuard: Expr, transform: Boolean): Expr = {
@@ -1899,7 +1926,6 @@ object Generator {
 
   // translate type to vpr type
   def translateType(typ: Type): vpr.Type = {
-    // println("translating type:" + typ)
     typ match {
       case t: IntType => vpr.Int
       case t: BoolType => vpr.Bool
