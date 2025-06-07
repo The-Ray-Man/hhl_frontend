@@ -9,6 +9,7 @@ import viper.HHLVerifier.typing.High
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.typing.HyperTypeCollection
+import viper.HHLVerifier.ast.FoldStmt
 
 object PrettyPrinter {
 
@@ -64,7 +65,7 @@ object PrettyPrinter {
       case UseHintStmt(hint) => "use " + formatExpr(hint)
       case MethodCallStmt(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
       case UnfoldStmt(t, id) => "unfold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
-      // case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
+      case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
     }
   }
 
