@@ -939,20 +939,24 @@ object Generator {
         val s1 = State.localVarDecl(s1VarName)
         val stmt = vpr.Exhale(
           vpr.Forall(Seq(s0, s1), Seq.empty, 
-          vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+          vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+          )(), vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+        )()
         )()
         )()
         newStmts = newStmts :+ stmt
         (newStmts, Seq.empty)
        
       }
-      // WiCh unfold we add a hyper assume
+      // With unfold we add a hyper assume
       case UnfoldStmt(hty, id) => {
         val s0 = State.localVarDecl(s0VarName)
         val s1 = State.localVarDecl(s1VarName)
         val stmt = vpr.Inhale(
           vpr.Forall(Seq(s0, s1), Seq.empty, 
-          vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+          vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+          )(), vpr.EqCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()
+        )()
         )()
         )()
         newStmts = newStmts :+ stmt
