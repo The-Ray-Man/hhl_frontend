@@ -1,0 +1,10 @@
+method testUnsafeLoop(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    var snew : Int
+    snew := s1
+    o := 0
+    while (snew < 10) {
+        o := o + 1
+        snew := s2 + 1
+    }
+}

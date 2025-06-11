@@ -1,0 +1,17 @@
+method testSafeBranching(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+{
+    var s1new : Int
+    s1new := s1
+    o := 0
+    while (s1new > 0){
+        
+        unfold (low) o
+        if (s1new > s2) {
+            o := o + 1
+        } else {
+            o := o + 1
+        }
+        fold (low) o
+        s1new := s1new - 1
+    }
+}

@@ -1,12 +1,14 @@
 method testNestedHighControl(s1: Int[low], s2: Int[high]) returns (o : Int[low])
 {
+    var s2new : Int
+    s2new := s2
     o := 0
-    while (s2 > 0) {
-        if (s2 % 2 == 0) {
+    while (s2new > 0) {
+        if (s1 % 2 == 0) {
             o := o + 1
         } else {
             o := o + 2
         }
-        s2 := s2 - 1
+        s2new := s2new - 1
     }
 }
