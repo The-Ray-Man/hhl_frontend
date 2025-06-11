@@ -70,7 +70,7 @@ object HyperLattice extends FiniteLattice[HyperTypeCollection] with PartialOrder
 
 
 
-class HyperMapping() extends Lattice[HyperMapping]  {
+case class HyperMapping() extends Lattice[HyperMapping]  {
 
   
   var mapping : Map[String, HyperTypeCollection] = Map()
@@ -110,15 +110,18 @@ class HyperMapping() extends Lattice[HyperMapping]  {
 
 
   def meet(other: HyperMapping): HyperMapping = {
-    meet(this, other)
+    return meet(this, other)
   }
 
   def join(other: HyperMapping): HyperMapping = {
-    join(this, other)
+    return join(this, other)
   }
 
-  def set(key: String, value: HyperTypeCollection): Unit = {
-    mapping = mapping + (key -> value)
+  def set(key: String, value: HyperTypeCollection): HyperMapping = {
+    val newMapping = mapping + (key -> value)
+    val result = new HyperMapping()
+    result.mapping = newMapping
+    result
   }
 
   def get(key: String): Option[HyperTypeCollection] = {

@@ -36,7 +36,7 @@ case class High() extends HyperType {
 }
 
 
-class HyperTypeCollection(var informationFlow: Option[HyperType] = None) {
+case class HyperTypeCollection(var informationFlow: Option[HyperType] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {

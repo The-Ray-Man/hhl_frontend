@@ -62,73 +62,77 @@ object HyperTypeChecker {
     })
   }
 
-  def typeCheckStmt(mapping: HyperMapping, s : Stmt, pc: HyperTypeCollection) : HyperMapping = {
+  def typeCheckStmt(mapping:  HyperMapping, s : Stmt, pc: HyperTypeCollection) : HyperMapping = {
+    
     s match {
       case AssignStmt(left, right) => {
          val rightHyperType = typeCheckExpression(mapping, right)
          val hyperType = HyperLattice.join(rightHyperType, pc)
-         mapping.set(left.name, hyperType)
-         mapping
+         val newMapping = mapping.set(left.name, hyperType)
+         return newMapping
       }
       case MultiAssignStmt(left, right) => {
         val rightHyperType = typeCheckMethodExpr(mapping, right)
+        var newMapping = mapping;
         for ((name, ty) <- left.zip(rightHyperType)) {
           val hyperType = HyperLattice.join(ty, pc)
-          mapping.set(name.name, hyperType)
+          newMapping = newMapping.set(name.name, hyperType)
         }
-        mapping
+        return newMapping
       }
       case CompositeStmt(stmts) => {
-        stmts.foldLeft(mapping)((acc, stmt) => typeCheckStmt(acc, stmt, pc))
+        return stmts.foldLeft(mapping)((acc, stmt) => typeCheckStmt(acc, stmt, pc))
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val condType = typeCheckExpression(mapping, cond)
         val new_pc = HyperLattice.join(condType, pc)
         val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
         val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
-        mappingIf.join(mappingElse)
+        val newMapping = mappingIf.join(mappingElse)
+        return newMapping
       }
       case UnfoldStmt(t, id) => {
         val ty = HyperTypeCollection.fromSeq(Seq(t))
         val var_type = mapping.getUnsafe(id.name)
         if (HyperLattice.lteq(var_type, ty)) {
-          mapping
+          return mapping
         } else {
           throw new Exception("Type error: cannot unfold " + id.name + " of type " + var_type + " to type " + t)
         }
-        mapping
       }
       case FoldStmt(t, id) => {
         val ty = HyperTypeCollection.fromSeq(Seq(t))
-        mapping.set(id.name, ty)
-        mapping
+        val newMapping = mapping.set(id.name, ty)
+        newMapping
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
-        val initial_mapping = mapping.deepcopy()
+        val initial_mapping = mapping
         var previous_mapping = mapping
-        var new_mapping = mapping
+        var newMapping = mapping
         do {
-          previous_mapping = new_mapping.deepcopy()
-          val condType = typeCheckExpression(mapping, cond)
+          previous_mapping = newMapping
+          val condType = typeCheckExpression(newMapping, cond)
           val new_pc = HyperLattice.join(condType, pc)
-          new_mapping = typeCheckStmt(new_mapping, body, new_pc)
-        } while (new_mapping != previous_mapping)
-        previous_mapping.join(initial_mapping)
+          newMapping = typeCheckStmt(newMapping, body, new_pc)
+        } while (newMapping != previous_mapping)
+
+        newMapping = previous_mapping.join(initial_mapping)
+        return newMapping
         }
       case HavocStmt(id, _) => {
-        mapping.set(id.name, HyperLattice.maximum())
-        mapping
+        val newMapping = mapping.set(id.name, HyperLattice.maximum())
+        return newMapping
       }
       
       case PVarDecl(_, _) => {
-        mapping
+        return mapping
       }
 
       case HyperAssertStmt(e) => {
-        mapping
+        return mapping
       } 
       case HyperAssumeStmt(e) => {
-        mapping
+        return mapping
       }
 
       case _ => {
