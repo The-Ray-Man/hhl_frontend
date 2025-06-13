@@ -6,6 +6,12 @@ import viper.HHLVerifier.generation.State
 import viper.silver.{ast => vpr}
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.generation.SetState
+import viper.HHLVerifier.ast.AssertVarDecl
+import viper.HHLVerifier.ast.AssertVar
+import viper.HHLVerifier.ast.BinaryExpr
+import viper.HHLVerifier.ast.LookupExpr
+import viper.HHLVerifier.ast.StateExistsExpr
+import viper.HHLVerifier.ast.SpecialId
 
 sealed trait HyperType {
   override def toString: String = {
@@ -15,7 +21,17 @@ sealed trait HyperType {
 
 case class Low() extends HyperType {
 
-  def semantic(id : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+
+  def semantic(id: Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s2_assert = AssertVar("_s2")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val s2 = AssertVarDecl(s2_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"==",LookupExpr(s2_assert, id)) ))
+    return stmt
+  }
+
+  def semantic_vpr(id : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
     val s0 = State.localVarDecl(s0VarName)
     val s1 = State.localVarDecl(s1VarName)
     val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
@@ -28,7 +44,7 @@ case class Low() extends HyperType {
 } 
 case class High() extends HyperType {
 
-  def semantic() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
     // High does not have a semantic, it is just a placeholder
     (None, Seq.empty)
   }

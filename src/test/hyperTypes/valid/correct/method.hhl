@@ -1,0 +1,17 @@
+method bar(x: Int[low]) returns (o: Int) {
+    o := x
+}
+
+
+method foo(x: Int[low], y : Int[high]) returns (o : Int) {
+    
+    var tmp : Int
+    o := 1
+    tmp := x
+
+    if (y < 0) {
+        o := bar(tmp)
+    } else {
+        tmp := tmp + 1
+    }
+}

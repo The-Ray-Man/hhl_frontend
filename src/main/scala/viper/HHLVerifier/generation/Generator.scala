@@ -936,8 +936,8 @@ object Generator {
       // With the fold we add a hyper assert
       case FoldStmt(hty, id) => {
       val (stmt, aux_vars) = hty match {
-        case High() =>  High().semantic()
-        case Low() => Low().semantic(id, s0VarName, s1VarName, STmp)
+        case High() =>  High().semantic_vpr()
+        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
       }
       
       if (!stmt.isEmpty) {
@@ -949,8 +949,8 @@ object Generator {
       // With unfold we add a hyper assume
       case UnfoldStmt(hty, id) => {
       val (stmt, aux_vars) = hty match {
-        case High() =>  High().semantic()
-        case Low() => Low().semantic(id, s0VarName, s1VarName, STmp)
+        case High() =>  High().semantic_vpr()
+        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
       }
 
       if (!stmt.isEmpty) {

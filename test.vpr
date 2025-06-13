@@ -1,0 +1,279 @@
+domain State  {
+  
+  function get_int(s: State, x: Int): Int 
+  
+  function get_map_int1seq_int__(s: State, x: Int): HHLMap[Int, HHLSeq[Int]] 
+  
+  function equal_on_everything_except(s1: State, s2: State, x: Int): Bool 
+  
+  axiom equal_on_everything_except_def_int {
+    (forall s1: State, s2: State, x: Int ::
+      { equal_on_everything_except(s1, s2, x) }
+      equal_on_everything_except(s1, s2, x) ==>
+      (forall y: Int ::x != y ==> get_int(s1, y) == get_int(s2, y)))
+  }
+  
+  axiom equal_on_everything_except_def_map_int1seq_int__ {
+    (forall s1: State, s2: State, x: Int ::
+      { equal_on_everything_except(s1, s2, x) }
+      equal_on_everything_except(s1, s2, x) ==>
+      (forall y: Int ::x != y ==>
+        get_map_int1seq_int__(s1, y) == get_map_int1seq_int__(s2, y)))
+  }
+}
+
+domain SetState  {
+  
+  function in_set_forall(s: State, S: SetState): Bool 
+  
+  function in_set_exists(s: State, S: SetState): Bool 
+  
+  function in_set_forall_limited(s: State, S: SetState): Bool 
+  
+  function in_set_exists_limited(s: State, S: SetState): Bool 
+  
+  function set_union(S1: SetState, S2: SetState): SetState 
+  
+  axiom set_union_forall_def {
+    (forall S1: SetState, S2: SetState ::
+      { set_union(S1, S2) }
+      (forall s: State ::(in_set_forall(s, S1) || in_set_forall(s, S2)) ==
+        in_set_forall(s, set_union(S1, S2))))
+  }
+  
+  axiom set_union_exists_def {
+    (forall S1: SetState, S2: SetState ::
+      { set_union(S1, S2) }
+      (forall s: State ::(in_set_exists(s, S1) || in_set_exists(s, S2)) ==
+        in_set_exists(s, set_union(S1, S2))))
+  }
+  
+  axiom in_set_forall_limited_def {
+    (forall s: State, S: SetState ::
+      { in_set_forall(s, S) }
+      in_set_forall_limited(s, S) == in_set_forall(s, S))
+  }
+  
+  axiom in_set_exists_limited_def {
+    (forall s: State, S: SetState ::
+      { in_set_exists(s, S) }
+      in_set_exists_limited(s, S) == in_set_exists(s, S))
+  }
+}
+
+domain HHLMap[K, V]  {
+  
+  function HHLMap_apply(m: HHLMap[K, V], k: K): V 
+  
+  function HHLMap_card(m: HHLMap[K, V]): Int 
+  
+  function HHLMap_disjoint(m1: HHLMap[K, V], m2: HHLMap[K, V]): Bool 
+  
+  function HHLMap_domain(m: HHLMap[K, V]): Set[K] 
+  
+  function HHLMap_empty(): HHLMap[K, V] 
+  
+  function HHLMap_equal(m1: HHLMap[K, V], m2: HHLMap[K, V]): Bool 
+  
+  function HHLMap_update(m: HHLMap[K, V], k: K, v: V): HHLMap[K, V] 
+  
+  function HHLMap_values(m: HHLMap[K, V]): Set[V] 
+  
+  function HHLMap_range_domain_skolem(m: HHLMap[K, V], v: V): K 
+  
+  axiom {
+    (forall m: HHLMap[K, V] ::
+      { (HHLMap_card(m): Int) }
+      0 <= (HHLMap_card(m): Int))
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V] ::
+      { |(HHLMap_domain(m): Set[K])| }
+      { (HHLMap_card(m): Int) }
+      |(HHLMap_domain(m): Set[K])| == (HHLMap_card(m): Int))
+  }
+  
+  axiom {
+    (forall m1: HHLMap[K, V], m2: HHLMap[K, V] ::
+      { (HHLMap_disjoint(m1, m2): Bool) }
+      (HHLMap_disjoint(m1, m2): Bool) ==>
+      (forall k: K ::
+        { (k in (HHLMap_domain(m1): Set[K])) }
+        { (k in (HHLMap_domain(m2): Set[K])) }
+        !((k in (HHLMap_domain(m1): Set[K]))) ||
+        !((k in (HHLMap_domain(m2): Set[K])))))
+  }
+  
+  axiom {
+    (forall m1: HHLMap[K, V], m2: HHLMap[K, V] ::
+      { (HHLMap_disjoint(m1, m2): Bool) }
+      !(HHLMap_disjoint(m1, m2): Bool) ==>
+      (exists k: K :: (k in (HHLMap_domain(m1): Set[K])) &&
+        (k in (HHLMap_domain(m2): Set[K]))))
+  }
+  
+  axiom {
+    (forall k: K ::
+      { (k in (HHLMap_domain((HHLMap_empty(): HHLMap[K, V])): Set[K])) }
+      !((k in (HHLMap_domain((HHLMap_empty(): HHLMap[K, V])): Set[K]))))
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V] ::
+      { (HHLMap_card(m): Int) }
+      ((HHLMap_card(m): Int) == 0) == (m == (HHLMap_empty(): HHLMap[K, V])) &&
+      (((HHLMap_card(m): Int) != 0 ==>
+      (exists u: K :: (u in (HHLMap_domain(m): Set[K])))) &&
+      (forall u: K ::
+        { (u in (HHLMap_domain(m): Set[K])) }
+        (u in (HHLMap_domain(m): Set[K])) ==> (HHLMap_card(m): Int) != 0)))
+  }
+  
+  axiom {
+    (forall m1: HHLMap[K, V], m2: HHLMap[K, V] ::
+      { (HHLMap_equal(m1, m2): Bool) }
+      (forall k: K ::
+        { (k in (HHLMap_domain(m1): Set[K])) }
+        { (k in (HHLMap_domain(m2): Set[K])) }
+        (k in (HHLMap_domain(m1): Set[K])) ==
+        (k in (HHLMap_domain(m2): Set[K]))) &&
+      (forall k: K ::
+        { (HHLMap_apply(m1, k): V) }
+        { (HHLMap_apply(m2, k): V) }
+        (k in (HHLMap_domain(m1): Set[K])) ==>
+        (HHLMap_apply(m1, k): V) == (HHLMap_apply(m2, k): V)) ==>
+      (HHLMap_equal(m1, m2): Bool))
+  }
+  
+  axiom {
+    (forall m1: HHLMap[K, V], m2: HHLMap[K, V] ::
+      { (HHLMap_equal(m1, m2): Bool) }
+      (HHLMap_equal(m1, m2): Bool) ==> m1 == m2)
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V], k1: K, k2: K, v: V ::
+      { (k2 in
+      (HHLMap_domain((HHLMap_update(m, k1, v): HHLMap[K, V])): Set[K])) }
+      { (k2 in (HHLMap_domain(m): Set[K])), (HHLMap_update(m, k1, v): HHLMap[K, V]) }
+      { (HHLMap_apply((HHLMap_update(m, k1, v): HHLMap[K, V]), k2): V) }
+      (k1 == k2 ==>
+      (k2 in
+      (HHLMap_domain((HHLMap_update(m, k1, v): HHLMap[K, V])): Set[K])) &&
+      (HHLMap_apply((HHLMap_update(m, k1, v): HHLMap[K, V]), k2): V) == v) &&
+      (k1 != k2 ==>
+      (k2 in
+      (HHLMap_domain((HHLMap_update(m, k1, v): HHLMap[K, V])): Set[K])) ==
+      (k2 in (HHLMap_domain(m): Set[K])) &&
+      ((k2 in (HHLMap_domain(m): Set[K])) ==>
+      (HHLMap_apply((HHLMap_update(m, k1, v): HHLMap[K, V]), k2): V) ==
+      (HHLMap_apply(m, k2): V))))
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V], k: K, v: V ::
+      { (HHLMap_card((HHLMap_update(m, k, v): HHLMap[K, V])): Int) }
+      { (HHLMap_card(m): Int), (HHLMap_update(m, k, v): HHLMap[K, V]) }
+      ((k in (HHLMap_domain(m): Set[K])) ==>
+      (HHLMap_card((HHLMap_update(m, k, v): HHLMap[K, V])): Int) ==
+      (HHLMap_card(m): Int)) &&
+      (!((k in (HHLMap_domain(m): Set[K]))) ==>
+      (HHLMap_card((HHLMap_update(m, k, v): HHLMap[K, V])): Int) ==
+      (HHLMap_card(m): Int) + 1))
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V], v: V ::
+      { (v in (HHLMap_values(m): Set[V])) }
+      (v in (HHLMap_values(m): Set[V])) ==>
+      ((HHLMap_range_domain_skolem(m, v): K) in (HHLMap_domain(m): Set[K])) &&
+      v == (HHLMap_apply(m, (HHLMap_range_domain_skolem(m, v): K)): V))
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V], k: K ::
+      { (HHLMap_apply(m, k): V) }
+      { (k in (HHLMap_domain(m): Set[K])) }
+      (k in (HHLMap_domain(m): Set[K])) ==>
+      |(HHLMap_values(m): Set[V])| > 0)
+  }
+  
+  axiom {
+    (forall m: HHLMap[K, V], k: K ::
+      { (HHLMap_apply(m, k): V) }
+      (k in (HHLMap_domain(m): Set[K])) ==>
+      ((HHLMap_apply(m, k): V) in (HHLMap_values(m): Set[V])))
+  }
+}
+
+method havocSet() returns (SS: SetState)
+
+
+method havocInt() returns (__k: Int)
+
+
+method testSequences(s1: Int, s2: Int, S0: SetState)
+  returns (o: Int, S: SetState, S_fail: SetState)
+  requires s1 == 0 && s2 == 1
+{
+  var S_temp: SetState
+  var S_fail_temp: SetState
+  S := S0
+  inhale (forall _s: State ::!in_set_forall(_s, S_fail))
+  inhale (forall _s: State ::in_set_forall(_s, S0) == in_set_exists(_s, S0))
+  inhale (forall _s: State ::in_set_forall_limited(_s, S0) ==
+      in_set_exists_limited(_s, S0))
+  inhale (forall _s: State ::in_set_forall(_s, S_fail) ==
+      in_set_exists(_s, S_fail))
+  inhale (forall _s: State ::in_set_forall_limited(_s, S_fail) ==
+      in_set_exists_limited(_s, S_fail))
+  o := 2
+  S_temp := havocSet()
+  S_fail_temp := havocSet()
+  inhale (forall _s: State ::
+      { in_set_forall(_s, S_temp) }
+      in_set_forall(_s, S_temp) ==>
+      in_set_forall(_s, S) &&
+      (get_int(_s, s1) in
+      (HHLMap_domain(get_map_int1seq_int__(_s, s2)): Set[HHLSeq[Int]])))
+  inhale (forall _s: State ::
+      { in_set_forall(_s, S_fail_temp) }
+      in_set_forall(_s, S_fail_temp) ==>
+      in_set_forall(_s, S) &&
+      !((get_int(_s, s1) in
+      (HHLMap_domain(get_map_int1seq_int__(_s, s2)): Set[HHLSeq[Int]]))))
+  inhale (forall _s: State ::
+      { in_set_exists_limited(_s, S) }
+      in_set_exists(_s, S) &&
+      (get_int(_s, s1) in
+      (HHLMap_domain(get_map_int1seq_int__(_s, s2)): Set[HHLSeq[Int]])) ==>
+      in_set_exists(_s, S_temp))
+  inhale (forall _s: State ::
+      { in_set_exists_limited(_s, S_fail) }
+      in_set_exists(_s, S) &&
+      !((get_int(_s, s1) in
+      (HHLMap_domain(get_map_int1seq_int__(_s, s2)): Set[HHLSeq[Int]]))) ==>
+      in_set_exists(_s, S_fail_temp))
+  S_fail := set_union(S_fail, S_fail_temp)
+  S := S_temp
+  S_temp := havocSet()
+  inhale (forall _s: State ::
+      { in_set_forall(_s, S_temp) }
+      in_set_forall(_s, S_temp) ==>
+      (exists _s0: State :: in_set_forall(_s0, S) &&
+        equal_on_everything_except(_s, _s0, o) &&
+        get_int(_s, o) ==
+        (HHLMap_apply(get_map_int1seq_int__(_s0, s2), get_int(_s0, s1)): HHLSeq[Int])))
+  inhale (forall _s: State ::
+      { in_set_exists_limited(_s, S) }
+      in_set_exists(_s, S) ==>
+      (exists _s1: State :: in_set_exists(_s1, S_temp) &&
+        equal_on_everything_except(_s, _s1, o) &&
+        get_int(_s1, o) ==
+        (HHLMap_apply(get_map_int1seq_int__(_s, s2), get_int(_s, s1)): HHLSeq[Int])))
+  S := S_temp
+  exhale (forall _s0: State, _s1: State ::in_set_forall(_s0, S_temp) &&
+      in_set_forall(_s1, S_temp) ==>
+      get_int(_s0, o) == get_int(_s1, o))
+}

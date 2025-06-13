@@ -10,7 +10,9 @@ import viper.HHLVerifier.typing.TypeChecker
 
 import java.io.FileWriter
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
-import viper.HHLVerifier.typing.HyperTypeChecker
+import viper.HHLVerifier.typing.{HyperTypeChecker}
+import viper.HHLVerifier.test.HyperTest
+import viper.HHLVerifier.typing.HyperTranslate
 
 /** Main Method */
 object Main {
@@ -27,12 +29,18 @@ object Main {
     verified = 0
 
     // [DOC] Read Files
-    if (args.length == 0) {
-      new Logger("Please provide the program to verify.", Logger.ERR).addTitle("Invalid Arguments").log()
-      sys.exit(1)
+    // if (args.length == 0) {
+    //   new Logger("Please provide the program to verify.", Logger.ERR).addTitle("Invalid Arguments").log()
+    //   sys.exit(1)
+    // }
+
+    if (args.contains("--tests")) {
+      HyperTest.main()
+      return
     }
 
-    val programAbsPath = args(0)
+    val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/proposal.hhl"
+    // var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
     val program = programSource.mkString
@@ -52,7 +60,7 @@ object Main {
     if (args.contains("--forall") && !args.contains("--exists")) Generator.verifierOption = 0
     else if (args.contains("--exists") && !args.contains("--forall")) Generator.verifierOption = 1
     else Generator.verifierOption = 2 // Both forall & exists encodings will be emitted
-
+    Generator.autoSelectRules = true
     new Logger(f"The input program is read from $programAbsPath.").log()
 
     try {
@@ -63,7 +71,12 @@ object Main {
       if (res.isSuccess) {
         new Logger("Parsing successful.").log()
 
-        val parsedProgram: HHLProgram = res.get.value
+        var parsedProgram: HHLProgram = res.get.value
+        HyperTypeChecker.typeCheckProg(parsedProgram)
+        new Logger("HyperType checking successful.").log()
+        if (args.contains("--hypraToHypra")) {
+          parsedProgram = HyperTranslate.translateProgram(parsedProgram)
+        }
 
         // Symbol table
         SymbolChecker.checkSymbolsProg(parsedProgram)
@@ -74,9 +87,10 @@ object Main {
         new Logger("Type checking successful.").log()
 
         // HyperType checking
-        HyperTypeChecker.typeCheckProg(parsedProgram)
-        new Logger("HyperType checking successful.").log()
 
+
+
+        // return
         // Generate the Viper program
         val viperProgram = Generator.generate(parsedProgram, program)
         SymbolChecker.reset()
