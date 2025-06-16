@@ -194,8 +194,6 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
       }
       case "||" => {
         (this.value, other.value) match {
-          case (None, _) => None
-          case (_, None) => None
           case (Some(True()), _) => Some(True())
           case (_, Some(True())) => Some(True())
           case (Some(False()), Some(False())) => Some(False())

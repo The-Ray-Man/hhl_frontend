@@ -44,9 +44,6 @@ object HyperTypeChecker {
     val hyperMapping = new HyperMapping(mapping)
 
     val finalMapping = typeCheckStmt(hyperMapping, m.body, pc)
-    finalMapping.mapping.foreach({case (name, value) =>
-      // println(s"Variable: $name, Type: $value")
-  })
     println(finalMapping.mapping)
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
@@ -61,7 +58,7 @@ object HyperTypeChecker {
   }
 
   def typeCheckStmt(mapping:  HyperMapping, s : Stmt, pc: HyperTypeCollection) : HyperMapping = {
-    
+    println("Type checking statement: " + s)
     s match {
       case AssignStmt(left, right) => {
          val rightHyperType = typeCheckExpression(mapping, right)
@@ -87,8 +84,7 @@ object HyperTypeChecker {
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val condType = typeCheckExpression(mapping, cond)
-
-
+        println(s"Condition type: $condType")
         condType.value match {
           case Some(True()) => {
             // If the condition is true, we only need to consider the if branch
@@ -101,12 +97,12 @@ object HyperTypeChecker {
           case None => {
             // If the condition is unknown, we need to consider both branches
             // We will join the information flow of both branches
-          val path_condition = condType.joinInfFlow(pc);
-          val new_pc = HyperTypeCollection(informationFlow=path_condition)
-          val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
-          val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
-          val newMapping = mappingIf.combine(mappingElse)
-          return newMapping
+            val path_condition = condType.joinInfFlow(pc);
+            val new_pc = HyperTypeCollection(informationFlow=path_condition)
+            val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
+            val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
+            val newMapping = mappingIf.combine(mappingElse)
+            return newMapping
           }
         }
 
@@ -187,6 +183,7 @@ object HyperTypeChecker {
 
 
   def typeCheckExpression(mapping: HyperMapping, e: Expr) : HyperTypeCollection = {
+    println("Type checking expression: " + e)
     e match {
       case BoolLit(b) => {
         val value = if (b) Some(True()) else Some(False())
@@ -203,8 +200,15 @@ object HyperTypeChecker {
         {
           val type1 = typeCheckExpression(mapping, e1)
           val type2 = typeCheckExpression(mapping, e2)
-          val infFlowType = type1.joinInfFlow(type2)
+          var infFlowType = type1.joinInfFlow(type2)
           val valueType = type1.joinValue(type2, op)
+          println("infFlowType: " + infFlowType + ", valueType: " + valueType)
+          valueType match {
+            case Some(True()) | Some(False()) | Some(Zero()) => {
+              infFlowType = Some(Low())
+            }
+            case _ => {}
+          }
           new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
         }
 

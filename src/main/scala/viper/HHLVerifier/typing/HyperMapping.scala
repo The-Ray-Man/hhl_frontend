@@ -3,9 +3,6 @@ package viper.HHLVerifier.typing
 
 
 case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
-
-  
-
   override def equals(other: Any): Boolean = {
     other match {
       case that: HyperMapping => 
