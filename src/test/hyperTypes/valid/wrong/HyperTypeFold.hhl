@@ -1,7 +1,0 @@
-method testSequences(s1: Int[low], s2: Map[Int, Seq[Int]][high]) returns (o : Int[low])
-{
-    var tmp : Seq[Int]
-    tmp := s2[s1]
-    o := tmp[s1]
-    fold (low) o
-}

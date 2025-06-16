@@ -1,0 +1,12 @@
+method flipWhile(s1: Int[low], x : Int[low, pos], s2: Int[high]) returns (o : Int[low])
+{
+    var s1new : Int
+    var xnew : Int
+    xnew := x
+    s1new := s1
+    o := 0
+    while (s1new > 0) {
+        xnew := (-1) * xnew
+        o := 1
+    }
+}

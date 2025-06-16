@@ -1,0 +1,9 @@
+
+method foo(x: Int[low, neg], z: Int[high, pos], y : Int[high]) returns (o : Int[low]) {
+    
+    if (x < z && y > 0) {
+        o := 1
+    } else {
+        o := 0
+    }
+}
