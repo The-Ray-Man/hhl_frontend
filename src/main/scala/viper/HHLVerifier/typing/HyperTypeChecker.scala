@@ -43,7 +43,7 @@ object HyperTypeChecker {
     val mapping = m.params.map(p => (p.name -> HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))).toMap
     val hyperMapping = new HyperMapping(mapping)
 
-    val finalMapping = typeCheckStmt(hyperMapping, m.body, pc)
+    val (finalMapping, deltaMapping) = typeCheckStmt(hyperMapping, m.body, pc)
     println(finalMapping.mapping)
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
@@ -57,16 +57,16 @@ object HyperTypeChecker {
     })
   }
 
-  def typeCheckStmt(mapping:  HyperMapping, s : Stmt, pc: HyperTypeCollection) : HyperMapping = {
+  def typeCheckStmt(mapping:  HyperMapping, s : Stmt, pc: HyperTypeCollection) : (HyperMapping, Map[String, DeltaMapping]) = {
     println("Type checking statement: " + s)
     s match {
       case AssignStmt(left, right) => {
-         val rightHyperType = typeCheckExpression(mapping, right)
+         val (rightHyperType, deltaType) = typeCheckExpression(mapping, right)
          val infFlow = rightHyperType.joinInfFlow(pc)
          val newMapping = mapping.set(left.name, HyperTypeCollection(
           informationFlow = infFlow,
           value = rightHyperType.value))
-         return newMapping
+         return (newMapping, Map(left.name -> deltaType))
       }
       case MultiAssignStmt(left, right) => {
         val rightHyperType = typeCheckMethodExpr(mapping, right)
@@ -77,18 +77,22 @@ object HyperTypeChecker {
             informationFlow = infFlow,
             value = ty.value))
         }
-        return newMapping
+        return (newMapping, Map())
       }
       case CompositeStmt(stmts) => {
-        return stmts.foldLeft(mapping)((acc, stmt) => typeCheckStmt(acc, stmt, pc))
+        return stmts.foldLeft((mapping, Map[String, DeltaMapping]()))((acc, stmt) => {
+          val (currentMapping, delta) = acc
+          val (newMapping, newDelta) = typeCheckStmt(currentMapping, stmt, pc)
+          (newMapping, DeltaMapping.composite(delta, newDelta))
+          })
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
-        val condType = typeCheckExpression(mapping, cond)
+        val (condType, _) = typeCheckExpression(mapping, cond)
         println(s"Condition type: $condType")
         condType.value match {
           case Some(True()) => {
             // If the condition is true, we only need to consider the if branch
-            return typeCheckStmt(mapping, ifStmt, HyperTypeCollection(informationFlow=pc.informationFlow))
+            typeCheckStmt(mapping, ifStmt, HyperTypeCollection(informationFlow=pc.informationFlow))
           }
           case Some(False()) => {
             // If the condition is false, we only need to consider the else branch
@@ -99,10 +103,11 @@ object HyperTypeChecker {
             // We will join the information flow of both branches
             val path_condition = condType.joinInfFlow(pc);
             val new_pc = HyperTypeCollection(informationFlow=path_condition)
-            val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
-            val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
+            val (mappingIf, deltaIf) = typeCheckStmt(mapping, ifStmt, new_pc)
+            val (mappingElse, deltaElse) = typeCheckStmt(mapping, elseStmt, new_pc)
             val newMapping = mappingIf.combine(mappingElse)
-            return newMapping
+            val newDelta = DeltaMapping.composite(deltaIf, deltaElse)
+            return (newMapping, newDelta)
           }
         }
 
@@ -112,7 +117,7 @@ object HyperTypeChecker {
         val ty = HyperTypeCollection.fromSeq(Seq(t))
         val var_type = mapping.getUnsafe(id.name)
         if (var_type.isSubTypeOf(ty)) {
-          return mapping
+          return (mapping, Map())
         } else {
           throw new Exception("Type error: cannot unfold " + id.name + " of type " + var_type + " to type " + t)
         }
@@ -120,43 +125,44 @@ object HyperTypeChecker {
       case FoldStmt(t, id) => {
         val ty = HyperTypeCollection.fromSeq(Seq(t))
         val newMapping = mapping.set(id.name, ty)
-        newMapping
+        (newMapping, Map())
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
-        val valueConditionType = typeCheckExpression(mapping, cond)
+        val (valueConditionType, delta) = typeCheckExpression(mapping, cond)
         if (valueConditionType.value == Some(False())) {
           // If the condition is false, we can skip the loop
-          return mapping
+          return (mapping, Map())
         }
         val initial_mapping = mapping
         var previous_mapping = mapping
         var newMapping = mapping
         do {
           previous_mapping = newMapping
-          val condType = typeCheckExpression(newMapping, cond)
+          val (condType, deltaCond) = typeCheckExpression(newMapping, cond)
           val new_pc_inf = condType.joinInfFlow(pc);
           val new_pc = HyperTypeCollection(informationFlow=new_pc_inf)
-          newMapping = typeCheckStmt(newMapping, body, new_pc)
+          val res  = typeCheckStmt(newMapping, body, new_pc)
+          newMapping = res._1
           newMapping = newMapping.combine(previous_mapping)
         } while (newMapping != previous_mapping)
 
         newMapping = previous_mapping.combine(initial_mapping)
-        return newMapping
+        return (newMapping, Map())
         }
-      case HavocStmt(id, _) => {
-        val newMapping = mapping.set(id.name, HyperTypeCollection.fromSeq(Seq.empty))
-        return newMapping
+      case HavocStmt(Id(name), _) => {
+        val newMapping = mapping.set(name, HyperTypeCollection.fromSeq(Seq.empty))
+        return (newMapping, Map())
       }
       
       case PVarDecl(_, _) => {
-        return mapping
+        return (mapping, Map())
       }
 
       case HyperAssertStmt(e) => {
-        return mapping
+        return (mapping, Map())
       } 
       case HyperAssumeStmt(e) => {
-        return mapping
+        return (mapping, Map())
       }
 
       case _ => {
@@ -173,7 +179,7 @@ object HyperTypeChecker {
     val methodArgTypes = method.params.map(p => HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))
    
     for ((name, ty) <- e.args.zip(methodArgTypes)) {
-      val actual_type = typeCheckExpression(mapping, name)
+      val (actual_type, _) = typeCheckExpression(mapping, name)
       if (!actual_type.isSubTypeOf(ty)) {
         throw new Exception("Type error: argument " + name + " of type " + actual_type + " does not match expected type " + ty)
       }
@@ -182,24 +188,25 @@ object HyperTypeChecker {
   }
 
 
-  def typeCheckExpression(mapping: HyperMapping, e: Expr) : HyperTypeCollection = {
+  def typeCheckExpression(mapping: HyperMapping, e: Expr) : (HyperTypeCollection, DeltaMapping) = {
     println("Type checking expression: " + e)
     e match {
       case BoolLit(b) => {
         val value = if (b) Some(True()) else Some(False())
-        new HyperTypeCollection(Some(Low()), value=value)
+        (new HyperTypeCollection(Some(Low()), value=value), new DeltaMapping(Map()))
       }
       case Num(n) => {
         val value = if (n > 0) Some(Pos()) else if (n < 0) Some(Neg()) else Some(Zero())
-        new HyperTypeCollection(informationFlow=Some(Low()), value=value)
+        (new HyperTypeCollection(informationFlow=Some(Low()), value=value), new DeltaMapping(Map()))
       }
       case Id(name) => {
-        mapping.getUnsafe(name)
+        val hyperType = mapping.getUnsafe(name)
+        (hyperType, new DeltaMapping(Map(name -> new HyperTypeCollection(informationFlow = hyperType.informationFlow, value = Some(Zero())))))
       }
       case BinaryExpr(e1, op, e2) => 
         {
-          val type1 = typeCheckExpression(mapping, e1)
-          val type2 = typeCheckExpression(mapping, e2)
+          val (type1, delta1) = typeCheckExpression(mapping, e1)
+          val (type2, delta2) = typeCheckExpression(mapping, e2)
           var infFlowType = type1.joinInfFlow(type2)
           val valueType = type1.joinValue(type2, op)
           println("infFlowType: " + infFlowType + ", valueType: " + valueType)
@@ -209,14 +216,15 @@ object HyperTypeChecker {
             }
             case _ => {}
           }
-          new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
+          val deltaMapping = DeltaMapping.combineOp(type1, delta1, type2, delta2, op)
+          (new HyperTypeCollection(informationFlow = infFlowType, value = valueType), deltaMapping)
         }
 
       case LengthExpr(id) => {
         typeCheckExpression(mapping, id)
       }
       case UnaryExpr(op, e) => {
-        val type1 = typeCheckExpression(mapping, e)
+        val (type1, delta) = typeCheckExpression(mapping, e)
         op match {
           case "-" => {
             // Negation
@@ -226,7 +234,7 @@ object HyperTypeChecker {
               case Some(Zero()) => Some(Zero())
               case _ => None
             }
-            return new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType)
+            return (new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType), delta.flipSign())
           }
           case "!" => {
             // Negation of boolean
@@ -235,17 +243,17 @@ object HyperTypeChecker {
               case Some(False()) => Some(True())
               case _ => None
             }
-            return new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType)
+            return (new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType), new DeltaMapping(Map()))
           }
           case _ => throw new Exception("Unknown unary operator: " + op)
         }
       }
       case LookupExpr(id, index) => {
-        val idType = typeCheckExpression(mapping, id)
-        val indexType = typeCheckExpression(mapping, index)
+        val (idType, _) = typeCheckExpression(mapping, id)
+        val (indexType, _) = typeCheckExpression(mapping, index)
         val infFlowType = idType.joinInfFlow(indexType)
         val valueType = idType.value
-        new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
+        (new HyperTypeCollection(informationFlow = infFlowType, value = valueType), new DeltaMapping(Map()))
       }
       case _ => {
         throw new Exception("Type error: cannot yet type check expression " + e)

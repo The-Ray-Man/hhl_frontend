@@ -131,7 +131,7 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
       case (Some(Pos()), Some(Pos())) => Some(Pos())
       case (Some(Neg()), Some(Neg())) => Some(Neg())
       case (Some(Zero()), Some(Zero())) => Some(Zero())
-      case _ => None // This should not happen
+      case _ => None 
     }
   }
 
