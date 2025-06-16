@@ -124,7 +124,6 @@ object HyperTypeChecker {
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
         val valueConditionType = typeCheckExpression(mapping, cond)
-        println(s"Value condition type: $valueConditionType")
         if (valueConditionType.value == Some(False())) {
           // If the condition is false, we can skip the loop
           return mapping
@@ -138,6 +137,7 @@ object HyperTypeChecker {
           val new_pc_inf = condType.joinInfFlow(pc);
           val new_pc = HyperTypeCollection(informationFlow=new_pc_inf)
           newMapping = typeCheckStmt(newMapping, body, new_pc)
+          newMapping = newMapping.combine(previous_mapping)
         } while (newMapping != previous_mapping)
 
         newMapping = previous_mapping.combine(initial_mapping)
