@@ -6,10 +6,16 @@ import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, S
 import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.typing.Low
 import viper.HHLVerifier.typing.High
+import viper.HHLVerifier.typing.Pos
+import viper.HHLVerifier.typing.Neg
+import viper.HHLVerifier.typing.Zero
+import viper.HHLVerifier.typing.True
+import viper.HHLVerifier.typing.False
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.FoldStmt
+import viper.HHLVerifier.management.Logger.format
 
 object PrettyPrinter {
 
@@ -113,19 +119,29 @@ object PrettyPrinter {
     }
   }
 
-  def formatHyperType(typ: HyperType): String = {
-    typ match {
-      case _: Low => "low"
-      case _: High => "high"
+  def formatHyperType(ty: HyperType): String = {
+    ty match {
+      case Low() => "low"
+      case High() => "high"
+      case Pos() => "pos"
+      case Neg() => "neg"
+      case Zero() => "zero"
+      case True() => "true"
+      case False() => "false"
     }
   }
 
   def formatHyperTypeCollection(col: HyperTypeCollection) : String = {
+    var types = Seq.empty[String]
     col.informationFlow match {
-      case Some(Low()) => "low"
-      case Some(High()) => "high"
-      case None => "unknown"
+      case Some(ty) => types = types :+ formatHyperType(ty)
+      case None => {}
     }
+    col.value match {
+      case Some(ty) => types = types :+ formatHyperType(ty)
+      case None =>  {}
+    }
+    types.mkString(", ")
   }
 
   def getErrorMessage(expr: Expr, source: String): String = {

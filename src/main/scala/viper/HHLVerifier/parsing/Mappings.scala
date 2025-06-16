@@ -223,6 +223,12 @@ object Mappings {
     name match {
     case "low" => Low()
     case "high" => High()
+    case "pos" => Pos()
+    case "neg" => Neg()
+    case "zero" => Zero()
+    case "true" => True()
+    case "false" => False()
+    case _ => throw UnknownException("Unknown hyper type: " + name)
   }
 
   def mapSeqOrSetType(name: String, t: Type): Type = name match {

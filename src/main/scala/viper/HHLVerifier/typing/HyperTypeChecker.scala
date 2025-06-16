@@ -41,8 +41,7 @@ object HyperTypeChecker {
     val pc = new HyperTypeCollection(Some(Low()))
 
     val mapping = m.params.map(p => (p.name -> HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))).toMap
-    val hyperMapping = new HyperMapping()
-    hyperMapping.mapping = mapping
+    val hyperMapping = new HyperMapping(mapping)
 
     val finalMapping = typeCheckStmt(hyperMapping, m.body, pc)
     finalMapping.mapping.foreach({case (name, value) =>
@@ -54,8 +53,7 @@ object HyperTypeChecker {
       if (!declaredRetType.is_empty()) {
         
       val retType = finalMapping.getUnsafe(r.name)
-      // println(s"Dseclared return type: $declaredRetType, Actual return type: $retType")
-      if (!HyperLattice.lteq(retType, declaredRetType)) {
+      if (!retType.isSubTypeOf(declaredRetType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
       }
       }
@@ -67,16 +65,20 @@ object HyperTypeChecker {
     s match {
       case AssignStmt(left, right) => {
          val rightHyperType = typeCheckExpression(mapping, right)
-         val hyperType = HyperLattice.join(rightHyperType, pc)
-         val newMapping = mapping.set(left.name, hyperType)
+         val infFlow = rightHyperType.joinInfFlow(pc)
+         val newMapping = mapping.set(left.name, HyperTypeCollection(
+          informationFlow = infFlow,
+          value = rightHyperType.value))
          return newMapping
       }
       case MultiAssignStmt(left, right) => {
         val rightHyperType = typeCheckMethodExpr(mapping, right)
         var newMapping = mapping;
         for ((name, ty) <- left.zip(rightHyperType)) {
-          val hyperType = HyperLattice.join(ty, pc)
-          newMapping = newMapping.set(name.name, hyperType)
+          val infFlow = ty.joinInfFlow(pc)
+          newMapping = newMapping.set(name.name, HyperTypeCollection(
+            informationFlow = infFlow,
+            value = ty.value))
         }
         return newMapping
       }
@@ -85,16 +87,35 @@ object HyperTypeChecker {
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val condType = typeCheckExpression(mapping, cond)
-        val new_pc = HyperLattice.join(condType, pc)
-        val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
-        val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
-        val newMapping = mappingIf.join(mappingElse)
-        return newMapping
+
+
+        condType.value match {
+          case Some(True()) => {
+            // If the condition is true, we only need to consider the if branch
+            return typeCheckStmt(mapping, ifStmt, HyperTypeCollection(informationFlow=pc.informationFlow))
+          }
+          case Some(False()) => {
+            // If the condition is false, we only need to consider the else branch
+            return typeCheckStmt(mapping, elseStmt, HyperTypeCollection(informationFlow=pc.informationFlow))
+          }
+          case None => {
+            // If the condition is unknown, we need to consider both branches
+            // We will join the information flow of both branches
+          val path_condition = condType.joinInfFlow(pc);
+          val new_pc = HyperTypeCollection(informationFlow=path_condition)
+          val mappingIf = typeCheckStmt(mapping, ifStmt, new_pc)
+          val mappingElse = typeCheckStmt(mapping, elseStmt, new_pc)
+          val newMapping = mappingIf.combine(mappingElse)
+          return newMapping
+          }
+        }
+
+
       }
       case UnfoldStmt(t, id) => {
         val ty = HyperTypeCollection.fromSeq(Seq(t))
         val var_type = mapping.getUnsafe(id.name)
-        if (HyperLattice.lteq(var_type, ty)) {
+        if (var_type.isSubTypeOf(ty)) {
           return mapping
         } else {
           throw new Exception("Type error: cannot unfold " + id.name + " of type " + var_type + " to type " + t)
@@ -106,21 +127,28 @@ object HyperTypeChecker {
         newMapping
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
+        val valueConditionType = typeCheckExpression(mapping, cond)
+        println(s"Value condition type: $valueConditionType")
+        if (valueConditionType.value == Some(False())) {
+          // If the condition is false, we can skip the loop
+          return mapping
+        }
         val initial_mapping = mapping
         var previous_mapping = mapping
         var newMapping = mapping
         do {
           previous_mapping = newMapping
           val condType = typeCheckExpression(newMapping, cond)
-          val new_pc = HyperLattice.join(condType, pc)
+          val new_pc_inf = condType.joinInfFlow(pc);
+          val new_pc = HyperTypeCollection(informationFlow=new_pc_inf)
           newMapping = typeCheckStmt(newMapping, body, new_pc)
         } while (newMapping != previous_mapping)
 
-        newMapping = previous_mapping.join(initial_mapping)
+        newMapping = previous_mapping.combine(initial_mapping)
         return newMapping
         }
       case HavocStmt(id, _) => {
-        val newMapping = mapping.set(id.name, HyperLattice.maximum())
+        val newMapping = mapping.set(id.name, HyperTypeCollection.fromSeq(Seq.empty))
         return newMapping
       }
       
@@ -150,7 +178,7 @@ object HyperTypeChecker {
    
     for ((name, ty) <- e.args.zip(methodArgTypes)) {
       val actual_type = typeCheckExpression(mapping, name)
-      if (!HyperLattice.lteq(actual_type, ty)) {
+      if (!actual_type.isSubTypeOf(ty)) {
         throw new Exception("Type error: argument " + name + " of type " + actual_type + " does not match expected type " + ty)
       }
     }
@@ -160,33 +188,60 @@ object HyperTypeChecker {
 
   def typeCheckExpression(mapping: HyperMapping, e: Expr) : HyperTypeCollection = {
     e match {
-      case BoolLit(_) => {
-        new HyperTypeCollection(Some(Low()))
+      case BoolLit(b) => {
+        val value = if (b) Some(True()) else Some(False())
+        new HyperTypeCollection(Some(Low()), value=value)
       }
-      case Num(_) => {
-        new HyperTypeCollection(Some(Low()))
+      case Num(n) => {
+        val value = if (n > 0) Some(Pos()) else if (n < 0) Some(Neg()) else Some(Zero())
+        new HyperTypeCollection(informationFlow=Some(Low()), value=value)
       }
       case Id(name) => {
         mapping.getUnsafe(name)
       }
-      case BinaryExpr(e1, _, e2) => 
+      case BinaryExpr(e1, op, e2) => 
         {
           val type1 = typeCheckExpression(mapping, e1)
           val type2 = typeCheckExpression(mapping, e2)
-          HyperLattice.join(type1, type2)
+          val infFlowType = type1.joinInfFlow(type2)
+          val valueType = type1.joinValue(type2, op)
+          new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
         }
 
       case LengthExpr(id) => {
         typeCheckExpression(mapping, id)
       }
-      case UnaryExpr(_, e) => {
+      case UnaryExpr(op, e) => {
         val type1 = typeCheckExpression(mapping, e)
-        type1
+        op match {
+          case "-" => {
+            // Negation
+            val valueType = type1.value match {
+              case Some(Pos()) => Some(Neg())
+              case Some(Neg()) => Some(Pos())
+              case Some(Zero()) => Some(Zero())
+              case _ => None
+            }
+            return new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType)
+          }
+          case "!" => {
+            // Negation of boolean
+            val valueType = type1.value match {
+              case Some(True()) => Some(False())
+              case Some(False()) => Some(True())
+              case _ => None
+            }
+            return new HyperTypeCollection(informationFlow = type1.informationFlow, value = valueType)
+          }
+          case _ => throw new Exception("Unknown unary operator: " + op)
+        }
       }
       case LookupExpr(id, index) => {
         val idType = typeCheckExpression(mapping, id)
         val indexType = typeCheckExpression(mapping, index)
-        HyperLattice.join(idType, indexType)
+        val infFlowType = idType.joinInfFlow(indexType)
+        val valueType = idType.value
+        new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
       }
       case _ => {
         throw new Exception("Type error: cannot yet type check expression " + e)
