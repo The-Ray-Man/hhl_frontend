@@ -222,7 +222,6 @@ object Mappings {
   def mapHyperTypeName(name: String) : HyperType = 
     name match {
     case "low" => Low()
-    case "high" => High()
     case "pos" => Pos()
     case "neg" => Neg()
     case "zero" => Zero()

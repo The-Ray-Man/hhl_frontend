@@ -311,7 +311,6 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
 object HyperTypeCollection {
 
  def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
-    val collection = new HyperTypeCollection();
     var infFlowType : HyperType = High();
     var valueType : Option[HyperType] = None;
     for (ty <- seq) {
@@ -330,6 +329,6 @@ object HyperTypeCollection {
         }
       }
     }
-    collection
+    new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
   }
 }
