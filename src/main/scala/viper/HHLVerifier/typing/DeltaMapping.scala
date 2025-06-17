@@ -50,9 +50,9 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
                     val value = x.joinValue(y);
                     val infFlow = value match {
                         case Some(True()) | Some(False()) | Some(Zero()) => {
-                            Some(Low())
+                            Low()
                         }
-                        case _ => Some(High())
+                        case _ => High()
                     }
 
                     key -> HyperTypeCollection(informationFlow = infFlow, value = value);
@@ -90,7 +90,7 @@ object DeltaMapping {
             val valueType = deltaType.joinValue(typeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Some(Low())
+                    infFlowType = Low()
                 }
                 case _ => {}
             }
@@ -103,7 +103,7 @@ object DeltaMapping {
             val valueType = typeLeft.joinValue(deltaType, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Some(Low())
+                    infFlowType = Low()
                 }
                 case _ => {}
             }
@@ -117,7 +117,7 @@ object DeltaMapping {
             val valueType = deltaTypeLeft.joinValue(deltaTypeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Some(Low())
+                    infFlowType = Low()
                 }
                 case _ => {}
             }
@@ -133,7 +133,6 @@ object DeltaMapping {
         val keysBoth = keysBefore.intersect(keysAfter)
 
         val keysBeforeOnly = keysBefore.diff(keysBoth)
-        val keysAfterOnly = keysAfter.diff(keysBoth)
 
         var newMapping = Map[String, DeltaMapping]()
         keysBeforeOnly.foreach(key => {
@@ -158,7 +157,7 @@ object DeltaMapping {
                         }
                         valueType match {
                             case Some(True()) | Some(False()) | Some(Zero()) => {
-                                dependencies += (beforeKey -> HyperTypeCollection(informationFlow = Some(Low()), value = valueType))
+                                dependencies += (beforeKey -> HyperTypeCollection(informationFlow = Low(), value = valueType))
                             }
                             case _ => {
                                 dependencies += (beforeKey -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))

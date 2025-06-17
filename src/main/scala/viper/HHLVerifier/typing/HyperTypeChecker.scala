@@ -38,7 +38,7 @@ object HyperTypeChecker {
 
   def typeCheckMethod(m: Method): Unit = {
     // Type check the method body
-    val pc = new HyperTypeCollection(Some(Low()))
+    val pc = new HyperTypeCollection(informationFlow = Low())
 
     val mapping = m.params.map(p => (p.name -> HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))).toMap
     val hyperMapping = new HyperMapping(mapping)
@@ -51,12 +51,9 @@ object HyperTypeChecker {
     }
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
-      if (!declaredRetType.is_empty()) {
-        
       val retType = finalMapping.getUnsafe(r.name)
       if (!retType.isSubTypeOf(declaredRetType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
-      }
       }
     })
   }
@@ -165,7 +162,7 @@ object HyperTypeChecker {
         }
       case HavocStmt(Id(name), _) => {
         val newMapping = mapping.set(name, HyperTypeCollection.fromSeq(Seq.empty))
-        val newCollection = delta.collection + (name -> new DeltaMapping(Map(name -> HyperTypeCollection(informationFlow = Some(High()), value = Some(Zero())))))
+        val newCollection = delta.collection + (name -> new DeltaMapping(Map(name -> HyperTypeCollection(informationFlow = High(), value = Some(Zero())))))
 
         return (newMapping, DeltaCollection(newCollection))
       }
@@ -208,11 +205,11 @@ object HyperTypeChecker {
     e match {
       case BoolLit(b) => {
         val value = if (b) Some(True()) else Some(False())
-        (new HyperTypeCollection(Some(Low()), value=value), DeltaMapping(Map()))
+        (new HyperTypeCollection(informationFlow=Low(), value=value), DeltaMapping(Map()))
       }
       case Num(n) => {
         val value = if (n > 0) Some(Pos()) else if (n < 0) Some(Neg()) else Some(Zero())
-        (new HyperTypeCollection(informationFlow=Some(Low()), value=value), DeltaMapping(Map()))
+        (new HyperTypeCollection(informationFlow=Low(), value=value), DeltaMapping(Map()))
       }
       case Id(name) => {
         val hyperType = mapping.getUnsafe(name)
@@ -231,7 +228,7 @@ object HyperTypeChecker {
           val valueType = type1.joinValue(type2, op)
           valueType match {
             case Some(True()) | Some(False()) | Some(Zero()) => {
-              infFlowType = Some(Low())
+              infFlowType = Low()
             }
             case _ => {}
           }

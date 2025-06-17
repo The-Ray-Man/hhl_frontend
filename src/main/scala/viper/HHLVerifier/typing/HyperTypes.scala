@@ -86,7 +86,7 @@ case class False() extends HyperType {
   }
 }
 
-case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, var value: Option[HyperType] = None) {
+case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
@@ -99,9 +99,8 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
 
   def isSubTypeOf(other: HyperTypeCollection): Boolean = {
     val infFlowRes = (this.informationFlow, other.informationFlow) match {
-      case (_, None) => true
-      case (_, Some(High())) => true
-      case (Some(Low()), Some(Low())) => true
+      case (_, High()) => true
+      case (Low(),Low()) => true
       case _ => false 
     };
     val valueRes = (this.value, other.value) match {
@@ -114,15 +113,12 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
     infFlowRes && valueRes
   }
 
-  def joinInfFlow(other: HyperTypeCollection): Option[HyperType] = {
+  def joinInfFlow(other: HyperTypeCollection): HyperType = {
     (this.informationFlow, other.informationFlow) match {
-      case (None, _) => None
-      case (_, None) => None
-      case (Some(Low()), _) => other.informationFlow
-      case (_, Some(Low())) => this.informationFlow
-      case (Some(High()), _) => Some(High())
-      case (_, Some(High())) => Some(High())
-      case _ => None // This should not happen
+      case (Low(), _) => other.informationFlow
+      case (_, Low()) => this.informationFlow
+      case (High(), _) => High()
+      case (_, High()) => High()
     }
   } 
 
@@ -309,10 +305,6 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
   def deepcopy() : HyperTypeCollection = {
     new HyperTypeCollection(informationFlow)
   }
-
-  def is_empty() : Boolean = {
-    informationFlow.isEmpty
-  }
  
 }
 
@@ -320,20 +312,17 @@ object HyperTypeCollection {
 
  def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
     val collection = new HyperTypeCollection();
+    var infFlowType : HyperType = High();
+    var valueType : Option[HyperType] = None;
     for (ty <- seq) {
       ty match {
-        case Low() | High() => {
-          if (collection.informationFlow.isEmpty) {
-            collection.informationFlow = Some(ty)
-          } else {
-            throw new Exception("Cannot have both low and high information flow")
-          }
+        case Low()  => {
+          infFlowType = Low()
         }
-        case Pos() | Neg() | Zero() => {
-          if (collection.value.isEmpty) {
-            collection.value = Some(ty)
-          } else {
-            throw new Exception("Cannot have both positive and negative sign")
+        case Pos() | Neg() | Zero() | True() | False() => {
+          valueType match {
+            case None => valueType = Some(ty)
+            case Some(v) => { throw new Exception("Cannot combine value types " + v + " and " + ty) }
           }
         } 
         case _ => {

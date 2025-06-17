@@ -134,10 +134,7 @@ object PrettyPrinter {
 
   def formatHyperTypeCollection(col: HyperTypeCollection) : String = {
     var types = Seq.empty[String]
-    col.informationFlow match {
-      case Some(ty) => types = types :+ formatHyperType(ty)
-      case None => {}
-    }
+    types = types :+ formatHyperType(col.informationFlow)
     col.value match {
       case Some(ty) => types = types :+ formatHyperType(ty)
       case None =>  {}
