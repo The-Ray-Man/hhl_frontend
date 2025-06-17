@@ -1,4 +1,4 @@
-method testSafeLoop(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+method testSafeLoop(s1: Int[low], s2: Int) returns (o : Int[low])
 {
     o := s2
     while (1 < 0) {

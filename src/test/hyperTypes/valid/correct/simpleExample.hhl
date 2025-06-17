@@ -1,0 +1,14 @@
+
+
+method fib(n : Int[pos], l : Int[low], k : Int[pos]) returns (o: Int[low])
+{
+    var z : Int
+    z := 1
+    var i : Int
+    i := 1
+    while (i < n) {
+        i := i + k
+        o := i
+        
+    }
+}

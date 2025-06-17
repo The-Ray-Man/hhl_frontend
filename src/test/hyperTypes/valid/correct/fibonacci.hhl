@@ -1,0 +1,18 @@
+
+
+method fib(n : Int) returns (o: Int)
+{
+    var a : Int
+    var b : Int
+    var i : Int
+    var tmp : Int
+    a := 1
+    b := 2
+    i := 0
+    while (i < n) {
+        tmp := b
+        b := a + b
+        a := tmp
+        i := i + 1
+    }
+}

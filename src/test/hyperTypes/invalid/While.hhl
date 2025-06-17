@@ -1,4 +1,4 @@
-method testUnsafeLoop(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+method testUnsafeLoop(s1: Int[low], s2: Int) returns (o : Int[low])
 {
     var snew : Int
     snew := s1

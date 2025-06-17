@@ -1,4 +1,4 @@
-method secure(l : Int[low], h : Int[high]) returns (o : Int[low])
+method secure(l : Int[low], h : Int) returns (o : Int[low])
     requires forall <_s1>, <_s2> :: (_s1[l] == _s2[l])
     ensures forall <_s1>, <_s2> :: (_s1[o] == _s2[o])
 {
