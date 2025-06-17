@@ -131,6 +131,8 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
       case (Some(Pos()), Some(Pos())) => Some(Pos())
       case (Some(Neg()), Some(Neg())) => Some(Neg())
       case (Some(Zero()), Some(Zero())) => Some(Zero())
+      case (Some(True()), Some(True())) => Some(True())
+      case (Some(False()), Some(False())) => Some(False())
       case _ => None 
     }
   }
@@ -144,6 +146,10 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
           case (Some(Pos()), Some(Pos())) => Some(Pos())
           case (Some(Neg()), Some(Neg())) => Some(Neg())
           case (Some(Zero()), Some(Zero())) => Some(Zero())
+          case (Some(Zero()), Some(Pos())) => Some(Pos())
+          case (Some(Pos()), Some(Zero())) => Some(Pos())
+          case (Some(Zero()), Some(Neg())) => Some(Neg())
+          case (Some(Neg()), Some(Zero())) => Some(Neg())
           case _ => None // This should not happen
         }
       }
@@ -154,6 +160,10 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
           case (Some(Pos()), Some(Neg())) => Some(Pos())
           case (Some(Neg()), Some(Pos())) => Some(Neg())
           case (Some(Zero()), Some(Zero())) => Some(Zero())
+          case (Some(Zero()), Some(Pos())) => Some(Neg())
+          case (Some(Zero()), Some(Neg())) => Some(Pos())
+          case (Some(Pos()), Some(Zero())) => Some(Pos())
+          case (Some(Neg()), Some(Zero())) => Some(Neg())
           case _ => None // This should not happen
         }
       }

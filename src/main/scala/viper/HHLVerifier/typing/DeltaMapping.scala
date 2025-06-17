@@ -1,10 +1,31 @@
 package viper.HHLVerifier.typing
 
 import viper.HHLVerifier.ast.Stmt
+import viper.HHLVerifier.management.PrettyPrinter
+
+case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
 
 
+    def combine(other: DeltaCollection): DeltaCollection = {
+        val keys = this.collection.keySet.intersect(other.collection.keySet)
+        val newMapping = keys.map { key =>
+            val xType = this.collection.get(key)
+            val yType = other.collection.get(key)
+            (xType, yType) match {
+                case (Some(x), Some(y)) => {
+                    key -> x.combine(y)
+                }
+                case _ => {
+                    throw new NoSuchElementException(s"Key $key not found in some mapping")
+                }
+            }
+        }.toMap
 
-class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
+        new DeltaCollection(newMapping)
+    };
+}
+
+case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
 
     def flipSign(): DeltaMapping = {
         val newMapping = mapping.map { case (key, value) =>
@@ -19,24 +40,34 @@ class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
     }
 
     def combine(other: DeltaMapping) : DeltaMapping = {
-        val keys = this.mapping.keySet ++ other.mapping.keySet
+        val keys = this.mapping.keySet.intersect(other.mapping.keySet)
 
         val newMapping = keys.map { key =>
             val xType = this.mapping.get(key)
             val yType = other.mapping.get(key)
             (xType, yType) match {
                 case (Some(x), Some(y)) => {
-                    val infFlow = x.joinInfFlow(y);
                     val value = x.joinValue(y);
+                    val infFlow = value match {
+                        case Some(True()) | Some(False()) | Some(Zero()) => {
+                            Some(Low())
+                        }
+                        case _ => Some(High())
+                    }
+
                     key -> HyperTypeCollection(informationFlow = infFlow, value = value);
                 }
-                case (Some(x), None) => (key, x)
-                case (None, Some(y)) => (key, y)
-                case _ => throw new NoSuchElementException(s"Key $key not found in either mapping")
+                case _ => {
+                    throw new NoSuchElementException(s"Key $key not found some mapping")
+                }
             }
         }.toMap
 
         new DeltaMapping(newMapping)
+    }
+
+    override def toString(): String = {
+        PrettyPrinter.formatDeltaMapping(this)
     }
 }
 
@@ -55,11 +86,11 @@ object DeltaMapping {
         var newMapping = Map[String, HyperTypeCollection]()
         keysLeftOnly.foreach(key => {
             val deltaType = deltaLeft.mapping(key);
-            var infFlowType = deltaType.joinValue(typeRight);
-            val valueType = deltaType.joinValue(typeRight);
+            var infFlowType = deltaType.joinInfFlow(typeRight);
+            val valueType = deltaType.joinValue(typeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                infFlowType = Some(Low())
+                    infFlowType = Some(Low())
                 }
                 case _ => {}
             }
@@ -69,10 +100,10 @@ object DeltaMapping {
         keysRightOnly.foreach(key => {
             val deltaType = deltaRight.mapping(key);
             var infFlowType = typeLeft.joinInfFlow(deltaType);
-            val valueType = typeLeft.joinValue(deltaType);
+            val valueType = typeLeft.joinValue(deltaType, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                infFlowType = Some(Low())
+                    infFlowType = Some(Low())
                 }
                 case _ => {}
             }
@@ -86,13 +117,12 @@ object DeltaMapping {
             val valueType = deltaTypeLeft.joinValue(deltaTypeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
-                infFlowType = Some(Low())
+                    infFlowType = Some(Low())
                 }
                 case _ => {}
             }
             newMapping += (key -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
         });
-
         new DeltaMapping(newMapping)
     }
 
@@ -106,19 +136,43 @@ object DeltaMapping {
         val keysAfterOnly = keysAfter.diff(keysBoth)
 
         var newMapping = Map[String, DeltaMapping]()
-
         keysBeforeOnly.foreach(key => {
             newMapping += (key -> before(key))
         });
+        keysAfter.foreach(key => {
+            val dependency = after(key)
+            var dependencies = Map[String, HyperTypeCollection]()
 
-        keysAfterOnly.foreach(key => {
+            dependency.mapping.foreach({ case (depKey, depValue) =>
+               if (before.contains(depKey)) {
+                    val beforeValue = before(depKey)
+                    for ((beforeKey, beforeValueType) <- beforeValue.mapping) {
+                        var infFlowType = beforeValueType.joinInfFlow(depValue);
+                        var valueType = beforeValueType.joinValue(depValue);
+
+                        if (dependencies.contains(beforeKey)) {
+                            val existingDependency = dependencies(beforeKey)
+                            val collectionBefore = new HyperTypeCollection(infFlowType, valueType)
+                            infFlowType = existingDependency.joinInfFlow(collectionBefore)
+                            valueType = existingDependency.joinValue(collectionBefore)
+                        }
+                        valueType match {
+                            case Some(True()) | Some(False()) | Some(Zero()) => {
+                                dependencies += (beforeKey -> HyperTypeCollection(informationFlow = Some(Low()), value = valueType))
+                            }
+                            case _ => {
+                                dependencies += (beforeKey -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
+                            }
+                        }
+                    }
+
+               } else {
+                    dependencies += (depKey -> depValue)
+               }
+            });
+
             newMapping += (key -> after(key))
         });
-
-        keysBoth.foreach(key => {
-            newMapping += (key -> before(key).combine(after(key)))
-        });
-
         newMapping
     }
 }
