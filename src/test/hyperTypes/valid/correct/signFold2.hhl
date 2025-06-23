@@ -1,0 +1,11 @@
+method sign(p : Int[pos], z: Int[zero], h: Int) returns (o : Int[zero]) {
+    var t : Int
+    o := z
+
+    t :=  h * h + 1
+    fold (pos) t
+
+    while (t < 0) {
+        o := p + z
+    }
+}

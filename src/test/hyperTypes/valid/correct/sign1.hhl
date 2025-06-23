@@ -1,0 +1,8 @@
+method sign(p : Int[pos], z: Int[zero], h: Int) returns (o : Int[pos]) {
+
+    if (h > 0) {
+        o := p + z
+    } else {
+        o := p + p
+    }
+}

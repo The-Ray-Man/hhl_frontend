@@ -15,4 +15,5 @@ method fib(n : Int) returns (o: Int)
         a := tmp
         i := i + 1
     }
+    o := 1
 }
