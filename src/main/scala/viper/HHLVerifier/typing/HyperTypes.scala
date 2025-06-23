@@ -86,12 +86,27 @@ case class False() extends HyperType {
   }
 }
 
-case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None) {
+case class MonoUp(val id : Id) extends HyperType {
+  // TODO
+  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    (None, Seq.empty)
+  }
+}
+case class MonoDown(val id : Id) extends HyperType {
+  // TODO
+  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    (None, Seq.empty)
+  }
+}
+
+
+
+case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None, var mono: Option[HyperType] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: HyperTypeCollection => {
-        this.informationFlow == that.informationFlow && this.value == that.value
+        this.informationFlow == that.informationFlow && this.value == that.value && this.mono == that.mono
       }
       case _ => false
     }
@@ -110,7 +125,13 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (Some(Zero()), Some(Zero())) => true
       case _ => false 
     };
-    infFlowRes && valueRes
+    val monoRes = (this.mono, other.mono) match {
+      case (_, None) => true
+      case (Some(MonoUp(left)), Some(MonoUp(right))) => left == right
+      case (Some(MonoDown(left)), Some(MonoDown(right))) => left == right
+      case _ => false
+    }
+    infFlowRes && valueRes && monoRes
   }
 
   def joinInfFlow(other: HyperTypeCollection): HyperType = {
@@ -119,6 +140,7 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (_, Low()) => this.informationFlow
       case (High(), _) => High()
       case (_, High()) => High()
+      case _ => throw new Exception("This should never happen 1")
     }
   } 
 
@@ -129,11 +151,33 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (Some(Zero()), Some(Zero())) => Some(Zero())
       case (Some(True()), Some(True())) => Some(True())
       case (Some(False()), Some(False())) => Some(False())
-      case _ => None 
+      case _ => None
     }
   }
 
-  def joinValue(other: HyperTypeCollection, op: String) : Option[HyperType] = {
+  def joinMono(other: HyperTypeCollection, pc: HyperType): Option[HyperType] = {
+    (this.mono, other.mono) match{
+      case (None, _) => None
+      case (_, None) => None
+      case (Some(MonoUp(left)), Some(MonoUp(right))) => {
+        if (left == right && pc == Low()) {
+          Some(MonoUp(left))
+        } else {
+          None
+        }
+      }
+      case (Some(MonoDown(left)), Some(MonoDown(right))) => {
+        if (left == right && pc == Low()) {
+          Some(MonoDown(left))
+        } else {
+          None
+        }
+      }
+      case _ => None
+    }
+  }
+
+  def combineValueOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
     op match {
       case "+" => {
         (this.value, other.value) match {
@@ -297,6 +341,109 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
     }
   }
 
+  def combineMonoOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
+    op match {
+      case "+" => {
+        if (this.mono == other.mono) {
+          // Both are the same or both are None
+          this.mono
+        } else if (this.mono.nonEmpty && other.informationFlow == Low()){
+          // Adding a constant to a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
+          // Adding a constant to a mono type, gives the same mono type
+          other.mono
+        } else {
+          None // This should not happen
+        }
+      }
+      case "-" => {
+        if (this.mono == other.mono) {
+          // Both are the same or both are None. Since we are subtracting, we do not know what happens
+          None
+        } else if (this.mono.nonEmpty && other.informationFlow == Low()){
+          // Subtracting a constant from a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
+          // Subtracting a constant from a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None // This should not happen
+        }
+      }
+      case "*" => {
+        if (this.mono == this.mono && this.value == Some(Pos()) && other.value == Some(Pos())) {
+          // Since the only positive values are considered, the monotonicity type remains the same.
+          this.mono
+        } else if (this.mono == this.mono && this.value == Some(Neg()) && other.value == Some(Neg())) {
+          // Since both are negative, the monotonicty is inverted
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
+          // Multiplying a constant to a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Pos())) {
+          // Multiplying a constant to a mono type, gives the same mono type
+          other.mono
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Neg())) {
+          // Multiplying a constant to a mono type, gives the oposite monotonicity type
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
+          // Multiplying a constant to a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None
+        }
+      }
+      case "/" => {
+        if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
+          // Dividing a monoton type by a positive constant, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Pos())) {
+          // Dividing a constant by a mono type, flipps the monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Neg())) {
+          // Dividing a monotone type by a negative constant, gives the oposite monotonicity type
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
+          // Dividing a negative constant by a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None // This should not happen
+        }
+      }
+      case _ => None
+      
+    }
+  }
+
   // print
   override def toString: String = {
     PrettyPrinter.formatHyperTypeCollection(this)
@@ -313,6 +460,7 @@ object HyperTypeCollection {
  def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
     var infFlowType : HyperType = High();
     var valueType : Option[HyperType] = None;
+    var monoType : Option[HyperType] = None;
     for (ty <- seq) {
       ty match {
         case Low()  => {
@@ -324,6 +472,12 @@ object HyperTypeCollection {
             case Some(v) => { throw new Exception("Cannot combine value types " + v + " and " + ty) }
           }
         } 
+        case MonoUp(_) | MonoDown(_) => {
+          monoType match {
+            case None => monoType = Some(ty)
+            case Some(m) => { throw new Exception("Cannot combine monotonicity types " + m + " and " + ty) }
+          }
+        }
         case _ => {
           throw new Exception("Unknown hyper type " + ty)
         }

@@ -17,6 +17,7 @@ import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.management.Logger.format
 import viper.HHLVerifier.typing.DeltaMapping
+import viper.HHLVerifier.typing.DeltaCollection
 
 object PrettyPrinter {
 
@@ -144,6 +145,12 @@ object PrettyPrinter {
   def formatDeltaMapping(mapping: DeltaMapping) : String = {
     mapping.mapping.map { case (key, value) =>
       s"$key -> ${formatHyperTypeCollection(value)}"
+    }.mkString(", ")
+  }
+
+  def formatDeltaCollection(delta: DeltaCollection) : String = {
+    delta.collection.map { case (key, value) =>
+      s"$key: ${formatDeltaMapping(value)}"
     }.mkString(", ")
   }
 

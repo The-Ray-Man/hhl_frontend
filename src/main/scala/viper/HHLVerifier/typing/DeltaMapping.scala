@@ -22,7 +22,27 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
         }.toMap
 
         new DeltaCollection(newMapping)
-    };
+    }; 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: DeltaCollection => {
+                if (this.collection.size != that.collection.size) {
+                    return false
+                }
+                this.collection.forall { case (key, value) =>
+                    that.collection.get(key) match {
+                        case Some(otherValue) => value == otherValue
+                        case None => false
+                    }
+                }
+            }
+            case _ => false
+        }
+    }
+
+    override def toString(): String = {
+        PrettyPrinter.formatDeltaCollection(this)
+    }
 }
 
 case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
@@ -69,6 +89,23 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
     override def toString(): String = {
         PrettyPrinter.formatDeltaMapping(this)
     }
+
+    override def equals(other: Any) : Boolean = {
+        other match {
+            case that: DeltaMapping => {
+                if (this.mapping.size != that.mapping.size) {
+                    return false
+                }
+                this.mapping.forall { case (key, value) =>
+                    that.mapping.get(key) match {
+                        case Some(otherValue) => value == otherValue
+                        case None => false
+                    }
+                }
+            }
+            case _ => false
+        }
+    }
 }
 
 
@@ -87,7 +124,7 @@ object DeltaMapping {
         keysLeftOnly.foreach(key => {
             val deltaType = deltaLeft.mapping(key);
             var infFlowType = deltaType.joinInfFlow(typeRight);
-            val valueType = deltaType.joinValue(typeRight, op);
+            val valueType = deltaType.combineValueOp(typeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
                     infFlowType = Low()
@@ -100,7 +137,7 @@ object DeltaMapping {
         keysRightOnly.foreach(key => {
             val deltaType = deltaRight.mapping(key);
             var infFlowType = typeLeft.joinInfFlow(deltaType);
-            val valueType = typeLeft.joinValue(deltaType, op);
+            val valueType = typeLeft.combineValueOp(deltaType, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
                     infFlowType = Low()
@@ -114,7 +151,7 @@ object DeltaMapping {
             val deltaTypeLeft = deltaLeft.mapping(key);
             val deltaTypeRight = deltaRight.mapping(key);
             var infFlowType = deltaTypeLeft.joinInfFlow(deltaTypeRight);
-            val valueType = deltaTypeLeft.joinValue(deltaTypeRight, op);
+            val valueType = deltaTypeLeft.combineValueOp(deltaTypeRight, op);
             valueType match {
                 case Some(True()) | Some(False()) | Some(Zero()) => {
                     infFlowType = Low()

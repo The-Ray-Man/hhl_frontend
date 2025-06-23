@@ -230,6 +230,13 @@ object Mappings {
     case _ => throw UnknownException("Unknown hyper type: " + name)
   }
 
+  def mapComplexHyperTypeName(name: String, variable: Id) : HyperType = {
+    name match {
+      case "monoUp" => MonoUp(variable)
+      case "monoDown" => MonoDown(variable)
+    }
+  }
+
   def mapSeqOrSetType(name: String, t: Type): Type = name match {
     case "Seq" => SeqType(t)
     case "Set" => SetType(t)

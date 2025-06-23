@@ -39,7 +39,7 @@ object Main {
       return
     }
 
-    val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/proposal.hhl"
+    val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/WhileLoopSkip.hhl"
     // var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
@@ -73,6 +73,7 @@ object Main {
 
         var parsedProgram: HHLProgram = res.get.value
         HyperTypeChecker.typeCheckProg(parsedProgram)
+        return
         new Logger("HyperType checking successful.").log()
         if (args.contains("--hypraToHypra")) {
           parsedProgram = HyperTranslate.translateProgram(parsedProgram)
