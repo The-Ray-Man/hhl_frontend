@@ -1,6 +1,0 @@
-
-
-method fib(n : Int[monoUp[l]], l : Int[low], k : Int[pos]) returns (o: Int[low])
-{
-
-}
