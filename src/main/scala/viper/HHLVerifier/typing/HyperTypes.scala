@@ -12,6 +12,8 @@ import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.StateExistsExpr
 import viper.HHLVerifier.ast.SpecialId
+import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.ast.UnaryExpr
 
 sealed trait HyperType {
   override def toString: String = {
@@ -52,50 +54,164 @@ case class High() extends HyperType {
 }
 
 case class Pos() extends HyperType {
-  // TODO
-  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),">",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class Neg() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"<",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class Zero() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"==",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.EqCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class True() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>", LookupExpr(s1_assert, id)))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), State.get(s0.localVar, id))())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class False() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+ def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>", UnaryExpr("!", LookupExpr(s1_assert, id))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), vpr.Not(State.get(s0.localVar, id))())())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class MonoUp(val id : Id) extends HyperType {
-  // TODO
-  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+  def semantic(valId: Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s2_assert = AssertVar("_s2")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val s2 = AssertVarDecl(s2_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",
+      BinaryExpr(
+        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        "==>",
+        BinaryExpr(LookupExpr(s1_assert, valId),"<=",LookupExpr(s2_assert, valId))
+      )
+     ))
+    return stmt
+  }
+
+  def semantic_vpr(valId : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val s1 = State.localVarDecl(s1VarName)
+    val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
+        vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+        )(), vpr.Implies(
+          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          vpr.LeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
+        )()
+      )()
+      )()
+      (Some(stmt), Seq.empty)
   }
 }
 case class MonoDown(val id : Id) extends HyperType {
-  // TODO
-  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+def semantic(valId: Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s2_assert = AssertVar("_s2")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val s2 = AssertVarDecl(s2_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",
+      BinaryExpr(
+        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        "==>",
+        BinaryExpr(LookupExpr(s1_assert, valId),">=",LookupExpr(s2_assert, valId))
+      )
+     ))
+    return stmt
+  }
+
+  def semantic_vpr(valId : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val s1 = State.localVarDecl(s1VarName)
+    val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
+        vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+        )(), vpr.Implies(
+          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          vpr.GeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
+        )()
+      )()
+      )()
+      (Some(stmt), Seq.empty)
+  }
+}
+
+
+object HyperTypes {
+
+  def semantic_vpr(ty: HyperType, id: Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    ty match {
+        case High() =>  High().semantic_vpr()
+        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
+        case Pos() => Pos().semantic_vpr(id, s0VarName, STmp)
+        case Neg() => Neg().semantic_vpr(id, s0VarName, STmp)
+        case Zero() => Zero().semantic_vpr(id, s0VarName, STmp)
+        case False() => False().semantic_vpr(id, s0VarName, STmp)
+        case True() => True().semantic_vpr(id, s0VarName, STmp)
+        case MonoDown(baseId) => MonoDown(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp)
+        case MonoUp(baseId) => MonoUp(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp) 
+    }
   }
 }
 
