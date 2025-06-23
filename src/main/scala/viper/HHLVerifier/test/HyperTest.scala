@@ -14,6 +14,7 @@ import viper.HHLVerifier.symbols.SymbolChecker
 import viper.HHLVerifier.typing.TypeChecker
 import viper.silicon.rules.evaluator.eval
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
+import viper.HHLVerifier.typing.HyperTranslate
 
 trait VerificationResult{}
 case class VerificationSuccess() extends VerificationResult
@@ -119,10 +120,11 @@ object HyperTest {
 
       val parsed = fastparse.parse(program, Parser.program(_))
       if (parsed.isSuccess) {
-        val parsedProgram = parsed.get.value
+        var parsedProgram = parsed.get.value
+        hyperTypeCheck(parsedProgram, f)
+        parsedProgram = HyperTranslate.translateProgram(parsedProgram)
         SymbolChecker.checkSymbolsProg(parsedProgram)
         TypeChecker.typeCheckProg(parsedProgram)
-        hyperTypeCheck(parsedProgram, f)
       } else {
         println(f"Failed to parse ${f._1.getPath}")
         failed = failed :+ f._1.getPath

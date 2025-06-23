@@ -34,17 +34,11 @@ object HyperTranslate {
 
         stmt match {
             case UnfoldStmt(t, id) => {
-                val semantics = t match {
-                    case Low() => Low().semantic(id)
-                    case _ => {throw new Exception("Unfolding a hyper type that is not low is not supported.")}
-                }
+                val semantics = HyperTypes.semantic(t, id)
                 HyperAssumeStmt(semantics);
             }
             case FoldStmt(t, id) => {
-                val semantics = t match {
-                    case Low() => Low().semantic(id)
-                    case _ => {throw new Exception("Folding a hyper type that is not low is not supported.")}
-                }
+                val semantics = HyperTypes.semantic(t, id)
                 HyperAssertStmt(semantics);
             }
             case _ => stmt

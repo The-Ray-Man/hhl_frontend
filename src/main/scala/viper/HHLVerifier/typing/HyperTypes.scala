@@ -14,6 +14,8 @@ import viper.HHLVerifier.ast.StateExistsExpr
 import viper.HHLVerifier.ast.SpecialId
 import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.ast.UnaryExpr
+import viper.HHLVerifier.ast.BoolLit
+import viper.HHLVerifier.ast.ImpliesExpr
 
 sealed trait HyperType {
   override def toString: String = {
@@ -29,7 +31,7 @@ case class Low() extends HyperType {
     val s2_assert = AssertVar("_s2")
     val s1 = AssertVarDecl(s1_assert, StateType())
     val s2 = AssertVarDecl(s2_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"==",LookupExpr(s2_assert, id)) ))
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)),BinaryExpr(LookupExpr(s1_assert, id),"==",LookupExpr(s2_assert, id)) ))
     return stmt
   }
 
@@ -46,6 +48,11 @@ case class Low() extends HyperType {
 } 
 case class High() extends HyperType {
 
+  def semantic() : Assertion = {
+    // High does not have a semantic, it is just a placeholder
+    Assertion("forall", Seq.empty, BoolLit(true))
+  }
+
   def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
     // High does not have a semantic, it is just a placeholder
     (None, Seq.empty)
@@ -58,7 +65,7 @@ case class Pos() extends HyperType {
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),">",Num(0))))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),">",Num(0))))
     return stmt
   }
 
@@ -76,7 +83,7 @@ case class Neg() extends HyperType {
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"<",Num(0))))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),"<",Num(0))))
     return stmt
   }
 
@@ -93,7 +100,7 @@ case class Zero() extends HyperType {
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"==",Num(0))))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),"==",Num(0))))
     return stmt
   }
 
@@ -110,7 +117,7 @@ case class True() extends HyperType {
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>", LookupExpr(s1_assert, id)))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) , LookupExpr(s1_assert, id)))
     return stmt
   }
 
@@ -125,7 +132,7 @@ case class False() extends HyperType {
  def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), BinaryExpr(StateExistsExpr(s1_assert, false) ,"==>", UnaryExpr("!", LookupExpr(s1_assert, id))))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) , UnaryExpr("!", LookupExpr(s1_assert, id))))
     return stmt
   }
 
@@ -142,10 +149,9 @@ case class MonoUp(val id : Id) extends HyperType {
     val s2_assert = AssertVar("_s2")
     val s1 = AssertVarDecl(s1_assert, StateType())
     val s2 = AssertVarDecl(s2_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",
-      BinaryExpr(
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
+      ImpliesExpr(
         BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
-        "==>",
         BinaryExpr(LookupExpr(s1_assert, valId),"<=",LookupExpr(s2_assert, valId))
       )
      ))
@@ -172,10 +178,9 @@ def semantic(valId: Id) : Assertion = {
     val s2_assert = AssertVar("_s2")
     val s1 = AssertVarDecl(s1_assert, StateType())
     val s2 = AssertVarDecl(s2_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",
-      BinaryExpr(
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
+      ImpliesExpr(
         BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
-        "==>",
         BinaryExpr(LookupExpr(s1_assert, valId),">=",LookupExpr(s2_assert, valId))
       )
      ))
@@ -211,6 +216,19 @@ object HyperTypes {
         case True() => True().semantic_vpr(id, s0VarName, STmp)
         case MonoDown(baseId) => MonoDown(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp)
         case MonoUp(baseId) => MonoUp(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp) 
+    }
+  }
+  def semantic(ty: HyperType, id: Id) : Assertion = {
+    ty match {
+      case High() => High().semantic()
+      case Low() => Low().semantic(id)
+      case Pos() => Pos().semantic(id)
+      case Neg() => Neg().semantic(id)
+      case Zero() => Zero().semantic(id)
+      case False() => False().semantic(id)
+      case True() => True().semantic(id)
+      case MonoDown(baseId) => MonoDown(baseId).semantic(id)
+      case MonoUp(baseId) => MonoUp(baseId).semantic(id)
     }
   }
 }
