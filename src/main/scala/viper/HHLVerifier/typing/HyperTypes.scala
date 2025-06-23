@@ -476,6 +476,12 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
   }
 
   def combineMonoOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
+    if (this.mono.isEmpty && other.mono.isEmpty) {
+      // If both are None, we return None
+      return None
+    }
+
+
     op match {
       case "+" => {
         if (this.mono == other.mono) {
@@ -510,10 +516,10 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
         }
       }
       case "*" => {
-        if (this.mono == this.mono && this.value == Some(Pos()) && other.value == Some(Pos())) {
+        if (this.mono == other.mono && this.value == Some(Pos()) && other.value == Some(Pos())) {
           // Since the only positive values are considered, the monotonicity type remains the same.
           this.mono
-        } else if (this.mono == this.mono && this.value == Some(Neg()) && other.value == Some(Neg())) {
+        } else if (this.mono == other.mono && this.value == Some(Neg()) && other.value == Some(Neg())) {
           // Since both are negative, the monotonicty is inverted
           this.mono match {
             case Some(MonoUp(id)) => Some(MonoDown(id))
@@ -585,6 +591,10 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
 
   def deepcopy() : HyperTypeCollection = {
     new HyperTypeCollection(informationFlow)
+  }
+
+  def isEmpty() : Boolean = {
+    this.informationFlow == High() && this.value.isEmpty && this.mono.isEmpty
   }
  
 }

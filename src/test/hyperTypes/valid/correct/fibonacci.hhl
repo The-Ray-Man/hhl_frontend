@@ -1,6 +1,6 @@
 
 
-method fib(n : Int) returns (o: Int)
+method fib(n : Int, k : Int[low]) returns (o: Int[monoUp[n]])
 {
     var a : Int
     var b : Int
@@ -9,11 +9,12 @@ method fib(n : Int) returns (o: Int)
     a := 1
     b := 2
     i := 0
-    while (i < n) {
+    while (i < n)
+    {
         tmp := b
         b := a + b
         a := tmp
         i := i + 1
     }
-    o := 1
+    o := b
 }

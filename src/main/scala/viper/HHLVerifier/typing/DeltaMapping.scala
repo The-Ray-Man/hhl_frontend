@@ -43,6 +43,10 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
     override def toString(): String = {
         PrettyPrinter.formatDeltaCollection(this)
     }
+
+    def isEmpty(): Boolean = {
+        collection.forall { case (_, value) => value.isEmpty() }
+    }
 }
 
 case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
@@ -72,7 +76,7 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
                         case Some(True()) | Some(False()) | Some(Zero()) => {
                             Low()
                         }
-                        case _ => High()
+                        case _ => x.joinInfFlow(y)
                     }
 
                     key -> HyperTypeCollection(informationFlow = infFlow, value = value);
@@ -105,6 +109,9 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
             }
             case _ => false
         }
+    }
+    def isEmpty(): Boolean = {
+        mapping.forall { case (_, value) => value.isEmpty() }
     }
 }
 

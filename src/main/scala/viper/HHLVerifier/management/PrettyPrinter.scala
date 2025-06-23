@@ -18,6 +18,8 @@ import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.management.Logger.format
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
+import viper.HHLVerifier.typing.MonoDown
+import viper.HHLVerifier.typing.MonoUp
 
 object PrettyPrinter {
 
@@ -130,6 +132,9 @@ object PrettyPrinter {
       case Zero() => "zero"
       case True() => "true"
       case False() => "false"
+      case MonoUp(id) => "monoUp[" + id + "]"
+      case MonoDown(id) => "monoDown[" + id + "]"
+      case _ => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
     }
   }
 
@@ -139,6 +144,10 @@ object PrettyPrinter {
     col.value match {
       case Some(ty) => types = types :+ formatHyperType(ty)
       case None =>  {}
+    }
+    col.mono match {
+      case Some(mono) => types = types :+ formatHyperType(mono)
+      case None => {}
     }
     types.mkString(", ")
   }
