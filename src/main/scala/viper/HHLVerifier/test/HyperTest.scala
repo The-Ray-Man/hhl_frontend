@@ -77,7 +77,10 @@ object HyperTest {
   def verificationCheck(program: HHLProgram, test : (File, TestResult)) = {
     Generator.verifierOption = 2
     Generator.autoSelectRules = true
-    val viperProgram = Generator.generate(program, test._1.getPath)
+    val translatedProgram = HyperTranslate.translateProgram(program)
+    SymbolChecker.checkSymbolsProg(translatedProgram)
+    TypeChecker.typeCheckProg(translatedProgram)
+    val viperProgram = Generator.generate(translatedProgram, test._1.getPath)
     SymbolChecker.reset()
     TypeChecker.reset()
     Generator.reset()
@@ -85,7 +88,7 @@ object HyperTest {
     //We check whether the program is well-defined (i.e., has no consistency errors such as ill-typed expressions)
     if (consistencyErrors.nonEmpty) {
       failed = failed :+ test._1.getPath
-      failedLog = (failedLog :+ "A consistency error occured: ") ++ consistencyErrors.map(err => err.readableMessage)
+      failedLog = failedLog :+ (f"A consistency error occured: ${consistencyErrors.map(err => err.readableMessage).mkString("\n")}")
     } else {
       val result = ViperRunner.runSiliconAndCarbon(viperProgram)
       result match {
@@ -112,8 +115,11 @@ object HyperTest {
   
 
   def runTests(tests: List[(File, TestResult)]): Unit = {
-    Generator.autoSelectRules = true
     for (f <- tests) {
+      SymbolChecker.reset()
+      TypeChecker.reset()
+      Generator.reset()
+      Generator.autoSelectRules = true
       println(s"starting with ${f._1.getPath}")
       totalNum = totalNum + 1
       val program = getDataForTestCase(f._1.getPath)
@@ -122,9 +128,6 @@ object HyperTest {
       if (parsed.isSuccess) {
         var parsedProgram = parsed.get.value
         hyperTypeCheck(parsedProgram, f)
-        parsedProgram = HyperTranslate.translateProgram(parsedProgram)
-        SymbolChecker.checkSymbolsProg(parsedProgram)
-        TypeChecker.typeCheckProg(parsedProgram)
       } else {
         println(f"Failed to parse ${f._1.getPath}")
         failed = failed :+ f._1.getPath
