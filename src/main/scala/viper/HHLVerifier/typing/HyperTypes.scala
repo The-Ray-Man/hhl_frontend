@@ -12,6 +12,10 @@ import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.StateExistsExpr
 import viper.HHLVerifier.ast.SpecialId
+import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.ast.UnaryExpr
+import viper.HHLVerifier.ast.BoolLit
+import viper.HHLVerifier.ast.ImpliesExpr
 
 sealed trait HyperType {
   override def toString: String = {
@@ -27,7 +31,7 @@ case class Low() extends HyperType {
     val s2_assert = AssertVar("_s2")
     val s1 = AssertVarDecl(s1_assert, StateType())
     val s2 = AssertVarDecl(s2_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1,s2), BinaryExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,"==>",BinaryExpr(LookupExpr(s1_assert, id),"==",LookupExpr(s2_assert, id)) ))
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)),BinaryExpr(LookupExpr(s1_assert, id),"==",LookupExpr(s2_assert, id)) ))
     return stmt
   }
 
@@ -44,6 +48,11 @@ case class Low() extends HyperType {
 } 
 case class High() extends HyperType {
 
+  def semantic() : Assertion = {
+    // High does not have a semantic, it is just a placeholder
+    Assertion("forall", Seq.empty, BoolLit(true))
+  }
+
   def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
     // High does not have a semantic, it is just a placeholder
     (None, Seq.empty)
@@ -52,46 +61,186 @@ case class High() extends HyperType {
 }
 
 case class Pos() extends HyperType {
-  // TODO
-  def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),">",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class Neg() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),"<",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class Zero() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(LookupExpr(s1_assert, id),"==",Num(0))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.EqCmp(State.get(s0.localVar, id), vpr.IntLit(0)())()
+    )())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class True() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) , LookupExpr(s1_assert, id)))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), State.get(s0.localVar, id))())()
+    (Some(stmt), Seq.empty)
   }
 }
 
 case class False() extends HyperType {
-  // TODO
-    def semantic_vpr() : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
-    (None, Seq.empty)
+ def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) , UnaryExpr("!", LookupExpr(s1_assert, id))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), vpr.Not(State.get(s0.localVar, id))())())()
+    (Some(stmt), Seq.empty)
   }
 }
 
-case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, var value: Option[HyperType] = None) {
+case class MonoUp(val id : Id) extends HyperType {
+  def semantic(valId: Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s2_assert = AssertVar("_s2")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val s2 = AssertVarDecl(s2_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
+      ImpliesExpr(
+        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        BinaryExpr(LookupExpr(s1_assert, valId),"<=",LookupExpr(s2_assert, valId))
+      )
+     ))
+    return stmt
+  }
+
+  def semantic_vpr(valId : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val s1 = State.localVarDecl(s1VarName)
+    val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
+        vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+        )(), vpr.Implies(
+          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          vpr.LeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
+        )()
+      )()
+      )()
+      (Some(stmt), Seq.empty)
+  }
+}
+case class MonoDown(val id : Id) extends HyperType {
+def semantic(valId: Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s2_assert = AssertVar("_s2")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val s2 = AssertVarDecl(s2_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
+      ImpliesExpr(
+        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        BinaryExpr(LookupExpr(s1_assert, valId),">=",LookupExpr(s2_assert, valId))
+      )
+     ))
+    return stmt
+  }
+
+  def semantic_vpr(valId : Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val s1 = State.localVarDecl(s1VarName)
+    val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
+        vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
+        )(), vpr.Implies(
+          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          vpr.GeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
+        )()
+      )()
+      )()
+      (Some(stmt), Seq.empty)
+  }
+}
+
+
+object HyperTypes {
+
+  def semantic_vpr(ty: HyperType, id: Id, s0VarName: String, s1VarName:String, STmp : vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    ty match {
+        case High() =>  High().semantic_vpr()
+        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
+        case Pos() => Pos().semantic_vpr(id, s0VarName, STmp)
+        case Neg() => Neg().semantic_vpr(id, s0VarName, STmp)
+        case Zero() => Zero().semantic_vpr(id, s0VarName, STmp)
+        case False() => False().semantic_vpr(id, s0VarName, STmp)
+        case True() => True().semantic_vpr(id, s0VarName, STmp)
+        case MonoDown(baseId) => MonoDown(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp)
+        case MonoUp(baseId) => MonoUp(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp) 
+    }
+  }
+  def semantic(ty: HyperType, id: Id) : Assertion = {
+    ty match {
+      case High() => High().semantic()
+      case Low() => Low().semantic(id)
+      case Pos() => Pos().semantic(id)
+      case Neg() => Neg().semantic(id)
+      case Zero() => Zero().semantic(id)
+      case False() => False().semantic(id)
+      case True() => True().semantic(id)
+      case MonoDown(baseId) => MonoDown(baseId).semantic(id)
+      case MonoUp(baseId) => MonoUp(baseId).semantic(id)
+    }
+  }
+}
+
+
+
+case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None, var mono: Option[HyperType] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: HyperTypeCollection => {
-        this.informationFlow == that.informationFlow && this.value == that.value
+        this.informationFlow == that.informationFlow && this.value == that.value && this.mono == that.mono
       }
       case _ => false
     }
@@ -99,9 +248,8 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
 
   def isSubTypeOf(other: HyperTypeCollection): Boolean = {
     val infFlowRes = (this.informationFlow, other.informationFlow) match {
-      case (_, None) => true
-      case (_, Some(High())) => true
-      case (Some(Low()), Some(Low())) => true
+      case (_, High()) => true
+      case (Low(),Low()) => true
       case _ => false 
     };
     val valueRes = (this.value, other.value) match {
@@ -111,18 +259,22 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
       case (Some(Zero()), Some(Zero())) => true
       case _ => false 
     };
-    infFlowRes && valueRes
+    val monoRes = (this.mono, other.mono) match {
+      case (_, None) => true
+      case (Some(MonoUp(left)), Some(MonoUp(right))) => left == right
+      case (Some(MonoDown(left)), Some(MonoDown(right))) => left == right
+      case _ => false
+    }
+    infFlowRes && valueRes && monoRes
   }
 
-  def joinInfFlow(other: HyperTypeCollection): Option[HyperType] = {
+  def joinInfFlow(other: HyperTypeCollection): HyperType = {
     (this.informationFlow, other.informationFlow) match {
-      case (None, _) => None
-      case (_, None) => None
-      case (Some(Low()), _) => other.informationFlow
-      case (_, Some(Low())) => this.informationFlow
-      case (Some(High()), _) => Some(High())
-      case (_, Some(High())) => Some(High())
-      case _ => None // This should not happen
+      case (Low(), _) => other.informationFlow
+      case (_, Low()) => this.informationFlow
+      case (High(), _) => High()
+      case (_, High()) => High()
+      case _ => throw new Exception("This should never happen 1")
     }
   } 
 
@@ -131,11 +283,35 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
       case (Some(Pos()), Some(Pos())) => Some(Pos())
       case (Some(Neg()), Some(Neg())) => Some(Neg())
       case (Some(Zero()), Some(Zero())) => Some(Zero())
-      case _ => None // This should not happen
+      case (Some(True()), Some(True())) => Some(True())
+      case (Some(False()), Some(False())) => Some(False())
+      case _ => None
     }
   }
 
-  def joinValue(other: HyperTypeCollection, op: String) : Option[HyperType] = {
+  def joinMono(other: HyperTypeCollection, pc: HyperType): Option[HyperType] = {
+    (this.mono, other.mono) match{
+      case (None, _) => None
+      case (_, None) => None
+      case (Some(MonoUp(left)), Some(MonoUp(right))) => {
+        if (left == right && pc == Low()) {
+          Some(MonoUp(left))
+        } else {
+          None
+        }
+      }
+      case (Some(MonoDown(left)), Some(MonoDown(right))) => {
+        if (left == right && pc == Low()) {
+          Some(MonoDown(left))
+        } else {
+          None
+        }
+      }
+      case _ => None
+    }
+  }
+
+  def combineValueOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
     op match {
       case "+" => {
         (this.value, other.value) match {
@@ -144,6 +320,10 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
           case (Some(Pos()), Some(Pos())) => Some(Pos())
           case (Some(Neg()), Some(Neg())) => Some(Neg())
           case (Some(Zero()), Some(Zero())) => Some(Zero())
+          case (Some(Zero()), Some(Pos())) => Some(Pos())
+          case (Some(Pos()), Some(Zero())) => Some(Pos())
+          case (Some(Zero()), Some(Neg())) => Some(Neg())
+          case (Some(Neg()), Some(Zero())) => Some(Neg())
           case _ => None // This should not happen
         }
       }
@@ -154,6 +334,10 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
           case (Some(Pos()), Some(Neg())) => Some(Pos())
           case (Some(Neg()), Some(Pos())) => Some(Neg())
           case (Some(Zero()), Some(Zero())) => Some(Zero())
+          case (Some(Zero()), Some(Pos())) => Some(Neg())
+          case (Some(Zero()), Some(Neg())) => Some(Pos())
+          case (Some(Pos()), Some(Zero())) => Some(Pos())
+          case (Some(Neg()), Some(Zero())) => Some(Neg())
           case _ => None // This should not happen
         }
       }
@@ -291,6 +475,115 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
     }
   }
 
+  def combineMonoOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
+    if (this.mono.isEmpty && other.mono.isEmpty) {
+      // If both are None, we return None
+      return None
+    }
+
+
+    op match {
+      case "+" => {
+        if (this.mono == other.mono) {
+          // Both are the same or both are None
+          this.mono
+        } else if (this.mono.nonEmpty && other.informationFlow == Low()){
+          // Adding a constant to a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
+          // Adding a constant to a mono type, gives the same mono type
+          other.mono
+        } else {
+          None // This should not happen
+        }
+      }
+      case "-" => {
+        if (this.mono == other.mono) {
+          // Both are the same or both are None. Since we are subtracting, we do not know what happens
+          None
+        } else if (this.mono.nonEmpty && other.informationFlow == Low()){
+          // Subtracting a constant from a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
+          // Subtracting a constant from a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None // This should not happen
+        }
+      }
+      case "*" => {
+        if (this.mono == other.mono && this.value == Some(Pos()) && other.value == Some(Pos())) {
+          // Since the only positive values are considered, the monotonicity type remains the same.
+          this.mono
+        } else if (this.mono == other.mono && this.value == Some(Neg()) && other.value == Some(Neg())) {
+          // Since both are negative, the monotonicty is inverted
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
+          // Multiplying a constant to a mono type, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Pos())) {
+          // Multiplying a constant to a mono type, gives the same mono type
+          other.mono
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Neg())) {
+          // Multiplying a constant to a mono type, gives the oposite monotonicity type
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
+          // Multiplying a constant to a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None
+        }
+      }
+      case "/" => {
+        if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
+          // Dividing a monoton type by a positive constant, gives the same mono type
+          this.mono
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Pos())) {
+          // Dividing a constant by a mono type, flipps the monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Neg())) {
+          // Dividing a monotone type by a negative constant, gives the oposite monotonicity type
+          this.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
+          // Dividing a negative constant by a mono type, gives the oposite monotonicity type
+          other.mono match {
+            case Some(MonoUp(id)) => Some(MonoDown(id))
+            case Some(MonoDown(id)) => Some(MonoUp(id))
+            case None => throw new Exception("This should not happen")
+          }
+        } else {
+          None // This should not happen
+        }
+      }
+      case _ => None
+      
+    }
+  }
+
   // print
   override def toString: String = {
     PrettyPrinter.formatHyperTypeCollection(this)
@@ -300,8 +593,8 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
     new HyperTypeCollection(informationFlow)
   }
 
-  def is_empty() : Boolean = {
-    informationFlow.isEmpty
+  def isEmpty() : Boolean = {
+    this.informationFlow == High() && this.value.isEmpty && this.mono.isEmpty
   }
  
 }
@@ -309,28 +602,31 @@ case class HyperTypeCollection(var informationFlow: Option[HyperType] = None, va
 object HyperTypeCollection {
 
  def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
-    val collection = new HyperTypeCollection();
+    var infFlowType : HyperType = High();
+    var valueType : Option[HyperType] = None;
+    var monoType : Option[HyperType] = None;
     for (ty <- seq) {
       ty match {
-        case Low() | High() => {
-          if (collection.informationFlow.isEmpty) {
-            collection.informationFlow = Some(ty)
-          } else {
-            throw new Exception("Cannot have both low and high information flow")
-          }
+        case Low()  => {
+          infFlowType = Low()
         }
-        case Pos() | Neg() | Zero() => {
-          if (collection.value.isEmpty) {
-            collection.value = Some(ty)
-          } else {
-            throw new Exception("Cannot have both positive and negative sign")
+        case Pos() | Neg() | Zero() | True() | False() => {
+          valueType match {
+            case None => valueType = Some(ty)
+            case Some(v) => { throw new Exception("Cannot combine value types " + v + " and " + ty) }
           }
         } 
+        case MonoUp(_) | MonoDown(_) => {
+          monoType match {
+            case None => monoType = Some(ty)
+            case Some(m) => { throw new Exception("Cannot combine monotonicity types " + m + " and " + ty) }
+          }
+        }
         case _ => {
           throw new Exception("Unknown hyper type " + ty)
         }
       }
     }
-    collection
+    new HyperTypeCollection(informationFlow = infFlowType, value = valueType)
   }
 }

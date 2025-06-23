@@ -1,0 +1,6 @@
+method sign(p : Int[pos], z: Int[zero], h: Int) returns (o : Int[pos]) {
+    o := p
+    while (h > 0) {
+        o := (-1) * o 
+    }
+}

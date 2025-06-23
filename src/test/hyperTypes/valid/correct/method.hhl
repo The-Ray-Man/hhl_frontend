@@ -3,7 +3,7 @@ method bar(x: Int[low]) returns (o: Int) {
 }
 
 
-method foo(x: Int[low], y : Int[high]) returns (o : Int) {
+method foo(x: Int[low], y : Int) returns (o : Int) {
     
     var tmp : Int
     o := 1

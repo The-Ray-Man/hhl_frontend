@@ -935,10 +935,7 @@ object Generator {
 
       // With the fold we add a hyper assert
       case FoldStmt(hty, id) => {
-      val (stmt, aux_vars) = hty match {
-        case High() =>  High().semantic_vpr()
-        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
-      }
+      val (stmt, aux_vars) = HyperTypes.semantic_vpr(hty, id, s0VarName, s1VarName, STmp)
       
       if (!stmt.isEmpty) {
         val newStmt = vpr.Exhale(stmt.get)()
@@ -948,10 +945,7 @@ object Generator {
       }
       // With unfold we add a hyper assume
       case UnfoldStmt(hty, id) => {
-      val (stmt, aux_vars) = hty match {
-        case High() =>  High().semantic_vpr()
-        case Low() => Low().semantic_vpr(id, s0VarName, s1VarName, STmp)
-      }
+      val (stmt, aux_vars) = HyperTypes.semantic_vpr(hty, id, s0VarName, s1VarName, STmp)
 
       if (!stmt.isEmpty) {
         val newStmt = vpr.Inhale(stmt.get)()

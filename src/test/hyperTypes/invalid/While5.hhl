@@ -1,4 +1,4 @@
-method testMixedControlLeak(s1: Int[low], s2: Int[high]) returns (o : Int[low])
+method testMixedControlLeak(s1: Int[low], s2: Int) returns (o : Int[low])
 {
     var y : Int
     y := s1
