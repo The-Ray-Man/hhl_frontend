@@ -46,6 +46,8 @@ object HyperTypeChecker {
     val mapping = m.params.map(p => (p.name -> HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))).toMap
     val hyperMapping = new HyperMapping(mapping)
 
+    println("mapping at method start\n", hyperMapping)
+
     val (finalMapping, deltaMapping) = typeCheckStmt(hyperMapping, DeltaCollection(Map()), m.body, pc)
     println("final mapping", finalMapping.mapping)
     println("delta mapping")
@@ -143,7 +145,6 @@ object HyperTypeChecker {
         (newMapping, delta)
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
-        // TODO: Very likely unsound!
         val (valueConditionType, deltaSub) = typeCheckExpression(mapping, delta, cond)
         if (valueConditionType.value == Some(False())) {
           // If the condition is false, we can skip the loop
@@ -175,7 +176,6 @@ object HyperTypeChecker {
         bodyDelta = deltas.reduce((d1, d2) => d1.combine(d2))
        
         // Try to find monotonicity in number of while loop iterations.
-
         // Variables that are always increasing/decreasing in every loop iteration.
         val monotonValues = bodyDelta.collection.filter { case (name, value) =>
           value.mapping.get(name) match {
@@ -279,7 +279,7 @@ object HyperTypeChecker {
           case _ => None
         }
         println("monotonicity", monotonicity)
-
+        return (newMapping, delta)
         if (monotonicity.isDefined) {
           // After the loop, all variables which were before low, and every loop iteration has the same effect i.e. increasing/decresing with low, will become monotonic.
           val newMappingWithMonotonicity = initial_mapping.mapping.map { case (name, collection) =>
@@ -293,12 +293,16 @@ object HyperTypeChecker {
                       val baseHyperTypeCollection = newMapping.getUnsafe(name)
                       (monotonicity, value.value) match {
                         case (Some(MonoUp(baseId)), Some(Pos())) => {
-                          // If the variable is monotonic and increasing, we set the mapping to the new value.
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(MonoUp(baseId))))
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoUp(baseId)))))
+                        }
+                        case (Some(MonoUp(baseId)), Some(Neg())) => {
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoDown(baseId)))))
+                        }
+                        case (Some(MonoDown(baseId)), Some(Pos())) => {
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoDown(baseId)))))
                         }
                         case (Some(MonoDown(baseId)), Some(Neg())) => {
-                          // If the variable is monotonic and decreasing, we set the mapping to the new value.
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(MonoDown(baseId))))
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoUp(baseId)))))
                         }
                         case _ => {
                           // If the variable is not monotonic, we keep the old mapping.

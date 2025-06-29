@@ -1,5 +1,7 @@
 package viper.HHLVerifier.typing
 
+import viper.HHLVerifier.management.PrettyPrinter
+
 
 
 case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
@@ -25,7 +27,7 @@ case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
           key -> HyperTypeCollection(informationFlow = infFlow, value = value, mono = mono);
         }
         case _ => {
-          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = None)
+          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = MonoTypeCollection(Set.empty))
         }
       }
     }.toMap
@@ -50,5 +52,10 @@ case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
       case Some(value) => value
       case None => throw new NoSuchElementException(s"Key $key not found in mapping")
     }
+  }
+
+  override
+  def toString: String = {
+    PrettyPrinter.formatHyperTypeMapping(this)
   }
 }

@@ -20,6 +20,7 @@ import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.MonoDown
 import viper.HHLVerifier.typing.MonoUp
+import viper.HHLVerifier.typing.HyperMapping
 
 object PrettyPrinter {
 
@@ -145,12 +146,18 @@ object PrettyPrinter {
       case Some(ty) => types = types :+ formatHyperType(ty)
       case None =>  {}
     }
-    col.mono match {
-      case Some(mono) => types = types :+ formatHyperType(mono)
-      case None => {}
+    if (col.mono.nonEmpty) {
+      types = types :++ col.mono.mono.map(formatHyperType)
     }
     types.mkString(", ")
   }
+
+  def formatHyperTypeMapping(mapping: HyperMapping) : String = {
+    mapping.mapping.map { case (key, value) =>
+      s"$key -> ${formatHyperTypeCollection(value)}"
+    }.mkString(", ")
+  }
+
   def formatDeltaMapping(mapping: DeltaMapping) : String = {
     mapping.mapping.map { case (key, value) =>
       s"$key -> ${formatHyperTypeCollection(value)}"
