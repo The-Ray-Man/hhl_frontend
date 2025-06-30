@@ -16,6 +16,7 @@ import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.ast.ImpliesExpr
+import viper.silicon.state.terms.Greater
 
 sealed trait HyperType {
   override def toString: String = {
@@ -311,6 +312,9 @@ object HyperTypes {
         case True() => True().semantic_vpr(id, s0VarName, STmp)
         case MonoDown(baseId) => MonoDown(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp)
         case MonoUp(baseId) => MonoUp(baseId).semantic_vpr(id, s0VarName, s1VarName, STmp) 
+        case GreaterOne() => GreaterOne().semantic_vpr(id, s0VarName, STmp)
+        case LessOne() => LessOne().semantic_vpr(id, s0VarName, STmp)
+        case One() => One().semantic_vpr(id, s0VarName, STmp)
     }
   }
   def semantic(ty: HyperType, id: Id) : Assertion = {
@@ -324,18 +328,25 @@ object HyperTypes {
       case True() => True().semantic(id)
       case MonoDown(baseId) => MonoDown(baseId).semantic(id)
       case MonoUp(baseId) => MonoUp(baseId).semantic(id)
+      case GreaterOne() => GreaterOne().semantic(id)
+      case LessOne() => LessOne().semantic(id)
+      case One() => One().semantic(id)
     }
   }
 }
 
 
 
-case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None, var mono: Option[MonoTypeCollection] = None) {
+case class HyperTypeCollection(
+    val informationFlow: HyperType = High(), 
+    val value: Option[HyperType] = None, 
+    val mono: Option[MonoTypeCollection] = None,
+    val absValue: Option[AbsValueHyperType] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: HyperTypeCollection => {
-        this.informationFlow == that.informationFlow && this.value == that.value && this.mono == that.mono
+        this.informationFlow == that.informationFlow && this.value == that.value && this.mono == that.mono && this.absValue == that.absValue
       }
       case _ => false
     }
@@ -359,7 +370,14 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (Some(mono1), Some(mono2)) => mono1.subsetOf(mono2)
       case _ => false
     }
-    infFlowRes && valueRes && monoRes
+    val absValue = (this.absValue, other.absValue) match {
+      case (_, None) => true
+      case (Some(GreaterOne()), Some(GreaterOne())) => true
+      case (Some(LessOne()), Some(LessOne())) => true
+      case (Some(One()), Some(One())) => true
+      case _ => false
+    }
+    infFlowRes && valueRes && monoRes && absValue
   }
 
   def joinInfFlow(other: HyperTypeCollection): HyperType = {
@@ -379,6 +397,15 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (Some(Zero()), Some(Zero())) => Some(Zero())
       case (Some(True()), Some(True())) => Some(True())
       case (Some(False()), Some(False())) => Some(False())
+      case _ => None
+    }
+  }
+
+  def joinAbsValue(other: HyperTypeCollection) : Option[AbsValueHyperType] = {
+    (this.absValue, other.absValue) match {
+      case (Some(GreaterOne()), Some(GreaterOne())) => Some(GreaterOne())
+      case (Some(LessOne()), Some(LessOne())) => Some(LessOne())
+      case (Some(One()), Some(One())) => Some(One())
       case _ => None
     }
   }
@@ -476,7 +503,13 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
           case (Some(True()), Some(True())) => Some(True())
           case (Some(False()), Some(False())) => Some(True())
           case (Some(Zero()), Some(Zero())) => Some(True())
-          case _ => None
+          case _ => {
+            if (this.absValue == other.absValue && this.value == other.value && (this.absValue == Some(One()))) {
+              Some(True())
+            } else {
+              None
+            }
+          }
         }
       }
       case "!=" => {
@@ -488,7 +521,19 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
           case (Some(Zero()), Some(Zero())) => Some(False())
           case (Some(Pos()), Some(Neg())) => Some(True())
           case (Some(Neg()), Some(Pos())) => Some(True())
-          case _ => None
+          case _ => {
+            if (this.absValue.isDefined && other.absValue.isDefined && this.value.isDefined && other.value.isDefined) {
+                if (this.absValue == other.absValue && this.value == other.value && (this.absValue == Some(One()))) {
+                  Some(False())
+                } else if (this.absValue != other.absValue) {
+                  Some(True())
+                } else {
+                  None
+                }
+            } else {
+              None
+            }
+          }
         }
       }
       case "==>" => {
@@ -510,7 +555,7 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
           case (Some(Zero()), Some(Pos())) => Some(True())
           case (Some(Pos()), Some(Zero())) => Some(False())
           case (Some(Zero()), Some(Neg())) => Some(False())
-          case _ => None // This should not happen
+          case _ => None
         }
       }
       case ">" => {
@@ -647,6 +692,113 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
     }
   }
 
+  def combineAbsValueOp(other: HyperTypeCollection, op: String) : Option[AbsValueHyperType] = {
+    op match {
+      case "+" => {
+        if (this.value == Some(Zero())) {
+          return other.absValue
+        } else if (other.value == Some(Zero())) {
+          return this.absValue
+        }
+
+        (this.absValue, other.absValue) match {
+          case (None, _) => None
+          case (_, None) => None
+          case (Some(GreaterOne()), _) => {
+            if (this.value.isDefined && this.value == other.value) {
+              // They are adding in the same direction
+              Some(GreaterOne())
+            } else None
+          }
+          case (Some(LessOne()), Some(LessOne())) => {
+            if (this.value.isDefined && other.value.isDefined && this.value != other.value) {
+              // they have opposite signs
+              Some(LessOne())
+            } else {
+              None
+            }
+          }
+          case (Some(One()), Some(One())) => {
+            if (this.value.isDefined && other.value.isDefined && this.value != other.value) {
+              // they ahve opposite signs
+              Some(LessOne())
+            } else None
+          }
+          case _ => None // This should not happen
+        }
+      }
+      case "-" => {
+        if (this.value == Some(Zero())) {
+          return other.absValue
+        } else if (other.value == Some(Zero())) {
+          return this.absValue
+        }
+
+        (this.absValue, other.absValue) match {
+          case (None, _) => None
+          case (_, None) => None
+          case (Some(GreaterOne()), Some(GreaterOne())) => {
+            if (this.value.isDefined && other.value.isDefined && this.value != other.value) {
+              // They are in opposite directions, but the minus flips them into the same direction
+              Some(GreaterOne())
+            } else None
+          }
+          case (Some(LessOne()), Some(LessOne())) => {
+            if (this.value.isDefined && other.value.isDefined && this.value == other.value) {
+              // they have equal sign but the minus flips one of them.
+              Some(LessOne())
+            } else {
+              None
+            }
+          }
+          case (Some(One()), Some(One())) => {
+            if (this.value.isDefined && other.value.isDefined && this.value == other.value) {
+              // they have equal sign but the minus flips one of them.
+              Some(LessOne())
+            } else None
+          }
+          case _ => None
+        }
+      }
+      case "*" => {
+        if (this.value == Some(Zero()) || other.value == Some(Zero())) {
+          return Some(LessOne())
+        }
+
+        (this.absValue, other.absValue) match {
+          case (None, _) => None
+          case (_, None) => None
+          case (Some(One()), _) => other.absValue
+          case (_, Some(One())) => this.absValue
+          case (Some(GreaterOne()), Some(GreaterOne())) => Some(GreaterOne())
+          case (Some(LessOne()), Some(LessOne())) => Some(LessOne())
+        }
+      }
+      case "/" => {
+        if (this.value == Some(Zero())) {
+          return Some(LessOne())
+        }
+        if (other.value == Some(Zero())) {
+          throw new Exception("Division by zero is not allowed")
+        }
+
+        (this.absValue, other.absValue) match {
+          case (None, _) => None
+          case (_, None) => None
+          case (_, Some(One())) => this.absValue
+          case (Some(GreaterOne()), Some(LessOne())) => Some(GreaterOne())
+          case (Some(One()), Some(LessOne())) => Some(GreaterOne())
+          case (Some(One()), Some(GreaterOne())) => Some(LessOne())
+          case (Some(LessOne()), Some(GreaterOne())) => Some(LessOne())
+          case _ => None 
+        }
+      }
+      case _ => None
+    }
+
+  }
+
+
   // print
   override def toString: String = {
     PrettyPrinter.formatHyperTypeCollection(this)
@@ -659,8 +811,9 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
   def isEmpty() : Boolean = {
     this.informationFlow == High() && this.value.isEmpty && this.mono.isEmpty
   }
- 
 }
+
+
 
 object HyperTypeCollection {
 

@@ -368,7 +368,8 @@ object HyperTypeChecker {
       }
       case Num(n) => {
         val value = if (n > 0) Some(Pos()) else if (n < 0) Some(Neg()) else Some(Zero())
-        (new HyperTypeCollection(informationFlow=Low(), value=value), DeltaMapping(Map()))
+        val absValue = if (n < 1 && n > -1) Some(LessOne()) else if (n==1 || n == -1) Some(One()) else Some(GreaterOne())
+        (new HyperTypeCollection(informationFlow=Low(), value=value, absValue = absValue), DeltaMapping(Map()))
       }
       case Id(name) => {
         val hyperType = mapping.getUnsafe(name)
@@ -386,12 +387,18 @@ object HyperTypeChecker {
           var infFlowType = type1.joinInfFlow(type2)
           val valueType = type1.combineValueOp(type2, op)
           val monoType = type1.combineMonoOp(type2, op)
+          val absType = type1.combineAbsValueOp(type2, op)
           valueType match {
             case Some(True()) | Some(False()) | Some(Zero()) => {
               infFlowType = Low()
             }
             case _ => {}
           }
+          if (absType.isDefined && absType.get == One() && (valueType.isDefined && (valueType.get == Pos() || valueType.get == Neg()))) {
+            // The value must be either 1 or -1, hence the information flow is low.
+            infFlowType = Low()
+          }
+        
           val deltaMapping = DeltaMapping.combineOp(type1, delta1, type2, delta2, op)
           (new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = monoType), deltaMapping)
         }
