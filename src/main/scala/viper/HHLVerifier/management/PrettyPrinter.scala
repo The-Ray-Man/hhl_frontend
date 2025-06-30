@@ -21,6 +21,9 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.MonoDown
 import viper.HHLVerifier.typing.MonoUp
 import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.One
+import viper.HHLVerifier.typing.GreaterOne
+import viper.HHLVerifier.typing.LessOne
 
 object PrettyPrinter {
 
@@ -133,6 +136,9 @@ object PrettyPrinter {
       case Zero() => "zero"
       case True() => "true"
       case False() => "false"
+      case One() => "absOne" 
+      case GreaterOne() => "absGtOne"
+      case LessOne() => "absLtOne" 
       case MonoUp(ids) => "monoUp[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
       case MonoDown(ids) => "monoDown[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
       case _ => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
@@ -148,6 +154,9 @@ object PrettyPrinter {
     }
     if (col.mono.nonEmpty) {
       types = types :+ formatHyperType(col.mono.get.mono)
+    }
+    if (col.absValue.nonEmpty) {
+      types = types :+ formatHyperType(col.absValue.get)
     }
     types.mkString(", ")
   }

@@ -231,7 +231,7 @@ object Parser {
   // def primitiveHyperTypes[$: P] : P[Type] = P(primitiveTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => mapPrimitiveHyperType(t, hyperType)})
 
   def HyperTypeList[$: P] : P[Seq[HyperType]] = P((mapHyperType | mapComplexHyperType).rep(sep=","))
-  def mapHyperType[$: P] : P[HyperType] = P("low" | "pos" | "neg" | "zero" | "true" | "false" ).!.map(mapHyperTypeName)
+  def mapHyperType[$: P] : P[HyperType] = P("low" | "pos" | "neg" | "zero" | "true" | "false" | "absOne" | "absGtOne" | "absLtOne").!.map(mapHyperTypeName)
   def mapComplexHyperType[$ : P] : P[HyperType] = P(("monoUp" | "monoDown").! ~ "[" ~ progVar.rep(sep=",") ~ "]").map {case (name, varName) => mapComplexHyperTypeName(name, varName)}
   /** Primitive Types: Parent for all primitive types. */
   def primitiveTypes[$: P] : P[Type] = P("Int" | "Bool").!.map(mapPrimitiveTypeName)

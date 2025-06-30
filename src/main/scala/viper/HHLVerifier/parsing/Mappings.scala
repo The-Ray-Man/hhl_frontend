@@ -227,6 +227,9 @@ object Mappings {
     case "zero" => Zero()
     case "true" => True()
     case "false" => False()
+    case "absOne" => One()
+    case "absGtOne" => GreaterOne()
+    case "absLtOne" => LessOne()
     case _ => throw UnknownException("Unknown hyper type: " + name)
   }
 
