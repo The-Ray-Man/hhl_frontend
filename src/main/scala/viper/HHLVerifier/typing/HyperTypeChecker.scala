@@ -71,11 +71,13 @@ object HyperTypeChecker {
         val infFlow = rightHyperType.joinInfFlow(pc)
         val value = rightHyperType.value
         val mono = rightHyperType.mono
+        val absValue = rightHyperType.absValue
 
         val newMapping = mapping.set(left.name, HyperTypeCollection(
           informationFlow = infFlow,
           value = value,
-          mono = mono)
+          mono = mono, 
+          absValue = absValue)
         )
 
         var newCollection = delta.collection 
@@ -94,7 +96,8 @@ object HyperTypeChecker {
           newMapping = newMapping.set(name.name, HyperTypeCollection(
             informationFlow = infFlow,
             value = ty.value,
-            mono = ty.mono))
+            mono = ty.mono,
+            absValue = ty.absValue))
           newCollection = newCollection + (name.name -> new DeltaMapping(Map(name.name -> HyperTypeCollection(informationFlow = infFlow, value = None))))
         }
         return (newMapping, DeltaCollection(newCollection))
@@ -400,7 +403,7 @@ object HyperTypeChecker {
           }
         
           val deltaMapping = DeltaMapping.combineOp(type1, delta1, type2, delta2, op)
-          (new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = monoType), deltaMapping)
+          (new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = monoType, absValue = absType), deltaMapping)
         }
 
       case LengthExpr(id) => {

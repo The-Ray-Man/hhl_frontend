@@ -821,6 +821,7 @@ object HyperTypeCollection {
     var infFlowType : HyperType = High();
     var valueType : Option[HyperType] = None;
     var monoType : Option[MonoHyperType] = None;
+    var absValueType : Option[AbsValueHyperType] = None;
     for (ty <- seq) {
       ty match {
         case Low()  => {
@@ -838,6 +839,12 @@ object HyperTypeCollection {
             case Some(_) => throw new Exception("Cannot combine mono types " + monoType + " and " + ty)
           }
         }
+        case GreaterOne() | One() | LessOne() => {
+          monoType match {
+            case None => absValueType = Some(ty.asInstanceOf[AbsValueHyperType])
+            case Some(_) => throw new Exception("Cannot combine abs value types " + absValueType + " and " + ty)
+          }
+        } 
         case _ => {
           throw new Exception("Unknown hyper type " + ty)
         }
@@ -849,6 +856,6 @@ object HyperTypeCollection {
       case None => None
     }
 
-    new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = mono)
+    new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = mono, absValue = absValueType)
   }
 }

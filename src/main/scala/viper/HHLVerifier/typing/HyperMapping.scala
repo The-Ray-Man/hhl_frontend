@@ -24,10 +24,11 @@ case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
           val infFlow = x.joinInfFlow(y);
           val value = x.joinValue(y);
           val mono = x.joinMono(y, pc)
-          key -> HyperTypeCollection(informationFlow = infFlow, value = value, mono = mono);
+          val absValue = x.joinAbsValue(y)
+          key -> HyperTypeCollection(informationFlow = infFlow, value = value, mono = mono, absValue = absValue);
         }
         case _ => {
-          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = None)
+          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = None, absValue = None) 
         }
       }
     }.toMap
