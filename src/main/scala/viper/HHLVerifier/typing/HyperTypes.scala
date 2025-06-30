@@ -24,10 +24,9 @@ sealed trait HyperType {
 }
 
 sealed trait MonoHyperType extends HyperType {}
+sealed trait AbsValueHyperType extends HyperType {}
 
 case class Low() extends HyperType {
-
-
   def semantic(id: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -243,6 +242,58 @@ case class MonoTypeCollection(val mono: MonoHyperType) {
       case (MonoDown(ids1), MonoDown(ids2)) => Some(MonoTypeCollection(MonoDown(ids1 ++ ids2)))
       case _ => None
     }
+  }
+}
+
+
+case class GreaterOne() extends AbsValueHyperType {
+  def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(BinaryExpr(LookupExpr(s1_assert, id),"<",UnaryExpr("-",Num(1))), "||", BinaryExpr(LookupExpr(s1_assert, id),">",Num(1)))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.And(vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(-1)())(),vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(1)())())()
+    )())()
+    (Some(stmt), Seq.empty)
+  }
+}
+case class LessOne() extends AbsValueHyperType {
+    def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(BinaryExpr(LookupExpr(s1_assert, id),">",UnaryExpr("-",Num(1))), "||", BinaryExpr(LookupExpr(s1_assert, id),"<",Num(1)))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.And(vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(-1)())(),vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(1)())())()
+    )())()
+    (Some(stmt), Seq.empty)
+  }
+}
+case class One() extends AbsValueHyperType {
+    def semantic(id : Id) : Assertion = {
+    val s1_assert = AssertVar("_s1")
+    val s1 = AssertVarDecl(s1_assert, StateType())
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(BinaryExpr(LookupExpr(s1_assert, id),"==",Num(1)), "||", BinaryExpr(LookupExpr(s1_assert, id),"==",UnaryExpr("-",Num(1))))))
+    return stmt
+  }
+
+  def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
+    val s0 = State.localVarDecl(s0VarName)
+    val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
+      vpr.Or(vpr.EqCmp(State.get(s0.localVar, id), vpr.IntLit(1)())(), 
+        vpr.EqCmp(State.get(s0.localVar, id), vpr.IntLit(-1)())())()
+      )()
+    )()
+    (Some(stmt), Seq.empty)
   }
 }
 
