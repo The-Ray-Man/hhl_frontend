@@ -120,8 +120,8 @@ object Parser {
   /** UseHint Statement: Use a hint declare trigger for havoc statments. */
   def useHintStmt[$: P]: P[UseHintStmt] = P("use" ~~ spaces ~ expr).map(mapUseHintStmt)
 
-  def unfoldStmt[$ : P] : P[UnfoldStmt] = P("unfold"  ~ "("  ~ mapHyperType  ~ ")" ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id)}
-  def foldStmt[$ : P] : P[FoldStmt] = P("fold"  ~ "(" ~ mapHyperType ~ ")" ~ progVar).map { case (t, id) => mapFoldStmt(t, id)}
+  def unfoldStmt[$ : P] : P[UnfoldStmt] = P("unfold"  ~ "("  ~ (mapHyperType | mapComplexHyperType)  ~ ")" ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id)}
+  def foldStmt[$ : P] : P[FoldStmt] = P("fold"  ~ "(" ~ (mapHyperType | mapComplexHyperType) ~ ")" ~ progVar).map { case (t, id) => mapFoldStmt(t, id)}
 
 
   // Utils for statements
@@ -232,7 +232,7 @@ object Parser {
 
   def HyperTypeList[$: P] : P[Seq[HyperType]] = P((mapHyperType | mapComplexHyperType).rep(sep=","))
   def mapHyperType[$: P] : P[HyperType] = P("low" | "pos" | "neg" | "zero" | "true" | "false" ).!.map(mapHyperTypeName)
-  def mapComplexHyperType[$ : P] : P[HyperType] = P(("monoUp" | "monoDown").! ~ "[" ~ progVar ~ "]").map {case (name, varName) => mapComplexHyperTypeName(name, varName)}
+  def mapComplexHyperType[$ : P] : P[HyperType] = P(("monoUp" | "monoDown").! ~ "[" ~ progVar.rep(sep=",") ~ "]").map {case (name, varName) => mapComplexHyperTypeName(name, varName)}
   /** Primitive Types: Parent for all primitive types. */
   def primitiveTypes[$: P] : P[Type] = P("Int" | "Bool").!.map(mapPrimitiveTypeName)
 

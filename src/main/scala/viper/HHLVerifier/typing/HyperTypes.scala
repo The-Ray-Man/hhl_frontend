@@ -145,7 +145,7 @@ case class False() extends HyperType {
   }
 }
 
-case class MonoUp(val id : Id) extends MonoHyperType {
+case class MonoUp(val ids : Set[Id]) extends MonoHyperType {
   def semantic(valId: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -153,7 +153,7 @@ case class MonoUp(val id : Id) extends MonoHyperType {
     val s2 = AssertVarDecl(s2_assert, StateType())
     val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
       ImpliesExpr(
-        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        ids.map(id => BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id))).reduce((a,b) => BinaryExpr(a,"&&",b)),
         BinaryExpr(LookupExpr(s1_assert, valId),"<=",LookupExpr(s2_assert, valId))
       )
      ))
@@ -166,7 +166,8 @@ case class MonoUp(val id : Id) extends MonoHyperType {
     val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
         vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
         )(), vpr.Implies(
-          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          ids.map(id => vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()).reduce((a: vpr.Exp,b : vpr.Exp) => vpr.And(a,b)()),
+          // vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
           vpr.LeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
         )()
       )()
@@ -174,7 +175,7 @@ case class MonoUp(val id : Id) extends MonoHyperType {
       (Some(stmt), Seq.empty)
   }
 }
-case class MonoDown(val id : Id) extends MonoHyperType {
+case class MonoDown(val ids : Set[Id]) extends MonoHyperType {
 def semantic(valId: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -182,7 +183,7 @@ def semantic(valId: Id) : Assertion = {
     val s2 = AssertVarDecl(s2_assert, StateType())
     val stmt = Assertion("forall", Seq(s1,s2), ImpliesExpr(BinaryExpr(StateExistsExpr(s1_assert, false), "&&", StateExistsExpr(s2_assert, false)) ,
       ImpliesExpr(
-        BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id)),
+        ids.map(id => BinaryExpr(LookupExpr(s1_assert, id),"<=",LookupExpr(s2_assert, id))).reduce((a,b) => BinaryExpr(a,"&&",b)),
         BinaryExpr(LookupExpr(s1_assert, valId),">=",LookupExpr(s2_assert, valId))
       )
      ))
@@ -195,7 +196,7 @@ def semantic(valId: Id) : Assertion = {
     val stmt = vpr.Forall(Seq(s0, s1), Seq.empty, 
         vpr.Implies(vpr.And(SetState.getInSetApp(Seq(s0.localVar,STmp)), SetState.getInSetApp(Seq(s1.localVar, STmp))
         )(), vpr.Implies(
-          vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))(),
+          ids.map(id => vpr.LeCmp(State.get(s0.localVar, id), State.get(s1.localVar, id))()).reduce((a: vpr.Exp,b : vpr.Exp) => vpr.And(a,b)()),
           vpr.GeCmp(State.get(s0.localVar, valId), State.get(s1.localVar, valId))()
         )()
       )()
@@ -204,7 +205,7 @@ def semantic(valId: Id) : Assertion = {
   }
 }
 
-case class MonoTypeCollection(val mono: Set[MonoHyperType]) {
+case class MonoTypeCollection(val mono: MonoHyperType) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
@@ -214,56 +215,34 @@ case class MonoTypeCollection(val mono: Set[MonoHyperType]) {
   }
 
   def keySet: Set[Id] = {
-    mono.map {
-      case MonoUp(id) => id
-      case MonoDown(id) => id
+    // Extract the set of Ids from the MonoHyperType
+    this.mono match {
+      case MonoUp(ids) => ids
+      case MonoDown(ids) => ids
     }
   }
 
-  def filterForKeySet(keys: Set[Id]): MonoTypeCollection = {
-    val filteredMono = mono.filter {
-      case MonoUp(id) => keys.contains(id)
-      case MonoDown(id) => keys.contains(id)
-    }
-    MonoTypeCollection(filteredMono)
-  }
 
   def subsetOf(other: MonoTypeCollection): Boolean = {
     // Check if this mono type collection is a subset of the other
-    this.mono.subsetOf(other.mono)
-  }
-
-  def intersect(other: MonoTypeCollection): MonoTypeCollection = {
-    // Return the intersection of this mono type collection with another
-    MonoTypeCollection(this.mono.intersect(other.mono))
-  }
-
-  def isEmpty: Boolean = {
-    // Check if the mono type collection is empty
-    this.mono.isEmpty
-  }
-
-  def nonEmpty: Boolean = {
-    // Check if the mono type collection is non-empty
-    this.mono.nonEmpty
+    this == other
   }
 
   def flip: MonoTypeCollection = {
     // Flip the mono types, i.e., change MonoUp to MonoDown and vice versa
-    MonoTypeCollection(this.mono.map {
-      case MonoUp(id) => MonoDown(id)
-      case MonoDown(id) => MonoUp(id)
-    })
+    this.mono match {
+      case MonoUp(ids) => MonoTypeCollection(MonoDown(ids))
+      case MonoDown(ids) => MonoTypeCollection(MonoUp(ids))
+    }
   }
 
-  def add(monoType: MonoHyperType): MonoTypeCollection = {
-    // Add a new mono type to the collection
-    MonoTypeCollection(this.mono + monoType)
-  }
-  
-  def extend(other: MonoTypeCollection): MonoTypeCollection = {
-    // Extend this mono type collection with another
-    MonoTypeCollection(this.mono ++ other.mono)
+  def union(other: MonoTypeCollection): Option[MonoTypeCollection] = {
+    // Union of two mono type collections
+    (this.mono, other.mono) match {
+      case (MonoUp(ids1), MonoUp(ids2)) => Some(MonoTypeCollection(MonoUp(ids1 ++ ids2)))
+      case (MonoDown(ids1), MonoDown(ids2)) => Some(MonoTypeCollection(MonoDown(ids1 ++ ids2)))
+      case _ => None
+    }
   }
 }
 
@@ -300,7 +279,7 @@ object HyperTypes {
 
 
 
-case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None, var mono: MonoTypeCollection = MonoTypeCollection(Set.empty)) {
+case class HyperTypeCollection(var informationFlow: HyperType = High(), var value: Option[HyperType] = None, var mono: Option[MonoTypeCollection] = None) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
@@ -324,7 +303,11 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
       case (Some(Zero()), Some(Zero())) => true
       case _ => false 
     };
-    val monoRes = other.mono.subsetOf(this.mono)
+    val monoRes = (this.mono, other.mono) match {
+      case (_, None) => true
+      case (Some(mono1), Some(mono2)) => mono1.subsetOf(mono2)
+      case _ => false
+    }
     infFlowRes && valueRes && monoRes
   }
 
@@ -349,13 +332,15 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
     }
   }
 
-  def joinMono(other: HyperTypeCollection, pc: HyperType): MonoTypeCollection = {
+  def joinMono(other: HyperTypeCollection, pc: HyperType): Option[MonoTypeCollection] = {
     // used to combine traces after i.e. if-else branch
 
-    if (pc == Low()) {
-      this.mono.intersect(other.mono)
+    if (pc == Low() && this == other) {
+      // If the program counter is low, we can just return the mono type of this collection
+      return this.mono
+
     } 
-    MonoTypeCollection(Set.empty)
+    None
   }
 
   def combineValueOp(other: HyperTypeCollection, op: String) : Option[HyperType] = {
@@ -522,10 +507,10 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
     }
   }
 
-  def combineMonoOp(other: HyperTypeCollection, op: String) : MonoTypeCollection = {
+  def combineMonoOp(other: HyperTypeCollection, op: String) : Option[MonoTypeCollection] = {
     if (this.mono.isEmpty && other.mono.isEmpty) {
       // If both are None, we return None
-      return MonoTypeCollection(Set.empty)
+      return None
     }
 
     op match {
@@ -536,8 +521,11 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
         } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
           // Adding a constant to a mono type, gives the same mono type
           other.mono
+        } else if (this.mono.nonEmpty && other.mono.nonEmpty) {
+          // Adding two mono types, gives the intersection of the two
+          this.mono.get.union(other.mono.get)
         } else {
-          this.mono.intersect(other.mono)
+          None
         }
       }
       case "-" => {
@@ -546,46 +534,45 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
           this.mono
         } else if (other.mono.nonEmpty && this.informationFlow == Low()) {
           // Subtracting a constant from a mono type, gives the oposite monotonicity type
-          other.mono.flip
+          Some(other.mono.get.flip)
         } else if (this.mono.nonEmpty && other.mono.nonEmpty) {
-          this.mono.intersect(other.mono.flip)
+          this.mono.get.union(other.mono.get.flip)
         }
         else {
-          MonoTypeCollection(Set.empty)
+          None
         }
       }
       case "*" => {
-        if (this.value == Some(Pos()) && other.value == Some(Pos())) {
-          // Since the only positive values are considered, the monotonicity type remains the same.
-          this.mono.intersect(other.mono)
-        } else if (this.mono == other.mono && this.value == Some(Neg()) && other.value == Some(Neg())) {
-          // Since both are negative, the monotonicty is inverted
-          this.mono.intersect(other.mono).flip
-        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
-          // Multiplying a constant to a mono type, gives the same mono type
+        if (other.value == Some(Pos()) && other.informationFlow == Low()) {
           this.mono
-        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Pos())) {
-          // Multiplying a constant to a mono type, gives the same mono type
+        } else if (this.value == Some(Pos()) && this.informationFlow == Low()) {
           other.mono
-        } else if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Neg())) {
-          // Multiplying a constant to a mono type, gives the oposite monotonicity type
-          this.mono.flip
-        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
-          // Multiplying a constant to a mono type, gives the oposite monotonicity type
-          other.mono.flip
+        } else if (other.value == Some(Neg()) && other.informationFlow == Low()) {
+          this.mono match {
+            case Some(mono) => Some(mono.flip)
+            case None => None
+          }
+        } else if (this.value == Some(Neg()) && this.informationFlow == Low()) {
+          other.mono match {
+            case Some(mono) => Some(mono.flip)
+            case None => None
+          }
         } else {
-          MonoTypeCollection(Set.empty)
+          None
         }
       }
       case "/" => {
-        if (this.mono.nonEmpty && other.informationFlow == Low() && other.value == Some(Pos())) {
+        if (other.informationFlow == Low() && other.value == Some(Pos())) {
           // Dividing a monoton type by a positive constant, gives the same mono type
           this.mono
-        } else if (other.mono.nonEmpty && this.informationFlow == Low() && this.value == Some(Neg())) {
+        } else if (this.informationFlow == Low() && this.value == Some(Neg())) {
           // Dividing a negative constant by a mono type, gives the oposite monotonicity type
-          other.mono.flip
+          other.mono match {
+            case Some(mono) => Some(mono.flip)
+            case None => None
+          }
         } else {
-          MonoTypeCollection(Set.empty)
+          None
         }
       }
       case "<" | ">" | "<=" | ">=" => { 
@@ -595,14 +582,17 @@ case class HyperTypeCollection(var informationFlow: HyperType = High(), var valu
           return normalized
         } else {
           // If we are checking if this is greater than other, we need to flip the monotonicity type
-          return normalized.flip
+          normalized match {
+            case Some(mono) => Some(mono.flip)
+            case None => None
+          }
         }
       }
       case "==" | "!=" | "&&" | "||" | "==>" => {
-        MonoTypeCollection(Set.empty) 
+        None
       }
-      case _ => MonoTypeCollection(Set.empty)
-      
+      case _ => None
+    // TODO: "Not" also just inverts it. And &&, || etc. may also be possible.
     }
   }
 
@@ -626,7 +616,7 @@ object HyperTypeCollection {
  def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
     var infFlowType : HyperType = High();
     var valueType : Option[HyperType] = None;
-    var monoType : Set[MonoHyperType] = Set.empty;
+    var monoType : Option[MonoHyperType] = None;
     for (ty <- seq) {
       ty match {
         case Low()  => {
@@ -639,7 +629,10 @@ object HyperTypeCollection {
           }
         } 
         case MonoUp(_) | MonoDown(_) => { 
-          monoType = monoType + ty.asInstanceOf[MonoHyperType] // Add the mono type to the set
+          monoType match {
+            case None => monoType = Some(ty.asInstanceOf[MonoHyperType])
+            case Some(_) => throw new Exception("Cannot combine mono types " + monoType + " and " + ty)
+          }
         }
         case _ => {
           throw new Exception("Unknown hyper type " + ty)
@@ -647,6 +640,11 @@ object HyperTypeCollection {
       }
     }
 
-    new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = MonoTypeCollection(monoType))
+    val mono = monoType match {
+      case Some(mono) => Some(MonoTypeCollection(mono))
+      case None => None
+    }
+
+    new HyperTypeCollection(informationFlow = infFlowType, value = valueType, mono = mono)
   }
 }

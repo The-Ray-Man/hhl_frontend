@@ -133,8 +133,8 @@ object PrettyPrinter {
       case Zero() => "zero"
       case True() => "true"
       case False() => "false"
-      case MonoUp(id) => "monoUp[" + id + "]"
-      case MonoDown(id) => "monoDown[" + id + "]"
+      case MonoUp(ids) => "monoUp[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
+      case MonoDown(ids) => "monoDown[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
       case _ => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
     }
   }
@@ -147,7 +147,7 @@ object PrettyPrinter {
       case None =>  {}
     }
     if (col.mono.nonEmpty) {
-      types = types :++ col.mono.mono.map(formatHyperType)
+      types = types :+ formatHyperType(col.mono.get.mono)
     }
     types.mkString(", ")
   }

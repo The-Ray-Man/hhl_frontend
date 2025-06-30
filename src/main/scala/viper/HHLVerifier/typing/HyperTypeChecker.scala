@@ -70,23 +70,7 @@ object HyperTypeChecker {
         val (rightHyperType, deltaType) = typeCheckExpression(mapping, delta ,right)
         val infFlow = rightHyperType.joinInfFlow(pc)
         val value = rightHyperType.value
-        var mono = rightHyperType.mono
-
-        if (pc.mono.nonEmpty) {
-          (value) match {
-            case (Some(Pos())) => if (mono.isEmpty) {
-              mono = pc.mono
-            } else {
-              mono = mono.extend(pc.mono)
-              
-            }
-            case (Some(Neg())) => if (mono.isEmpty) {
-              mono = pc.mono.flip
-            } else {
-              mono = mono.flip.extend(pc.mono)
-            }
-          }
-        }
+        val mono = rightHyperType.mono
 
         val newMapping = mapping.set(left.name, HyperTypeCollection(
           informationFlow = infFlow,
@@ -171,7 +155,7 @@ object HyperTypeChecker {
           // If the condition is false, we can skip the loop
           return (mapping, delta)
         }
-        var new_pc_mono = MonoTypeCollection(Set())
+        var new_pc_mono : Option[MonoTypeCollection] = None
         if (pc.mono.isEmpty) {
           new_pc_mono = valueConditionType.mono
         }
@@ -225,7 +209,7 @@ object HyperTypeChecker {
                           (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono))
                         }
                         case ( Some(Neg())) => {
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono.flip))
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(loopMono.get.flip)))
                         }
                         case _ => {
                           // If the variable is not monotonic, we keep the old mapping.
@@ -276,7 +260,7 @@ object HyperTypeChecker {
     }
   }
 
-  def findMonotonicityOfLoop(loopGuard : Expr, beforeLoopMapping : HyperMapping, bodyChange : DeltaCollection) : MonoTypeCollection = {
+  def findMonotonicityOfLoop(loopGuard : Expr, beforeLoopMapping : HyperMapping, bodyChange : DeltaCollection) : Option[MonoTypeCollection] = {
     println("beforeLoopMapping", beforeLoopMapping)
     println("bodyChange", bodyChange)
     val (lhs, op, rhs) = loopGuard match {
@@ -294,32 +278,32 @@ object HyperTypeChecker {
       case (Some(Pos()), Some(Zero())) => {
         println("lhs is increasing, rhs is constant")
         if (op == "<" || op == "<=") {
-          return MonoTypeCollection(rhsDelta._2.mapping.keySet.map(key => MonoUp(Id(key))))
+          return Some(MonoTypeCollection(MonoUp(rhsDelta._2.mapping.keySet.map(key => Id(key)))))
         }
       }
       case (Some(Neg()), Some(Zero())) => {
         println("lhs is decreasing, rhs is constant")
         if (op == ">" || op == ">=") {
-          return MonoTypeCollection(rhsDelta._2.mapping.keySet.map(key => MonoDown(Id(key))))
+          return Some(MonoTypeCollection(MonoDown(rhsDelta._2.mapping.keySet.map(key => Id(key)))))
         }
       }
       case (Some(Zero()), Some(Pos())) => {
         println("lhs is constant, rhs is increasing")
         if (op == ">" || op == ">=") {
-          return MonoTypeCollection(lhsDelta._2.mapping.keySet.map(key => MonoUp(Id(key))))
+          return Some(MonoTypeCollection(MonoUp(lhsDelta._2.mapping.keySet.map(key => Id(key)))))
         }
       }
       case (Some(Zero()), Some(Neg())) => {
         println("lhs is constant, rhs is decreasing")
         if (op == "<" || op == "<=") {
-          return MonoTypeCollection(lhsDelta._2.mapping.keySet.map(key => MonoDown(Id(key))))
+          return Some(MonoTypeCollection(MonoDown(lhsDelta._2.mapping.keySet.map(key => Id(key)))))
         }
       }
       case (_,_) => {
-        return MonoTypeCollection(Set())
+        return None
       }
     }
-    return MonoTypeCollection(Set())
+    return None
   }
 
   def changeOfExpression(expr: Expr, mapping: HyperMapping, changeInLoopIteration: DeltaCollection) : Option[HyperType]  = {

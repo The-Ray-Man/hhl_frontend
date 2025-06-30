@@ -27,7 +27,7 @@ case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
           key -> HyperTypeCollection(informationFlow = infFlow, value = value, mono = mono);
         }
         case _ => {
-          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = MonoTypeCollection(Set.empty))
+          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = None)
         }
       }
     }.toMap
