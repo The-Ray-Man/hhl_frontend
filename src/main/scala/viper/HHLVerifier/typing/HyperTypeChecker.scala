@@ -24,6 +24,7 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.MonoTypeCollection
 
 object HyperTypeChecker {
 
@@ -68,10 +69,30 @@ object HyperTypeChecker {
       case AssignStmt(left, right) => {
         val (rightHyperType, deltaType) = typeCheckExpression(mapping, delta ,right)
         val infFlow = rightHyperType.joinInfFlow(pc)
+        val value = rightHyperType.value
+        var mono = rightHyperType.mono
+
+        if (pc.mono.nonEmpty) {
+          (value) match {
+            case (Some(Pos())) => if (mono.isEmpty) {
+              mono = pc.mono
+            } else {
+              mono = mono.extend(pc.mono)
+              
+            }
+            case (Some(Neg())) => if (mono.isEmpty) {
+              mono = pc.mono.flip
+            } else {
+              mono = mono.flip.extend(pc.mono)
+            }
+          }
+        }
+
         val newMapping = mapping.set(left.name, HyperTypeCollection(
           informationFlow = infFlow,
-          value = rightHyperType.value,
-          mono = rightHyperType.mono))
+          value = value,
+          mono = mono)
+        )
 
         var newCollection = delta.collection 
         if (!deltaType.isEmpty()) {
@@ -150,6 +171,12 @@ object HyperTypeChecker {
           // If the condition is false, we can skip the loop
           return (mapping, delta)
         }
+        var new_pc_mono = MonoTypeCollection(Set())
+        if (pc.mono.isEmpty) {
+          new_pc_mono = valueConditionType.mono
+        }
+
+
         val initial_mapping = mapping
         var previous_mapping = mapping
         var newMapping = mapping
@@ -160,8 +187,9 @@ object HyperTypeChecker {
         do {
           previous_mapping = newMapping
           val (condType, deltaCondition) = typeCheckExpression(newMapping, DeltaCollection(Map()), cond)
-          println("delta type of condition", deltaCondition)
           val new_pc_inf = condType.joinInfFlow(pc);
+          // val new_pc_mono = condType.joinMono(pc, Low()) 
+          // println("new_pc_inf", new_pc_inf, "new_pc_mono", new_pc_mono)
           val new_pc = HyperTypeCollection(informationFlow=new_pc_inf)
           val res  = typeCheckStmt(newMapping, delta, body, new_pc)
           newMapping = res._1
@@ -172,118 +200,19 @@ object HyperTypeChecker {
         } while (newMapping != previous_mapping)
         newMapping = previous_mapping.combine(initial_mapping, valueConditionType.informationFlow)
 
-        // Some logic here for monotonicity stuff.
+        // // Some logic here for monotonicity stuff.
         bodyDelta = deltas.reduce((d1, d2) => d1.combine(d2))
        
-        // Try to find monotonicity in number of while loop iterations.
-        // Variables that are always increasing/decreasing in every loop iteration.
-        val monotonValues = bodyDelta.collection.filter { case (name, value) =>
-          value.mapping.get(name) match {
-            case Some(collection) =>  collection.informationFlow == Low() && (collection.value == Some(Pos()) || collection.value == Some(Neg()))
-            case None => false
-          }
-        }.map {case (name, value) => name }.toSet
 
-        // Variables that are present in the condition of the while loop.
-        val conditionVariables = getVariables(cond)
+        val loopMono = HyperTypeChecker.findMonotonicityOfLoop(cond, initial_mapping, bodyDelta)
 
-        val toConsider = monotonValues.intersect(conditionVariables)
-
-        if (toConsider.isEmpty){
-          return (newMapping, delta)
-        }
-
-        // Now we need to check if the number of loop iterations is monotonic to one of the variables in `toConsider`.
-        // One side of the condition needs to be constant i.e. not changed in the loop body. The other side of the condition must be increasing/decreasing.
-
-        val (lhs, op, rhs) = cond match {
-          case BinaryExpr(e1, op, e2) => (e1, op, e2)
-          case _ => return (newMapping, delta) // Not a binary expression, cannot check monotonicity
-        }
-
-        // The types in this mapping should be align with every loop iteration. If the type of a variable is low, it means that in every loop iteration every trace has the same value.
-        val conditionMapping = initial_mapping.mapping.map( {case (name, collection) => {
-          if (bodyDelta.collection.contains(name)) {
-            val deltaCollection = bodyDelta.collection(name).mapping.get(name) match {
-              case Some(value) => value
-              case None => HyperTypeCollection(informationFlow = High(), value = None)
-            }
-
-            val infFlow = collection.joinInfFlow(deltaCollection)
-            val value = (collection.value, deltaCollection.value) match {
-              case (Some(Pos()), Some(Pos())) => Some(Pos())
-              case (Some(Neg()), Some(Neg())) => Some(Neg())
-              case (Some(Zero()), Some(Zero())) => Some(Zero())
-              case _ => None
-            }
-            (name, HyperTypeCollection(informationFlow = infFlow, value = value))
-          } else {
-            (name, collection) // Is this wrong?
-          }
-        }}
-        ).toMap
-
-        val tmpMapping = new HyperMapping(conditionMapping)
-
-
-        // Now we need to find the baseId (to which the monotonicity applies) and the id (which is increasing/decreasing).
-        val lhsChange = changeOfExpression(lhs, tmpMapping, bodyDelta)
-        val rhsChange = changeOfExpression(rhs, tmpMapping, bodyDelta)
-
-        val parameter = this.method match {
-          case Some(m) => m.params.map(_.name).toSet
-          case None => Set.empty[String]
-        }
-
-        val lhsDpendentOnVars = getVariables(lhs).intersect(parameter)
-        val rhsDpendentOnVars = getVariables(rhs).intersect(parameter)
-
-        val lhsCandidateVariable = if  (lhsDpendentOnVars.size == 1) {
-          Some(lhsDpendentOnVars.head)
-        } else {
-          None
-        }
-
-        val rhsCandidateVariable = if (rhsDpendentOnVars.size == 1) {
-          Some(rhsDpendentOnVars.head)
-        } else {
-          None
-        }
-
-        // This means the number of loop iterations is monotonic.
-        val monotonicity = (lhsChange, lhsCandidateVariable, rhsChange, rhsCandidateVariable, op) match {
-          case ("constant", Some(lhsVar), "increasing", _, ">=") => {
-            Some(MonoUp(Id(lhsVar)))
-          }
-          case ("constant", Some(lhsVar), "increasing", _, ">") => {
-            Some(MonoUp(Id(lhsVar)))
-          }
-          case ("constant", Some(lhsVar), "decreasing", _, "<=") => {
-            Some(MonoDown(Id(lhsVar)))
-          }
-          case ("constant", Some(lhsVar), "decreasing", _, "<") => {
-            Some(MonoDown(Id(lhsVar)))
-          }
-          case ("increasing", _, "constant", Some(rhsVar), "<=") => {
-            Some(MonoUp(Id(rhsVar)))
-          }
-          case ("increasing", _, "constant", Some(rhsVar), "<") => {
-            Some(MonoUp(Id(rhsVar)))
-          }
-          case ("decreasing", _, "constant", Some(rhsVar), ">=") => {
-            Some(MonoDown(Id(rhsVar)))
-          }
-          case ("decreasing", _, "constant", Some(rhsVar), ">") => {
-            Some(MonoDown(Id(rhsVar)))
-          }
-          case _ => None
-        }
-        println("monotonicity", monotonicity)
-        return (newMapping, delta)
-        if (monotonicity.isDefined) {
+        // // Variables that are present in the condition of the while loop.
+        
+        if (loopMono.nonEmpty) {
           // After the loop, all variables which were before low, and every loop iteration has the same effect i.e. increasing/decresing with low, will become monotonic.
           val newMappingWithMonotonicity = initial_mapping.mapping.map { case (name, collection) =>
             if (collection.informationFlow == High()) {
+              // The value before was high, hence we cannot say something about monotonicity.
               (name, newMapping.getUnsafe(name))
             } else {
               bodyDelta.collection.get(name) match {
@@ -291,23 +220,17 @@ object HyperTypeChecker {
                   changeInLoop.mapping.get(name) match {
                     case Some(value) if value.informationFlow == Low() && (value.value == Some(Pos()) || value.value == Some(Neg())) => {
                       val baseHyperTypeCollection = newMapping.getUnsafe(name)
-                      (monotonicity, value.value) match {
-                        case (Some(MonoUp(baseId)), Some(Pos())) => {
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoUp(baseId)))))
+                      value.value match {
+                        case ( Some(Pos())) => {
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono))
                         }
-                        case (Some(MonoUp(baseId)), Some(Neg())) => {
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoDown(baseId)))))
-                        }
-                        case (Some(MonoDown(baseId)), Some(Pos())) => {
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoDown(baseId)))))
-                        }
-                        case (Some(MonoDown(baseId)), Some(Neg())) => {
-                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = MonoTypeCollection(Set(MonoUp(baseId)))))
+                        case ( Some(Neg())) => {
+                          (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono.flip))
                         }
                         case _ => {
                           // If the variable is not monotonic, we keep the old mapping.
                           (name, newMapping.getUnsafe(name))
-                      }
+                        }
                       }
                     }
                     case _ => {
@@ -325,7 +248,7 @@ object HyperTypeChecker {
           return (HyperMapping(newMappingWithMonotonicity), bodyDelta.combine(delta))
         } else {
           // No monotonicity found, return the mapping and delta as is.
-          return (newMapping, delta)
+          return (newMapping, bodyDelta.combine(delta))
         }
       }
 
@@ -353,37 +276,78 @@ object HyperTypeChecker {
     }
   }
 
-  def changeOfExpression(expr: Expr, mapping: HyperMapping, changeInLoopIteration: DeltaCollection): String  = {
+  def findMonotonicityOfLoop(loopGuard : Expr, beforeLoopMapping : HyperMapping, bodyChange : DeltaCollection) : MonoTypeCollection = {
+    println("beforeLoopMapping", beforeLoopMapping)
+    println("bodyChange", bodyChange)
+    val (lhs, op, rhs) = loopGuard match {
+      case BinaryExpr(e1, op, e2) => (e1, op, e2)
+      case _ => throw new Exception("(This should never happen) Loop guard is not a binary expression: " + loopGuard)
+    }
+
+    val lhsChange = changeOfExpression(lhs, beforeLoopMapping, bodyChange)
+    val rhsChange = changeOfExpression(rhs, beforeLoopMapping, bodyChange)
+
+    val lhsDelta = typeCheckExpression(beforeLoopMapping, DeltaCollection(Map()), lhs)
+    val rhsDelta = typeCheckExpression(beforeLoopMapping, DeltaCollection(Map()), rhs)
+
+    (lhsChange, rhsChange) match {
+      case (Some(Pos()), Some(Zero())) => {
+        println("lhs is increasing, rhs is constant")
+        if (op == "<" || op == "<=") {
+          return MonoTypeCollection(rhsDelta._2.mapping.keySet.map(key => MonoUp(Id(key))))
+        }
+      }
+      case (Some(Neg()), Some(Zero())) => {
+        println("lhs is decreasing, rhs is constant")
+        if (op == ">" || op == ">=") {
+          return MonoTypeCollection(rhsDelta._2.mapping.keySet.map(key => MonoDown(Id(key))))
+        }
+      }
+      case (Some(Zero()), Some(Pos())) => {
+        println("lhs is constant, rhs is increasing")
+        if (op == ">" || op == ">=") {
+          return MonoTypeCollection(lhsDelta._2.mapping.keySet.map(key => MonoUp(Id(key))))
+        }
+      }
+      case (Some(Zero()), Some(Neg())) => {
+        println("lhs is constant, rhs is decreasing")
+        if (op == "<" || op == "<=") {
+          return MonoTypeCollection(lhsDelta._2.mapping.keySet.map(key => MonoDown(Id(key))))
+        }
+      }
+      case (_,_) => {
+        return MonoTypeCollection(Set())
+      }
+    }
+    return MonoTypeCollection(Set())
+  }
+
+  def changeOfExpression(expr: Expr, mapping: HyperMapping, changeInLoopIteration: DeltaCollection) : Option[HyperType]  = {
     val dependent = typeCheckExpression(mapping, DeltaCollection(Map()), expr)._2
 
-      val res = dependent.mapping.foldLeft("constant"){ case ( acc, (key, value)) =>
+      val res = dependent.mapping.foldLeft(Some(Zero()) : Option[HyperType]){ case ( acc, (key, value)) =>
         if (changeInLoopIteration.collection.contains(key)) {
           val change = changeInLoopIteration.collection(key).mapping.get(key) match {
             case Some(v) => v
             case None => HyperTypeCollection(informationFlow = High(), value = None)
           }
           if (value.informationFlow == High() || change.informationFlow == High()) {
-            "unknown"
+            None
           } else {
-            val currentDirection = change.value match {
-              case Some(Pos()) => "increasing"
-              case Some(Neg()) => "decreasing"
-              case Some(Zero()) => "constant"
-              case None => "unknown"
-            }
-            val combined = (acc, currentDirection) match {
-              case ("unknown", _) => "unknown"
-              case (_, "unknown") => "unknown"
-              case ("constant", "increasing") => "increasing"
-              case ("constant", "decreasing") => "decreasing"
-              case ("constant", "constant") => "constant"
-              case ("increasing", "decreasing") => "unknown"
-              case ("increasing", "increasing") => "increasing"
-              case ("increasing", "constant") => "increasing"
-              case ("decreasing", "decreasing") => "decreasing"
-              case ("decreasing", "increasing") => "unknown"
-              case ("decreasing", "constant") => "decreasing"
-              case _ => "unknown"
+            val currentDirection = change.value 
+            val combined : Option[HyperType] = (acc, currentDirection) match {
+              case (None, _) => None
+              case (_, None) => None
+              case (Some(Zero()), Some(Pos())) => Some(Pos())
+              case (Some(Zero()), Some(Neg())) => Some(Neg())
+              case (Some(Zero()), Some(Zero())) => Some(Zero())
+              case (Some(Pos()), Some(Neg())) => None
+              case (Some(Pos()), Some(Pos())) => Some(Pos())
+              case (Some(Pos()), Some(Zero())) => Some(Pos())
+              case (Some(Neg()), Some(Neg())) =>  Some(Neg())
+              case (Some(Neg()), Some(Pos())) => None
+              case (Some(Neg()), Some(Zero())) => Some(Neg())
+              case _ => None
             }
             combined
           }

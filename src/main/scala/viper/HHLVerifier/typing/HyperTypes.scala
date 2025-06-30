@@ -255,6 +255,16 @@ case class MonoTypeCollection(val mono: Set[MonoHyperType]) {
       case MonoDown(id) => MonoUp(id)
     })
   }
+
+  def add(monoType: MonoHyperType): MonoTypeCollection = {
+    // Add a new mono type to the collection
+    MonoTypeCollection(this.mono + monoType)
+  }
+  
+  def extend(other: MonoTypeCollection): MonoTypeCollection = {
+    // Extend this mono type collection with another
+    MonoTypeCollection(this.mono ++ other.mono)
+  }
 }
 
 
