@@ -439,6 +439,44 @@ object DeltaMapping {
         }
     }
 
+    def combineConstantOpRight(leftType: HyperTypeCollection, leftDelta: HyperTypeCollection, rightType: HyperTypeCollection, op : String) : Option[HyperTypeCollection] = {
+        op match {
+            case "-" => {
+                // x'' = leftType - x'
+                // What is x'' - x?
+                val infFlowType = leftType.joinInfFlow(rightType);
+                (leftDelta.value) match {
+                    case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    case Some(Zero()) => {
+                        // x' - x = 0
+                        (leftType.value, rightType.value) match {
+                            case (None, _) => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case (_, None) => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case (Some(Pos()), Some(Neg())) | (Some(Pos()), Some(Zero())) | (Some(Zero()), Some(Neg())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            case (Some(Zero()), Some(Pos())) | (Some(Neg()), Some(Pos())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                        }
+                    }
+                    // The other cases are very complicated and currently not supported.
+                    case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                }
+            }
+            case "/" => {
+                // x'' = leftType / x'
+                // What is x'' - x?
+                val infFlowType = leftType.joinInfFlow(rightType);
+                (leftDelta.value) match {
+                    case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    // The other cases are very complicated and currently not supported.
+                    case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                }
+            }
+            case _ => {
+                throw new IllegalArgumentException(s"Unsupported operator: $op")
+            }
+        }
+    }
+
 
     def combineOp(typeLeft : HyperTypeCollection, deltaLeft: DeltaMapping, typeRight: HyperTypeCollection, deltaRight  : DeltaMapping, op: String): DeltaMapping = {
         // Combines two DeltaMapping with a given operator. Returns the delta mapping for the result.
@@ -477,6 +515,11 @@ object DeltaMapping {
                 }
             } else if (op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==" || op == "!=" || op == "&&" || op == "||") {
                 newMapping += (key -> HyperTypeCollection(informationFlow = High(), value = None))
+            } else if (op == "-" || op == "/") {
+                combineConstantOpRight(typeLeft, deltaType, typeRight, op) match {
+                    case Some(result) => newMapping += (key -> result)
+                    case None => {}
+                }
             } else {
                 throw new IllegalArgumentException(s"Unsupported operator: $op")
             }
