@@ -1,0 +1,8 @@
+method absValue(n: Int[absLtOne]) returns (r : Int[absGtOne]) {
+
+   if (n < 0) {
+      r := 1 / n
+   } else {
+      r := 1 / n
+   }
+}

@@ -1,0 +1,15 @@
+method mono(n: Int, k: Int[low]) returns (o: Int[monoUp[n]]) {
+    var i : Int
+    var j : Int
+
+    i := 0
+    j := k
+    o := 0
+    while (i + j < n) {
+
+        o := o + 1
+
+        i := i + 1
+        j := j + 2
+    }
+}

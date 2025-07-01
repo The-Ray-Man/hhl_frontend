@@ -1,0 +1,9 @@
+
+
+method test(n : Int) returns (o: Int[monoUp[n]])
+{
+    o := 0
+    while (o < n) {
+        o := o + 1
+    }
+}
