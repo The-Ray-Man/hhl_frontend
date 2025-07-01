@@ -193,8 +193,8 @@ object HyperTypeChecker {
         } while (newMapping != previous_mapping)
         newMapping = previous_mapping.combine(initial_mapping, valueConditionType.informationFlow)
 
-        // // Some logic here for monotonicity stuff.
-        bodyDelta = deltas.reduce((d1, d2) => d1.concat(d2))
+        // We need to compute how the delta changes in the body of the loop.
+        bodyDelta = deltas.reduce((d1, d2) => d1.combine(d2))
        
 
         val loopMono = HyperTypeChecker.findMonotonicityOfLoop(cond, initial_mapping, bodyDelta)
