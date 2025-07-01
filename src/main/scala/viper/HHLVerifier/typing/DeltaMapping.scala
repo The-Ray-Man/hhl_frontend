@@ -7,6 +7,7 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
 
 
     def combine(other: DeltaCollection): DeltaCollection = {
+        // Combines two DeltaCollection. This should be used to combine two delta collections from two different paths in the program. (like if-else branches)
         val keys = this.collection.keySet.intersect(other.collection.keySet)
         val newMapping = keys.map { key =>
             val xType = this.collection.get(key)
@@ -23,6 +24,62 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
 
         new DeltaCollection(newMapping)
     }; 
+
+    def concat(other: DeltaCollection) : DeltaCollection = {
+        // Combines two DeltaCollection. the `this` Collection happend before the `other` Collection.
+
+        var newDependencies = Map[String, DeltaMapping]()
+        other.collection.map({case (key, values) => {
+            // key, depends on the values. We need to combine the current dependency with the dependency from the previous (this) collection.
+            
+            // mapping that contains the dependencies of key
+            var mapping = Map[String, HyperTypeCollection]()
+            values.mapping.map({case (depKey, depValue) => {
+                // the value of key, depends on the value of depKey with relation depValue.
+                // We now need to find the dependencies of depKey in the previous collection (this.collection)
+
+                if (this.collection.contains(depKey)) {
+                    // The depKey exists in the previous collection. Hence we need to combine the dependencies.
+                    val previousMapping = this.collection(depKey)
+
+                    previousMapping.mapping.map({case (prevKey, prevValue) => {
+                        val infFlowType = prevValue.joinInfFlow(depValue)
+                        val valueType = prevValue.concatValue(depValue)
+                        // TODO mono type etc.
+                        if (mapping.contains(prevKey)) {
+                            // If the key is already in the mapping, we need to combine the dependencies.
+                            val existingDependency = mapping(prevKey)
+                            val collectionBefore = new HyperTypeCollection(infFlowType, valueType)
+                            val combinedInfFlow = existingDependency.joinInfFlow(collectionBefore)
+                            val combinedValue = existingDependency.joinValue(collectionBefore)
+                            mapping += (prevKey -> HyperTypeCollection(informationFlow = combinedInfFlow, value = combinedValue))
+                        } else {
+                            // If the key is not in the mapping, we can just add it.
+                            mapping += (prevKey -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
+                        }
+                    }})
+                } else {
+                    // If the key is not in the previous collection, we can just add the dependency.
+                    mapping += (depKey -> depValue)
+                } 
+                // newDependencies += (key -> mapping)
+            }
+            newDependencies += (key -> DeltaMapping(mapping))
+            
+        })
+        
+
+        // Now we have a new collection with the combined dependencies.
+    }})
+    val leftOverKeys = this.collection.keySet.diff(newDependencies.keySet)
+
+    leftOverKeys.foreach(key => {
+        // If the key is not in the new dependencies, we can just add it.
+        newDependencies += (key -> this.collection(key))
+    })
+    DeltaCollection(newDependencies)
+
+    }
     override def equals(other: Any): Boolean = {
         other match {
             case that: DeltaCollection => {
@@ -44,8 +101,8 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
         PrettyPrinter.formatDeltaCollection(this)
     }
 
-    def isEmpty(): Boolean = {
-        collection.forall { case (_, value) => value.isEmpty() }
+    def isEmpty: Boolean = {
+        collection.isEmpty 
     }
 }
 
@@ -110,8 +167,8 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
             case _ => false
         }
     }
-    def isEmpty(): Boolean = {
-        mapping.forall { case (_, value) => value.isEmpty() }
+    def isEmpty: Boolean = {
+        mapping.isEmpty
     }
 }
 
@@ -123,7 +180,6 @@ object DeltaMapping {
         val keysLeft = deltaLeft.mapping.keySet
         val keysRight = deltaRight.mapping.keySet
         val keysBoth = keysLeft.intersect(keysRight)
-
 
         val keysLeftOnly = keysLeft.diff(keysBoth)
         val keysRightOnly = keysRight.diff(keysBoth)

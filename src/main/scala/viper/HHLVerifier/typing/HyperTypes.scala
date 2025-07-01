@@ -401,6 +401,26 @@ case class HyperTypeCollection(
     }
   }
 
+  def concatValue(after: HyperTypeCollection) : Option[HyperType] = {
+    // This is used to concat dependencies.
+    // this is the older dependency, i.e. y : k -> low, pos . 
+    // after is the dependency we want to add i.e. x: y -> low, zero
+    // Hence x : y -> low, pos
+    (this.value, after.value) match {
+      case (_, None) => None
+      case (Some(Pos()), Some(Pos())) => Some(Pos())
+      case (Some(Neg()), Some(Neg())) => Some(Pos())
+      case (Some(Pos()), Some(Neg())) => Some(Neg())
+      case (Some(Neg()), Some(Pos())) => Some(Neg())
+      case (Some(Zero()), Some(Zero())) => Some(Zero())
+      case (Some(Zero()), Some(Pos())) => Some(Pos())
+      case (Some(Zero()), Some(Neg())) => Some(Neg())
+      case (Some(Pos()), Some(Zero())) => Some(Pos())
+      case (Some(Neg()), Some(Zero())) => Some(Neg())
+      case (_, _) => None
+    }
+  }
+
   def joinAbsValue(other: HyperTypeCollection) : Option[AbsValueHyperType] = {
     (this.absValue, other.absValue) match {
       case (Some(GreaterOne()), Some(GreaterOne())) => Some(GreaterOne())
