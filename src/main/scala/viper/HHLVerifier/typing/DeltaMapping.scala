@@ -170,13 +170,278 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
     def isEmpty: Boolean = {
         mapping.isEmpty
     }
+
 }
 
 
 object DeltaMapping {
 
+    def combineConstantCommutativeOp(firstDelta : HyperTypeCollection, firstType : HyperTypeCollection, secondType: HyperTypeCollection, op: String) : Option[HyperTypeCollection] = {
+        // Combines one part that depends on variable and a constant part. This function is only used for commutative operations like + and *. 
+        // If None is returned, it means that the result is no longer dependent on the variable (e.g. 0 * x)
+        op match {
+            case "+" => {
+                val infFlowType = firstType.joinInfFlow(secondType);
+                (firstDelta.value, secondType.value) match {
+                    case (None, _) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    }
+                    case (_, None) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    }
+                    case (Some(Pos()) , Some(Pos())) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                    }
+                    case (Some(Neg()), Some(Neg())) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                    }
+                    case (_, Some(Zero())) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = firstDelta.value))
+                    }
+                    case (Some(Zero()), _) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = secondType.value))
+                    }
+                    case (_, _) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType))
+                    }
+                } 
+            }
+            case "*" => {
+                val infFlowType = firstType.joinInfFlow(secondType);
+                (firstDelta.value, secondType.value) match {
+                    case (None, _) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    }
+                    case (_, None) => {
+                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    }
+                    case (_ , Some(Zero())) => {
+                        None
+                    }
+                    case (Some(Pos()), Some(value)) => {
+                        // delta = x' - x > 0. What is delta' = x' * second - x?
+                        (value, secondType.absValue) match {
+                            case (_, None) => Some(HyperTypeCollection(informationFlow = infFlowType))
+                            case (Pos(), Some(GreaterOne())) => {
+                                // Multiplication with a value greater than 1. Hence the difference will increase.
+                                Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            }
+                            case (Pos(), Some(One())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            case (_, _) => {
+                                Some(HyperTypeCollection(informationFlow = infFlowType))
+                            }
+                        }
+                    }
+                    case (Some(Neg()), Some(value)) => {
+                        // delta = x' - x < 0. Hence we know x' < x
+                        (value, secondType.absValue) match {
+                            case (_, None) => Some(HyperTypeCollection(informationFlow = infFlowType))
+                            case (Pos(), Some(GreaterOne())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case (Pos(), Some(One())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case (_, _) => Some(HyperTypeCollection(informationFlow = infFlowType))
+                        }
+                    }
+                    case (Some(Zero()), Some(value)) => {
+                        // x' - x = 0. What is x'* second - x?
+                        // x' = x. For multiplication we have:
+                            // increase x'' => pos
+                            // decrease x'' => neg
+                            // unchanged x'' => zero
+
+                        // unchanged x'' multiplication by +1
+                        if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == One()) {
+                            Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Zero())))
+                        } else {
+                            firstType.value match {
+                                case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                case Some(Zero()) => None
+                                case Some(Pos()) => {
+                                    // x' > 0. 
+                                    if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == GreaterOne()) {
+                                        // Multiplication with a value greater than 1. Hence the difference will increase.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                    } else if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == LessOne()) {
+                                        // Multiplication with a value less than 1. Hence the difference will decrease.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                    } else if (value == Neg()) {
+                                        // Multiplication with a negative value. Hence the difference will decrease.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                    } else {
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                    }
+                                }
+                                case Some(Neg()) => {
+                                    // x' < 0
+                                    if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == GreaterOne()) {
+                                        // Multiplication with a value greater than 1. Hence the difference will decrease.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                    } else if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == LessOne()) {
+                                        // Multiplication with a value less than 1. Hence the difference will increase.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                    } else if (value == Neg()) {
+                                        // Multiplication with a negative value. Hence the difference will increase.
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                    } else {
+                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    case (_, _) => {
+                        // Base Case
+                        Some(HyperTypeCollection(informationFlow = infFlowType))
+                    }
+                }
+            }
+            case _ => Some(HyperTypeCollection(informationFlow = High()))
+        }
+    }
+
+    def combineConstantOpLeft(leftDelta : HyperTypeCollection, leftType: HyperTypeCollection, rightType: HyperTypeCollection, op: String): Option[HyperTypeCollection] = {
+        // Combines one part that depends on variable and a constant part. This function is only used for non-commutative operations like - and / where the non-constant part is on the left side.
+        op match {
+            case "-" => {
+                val infFlowType = leftType.joinInfFlow(rightType);
+                (leftDelta.value) match {
+                    case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    case Some(Zero()) => {
+                        // x' - x = 0 and x'' = x' - rightType. What is x'' - x
+                        rightType.value match {
+                            case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Pos()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            case Some(Zero()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Zero())))
+                            case _ => throw new IllegalArgumentException(s"Unsupported value for rightType: ${rightType.value}")
+                        }
+                    }
+                    case Some(Neg()) => {
+                        // x' - x < 0 and x'' = x' - rightType. What is x'' - x?
+                        rightType.value match {
+                            case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Pos()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Zero()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case _ => throw new IllegalArgumentException(s"Unsupported value for rightType: ${rightType.value}")
+                        }
+                    }
+                    case Some(Pos()) => {
+                        // x' - x > 0 and x'' = x' - rightType. What is x'' - x?
+                        rightType.value match {
+                            case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Pos()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            case Some(Zero()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                            case _ => throw new IllegalArgumentException(s"Unsupported value for rightType: ${rightType.value}")
+                        }
+                    }
+                    case _ => throw new IllegalArgumentException(s"Unsupported value for leftDelta: ${leftDelta.value}")  
+                }
+            }
+            case "/" => {
+                val infFlowType = leftType.joinInfFlow(rightType);
+                (leftDelta.value) match {
+                    case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                    case Some(Zero()) => {
+                        // x' - x = 0 and x'' = x' / rightType. What is x'' - x?
+                        rightType.value match {
+                            case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case Some(Pos()) => {
+                                (rightType.absValue) match {
+                                    case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                    // division by one
+                                    case Some(One()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Zero())))
+                                    // division by greater than one
+                                    case Some(GreaterOne()) => {
+                                        leftType.value match {
+                                            case Some(Zero()) => None
+                                            case Some(Pos()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                            case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                        }
+                                    
+                                    }
+                                    // division by less than one but positive
+                                    case Some(LessOne()) => {
+                                        leftType.value match {
+                                            case Some(Zero()) => None
+                                            case Some(Pos()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                            case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                        }
+                                    }
+                                }
+                            }
+                            case Some(Neg()) => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                            case _ => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                        }
+                    }
+                    case Some(Pos()) => {
+                        // x' - x > 0 and x'' = x' / rightType. What is x'' - x
+                        // x' > x. We need to find divisions which increase the value of x'' or leave it unchanged.
+                        if (
+                            // Case one: left type is positive
+                            leftType.value.isDefined && leftType.value.get == Pos() && (
+                                // Divition by one or smaller one, results in a greater value
+                                rightType.value.isDefined && rightType.value.get == Pos() && (
+                                    rightType.absValue.isDefined && rightType.absValue.get == One() ||
+                                    rightType.absValue.isDefined && rightType.absValue.get == LessOne()
+                                )
+                            ) ||
+                            leftType.value.isDefined && leftType.value.get == Neg() && (
+                                // Division by one or greater than one will result in a greater value after division.
+                                rightType.value.isDefined && rightType.value.get == Pos() && (
+                                    rightType.absValue.isDefined && rightType.absValue.get == One() ||
+                                    rightType.absValue.isDefined && rightType.absValue.get == GreaterOne()
+                                ) || 
+                                // Division by a negative value, results in a greater value
+                                rightType.value.isDefined && rightType.value.get == Neg()
+
+                            )
+                        ) {
+                            Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                        } else {
+                            Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                        }
+                    }
+                    case Some(Neg()) => {
+                        // x' - x < 0 and x'' = x' / rightType. What is x'' - x?
+                        // x' < x. We need to find divisions which decrease the value of x'' or leave it unchanged.
+                        if (
+                            // Case one: left type is positive
+                            leftType.value.isDefined && leftType.value.get == Pos() && (
+                                // Division by one or greater than one will result in a smaller value after division.
+                                rightType.value.isDefined && rightType.value.get == Pos() && (
+                                    rightType.absValue.isDefined && rightType.absValue.get == One() ||
+                                    rightType.absValue.isDefined && rightType.absValue.get == GreaterOne()
+                                ) || 
+                                // Division by a negative value, results in a smaller value
+                                rightType.value.isDefined && rightType.value.get == Neg()
+                            ) ||
+                            leftType.value.isDefined && leftType.value.get == Neg() && (
+                                // Division by one or smaller than one, results in a smaller value
+                                rightType.value.isDefined && rightType.value.get == Pos() && (
+                                    rightType.absValue.isDefined && rightType.absValue.get == One() ||
+                                    rightType.absValue.isDefined && rightType.absValue.get == LessOne()
+                                )
+                            )
+                        ) {
+                            Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                        } else {
+                            Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                        }
+                    }
+                }
+            }
+            case _ => {
+                throw new IllegalArgumentException(s"Unsupported operator: $op")
+            }
+        }
+    }
+
 
     def combineOp(typeLeft : HyperTypeCollection, deltaLeft: DeltaMapping, typeRight: HyperTypeCollection, deltaRight  : DeltaMapping, op: String): DeltaMapping = {
+        // Combines two DeltaMapping with a given operator. Returns the delta mapping for the result.
         val keysLeft = deltaLeft.mapping.keySet
         val keysRight = deltaRight.mapping.keySet
         val keysBoth = keysLeft.intersect(keysRight)
@@ -186,42 +451,41 @@ object DeltaMapping {
         var newMapping = Map[String, HyperTypeCollection]()
         keysLeftOnly.foreach(key => {
             val deltaType = deltaLeft.mapping(key);
-            var infFlowType = deltaType.joinInfFlow(typeRight);
-            val valueType = deltaType.combineValueOp(typeRight, op);
-            valueType match {
-                case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Low()
+            if (op == "+" || op == "*") {
+                combineConstantCommutativeOp(deltaType, typeLeft, typeRight, op) match {
+                    case Some(result) => newMapping += (key -> result)
+                    case None => {}
                 }
-                case _ => {}
+            } else if (op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==" || op == "!=" || op == "&&" || op == "||") {
+                newMapping += (key -> HyperTypeCollection(informationFlow = High(), value = None))
+            } else if (op == "-" || op == "/") {
+                combineConstantOpLeft(deltaType, typeLeft, typeRight, op) match {
+                    case Some(result) => newMapping += (key -> result)
+                    case None => {}
+                }
+            } else {
+                throw new IllegalArgumentException(s"Unsupported operator: $op")
             }
-            newMapping += (key -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
         });
 
         keysRightOnly.foreach(key => {
             val deltaType = deltaRight.mapping(key);
-            var infFlowType = typeLeft.joinInfFlow(deltaType);
-            val valueType = typeLeft.combineValueOp(deltaType, op);
-            valueType match {
-                case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Low()
+            if (op == "+" || op == "*") {
+                combineConstantCommutativeOp(deltaType, typeLeft, typeRight, op) match {
+                    case Some(result) => newMapping += (key -> result)
+                    case None => {}
                 }
-                case _ => {}
+            } else if (op == "<" || op == "<=" || op == ">" || op == ">=" || op == "==" || op == "!=" || op == "&&" || op == "||") {
+                newMapping += (key -> HyperTypeCollection(informationFlow = High(), value = None))
+            } else {
+                throw new IllegalArgumentException(s"Unsupported operator: $op")
             }
-            newMapping += (key -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
         });
 
         keysBoth.foreach(key => {
-            val deltaTypeLeft = deltaLeft.mapping(key);
-            val deltaTypeRight = deltaRight.mapping(key);
-            var infFlowType = deltaTypeLeft.joinInfFlow(deltaTypeRight);
-            val valueType = deltaTypeLeft.combineValueOp(deltaTypeRight, op);
-            valueType match {
-                case Some(True()) | Some(False()) | Some(Zero()) => {
-                    infFlowType = Low()
-                }
-                case _ => {}
-            }
-            newMapping += (key -> HyperTypeCollection(informationFlow = infFlowType, value = valueType))
+            // This is for stuff like this: (x - 1 + y) {+,-,*,/} (x + 1)
+            // This becomes very complicated. Currently we do not support this.
+            newMapping += (key -> HyperTypeCollection(informationFlow = High(), value = None))
         });
         new DeltaMapping(newMapping)
     }
