@@ -5,6 +5,9 @@ import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, A
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.UnfoldStmt
+import viper.HHLVerifier.typing.MonoHyperType
+import viper.HHLVerifier.typing.MonoDown
+import viper.HHLVerifier.typing.MonoUp
 
 object SymbolChecker {
   // This map is used to keep track of the declared program variables + assertion variables for each method
@@ -240,12 +243,22 @@ object SymbolChecker {
         stmt.paramsToArgs = paramNames.zip(argNames).toMap
         (varsInArgs, Seq.empty)
 
-      case FoldStmt(_, variable) => {
-        (checkSymbolsExpr(variable, false, false), Seq.empty)
+      case FoldStmt(ty, variable) => {
+        val newSymbols = ty match {
+          case MonoDown(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
+          case MonoUp(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
+          case _ => Seq.empty
+        }
+        (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
       }
 
-      case UnfoldStmt(_, variable) => {
-        (checkSymbolsExpr(variable, false, false), Seq.empty)
+      case UnfoldStmt(ty, variable) => {
+        val newSymbols = ty match {
+          case MonoDown(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
+          case MonoUp(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
+          case _ => Seq.empty
+        }
+        (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
       }
 
 

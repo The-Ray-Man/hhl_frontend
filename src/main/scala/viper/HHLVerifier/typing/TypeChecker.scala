@@ -148,9 +148,17 @@ object TypeChecker {
         })
         if (!res) throw new Logger("The types of the arguments in the call to method " + name + " do not match with the types of the method parameters").addTitle("Type Checker Error").addOffset((call.offsetLeft, call.offsetRight))
       case fold@FoldStmt(hty, id)  => {
+        hty match {
+          case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
+          case MonoUp(ids) => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
+        }
         typeCheckExprWithChecks(fold, id, false)
       } 
       case unfold@UnfoldStmt(hty, id) => {
+        hty match {
+          case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
+          case MonoUp(ids) => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
+        }
         typeCheckExprWithChecks(unfold, id, false)
 
       } 
