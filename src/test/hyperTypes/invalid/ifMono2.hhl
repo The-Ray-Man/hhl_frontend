@@ -1,0 +1,7 @@
+method foo(x: Int) returns (o: Int[monoDown[x]]) {
+    o := x
+    if (x < 0) {
+        o := o + 2
+    }
+
+}

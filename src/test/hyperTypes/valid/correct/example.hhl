@@ -1,0 +1,9 @@
+method example(x : Int[monoUp[x]], y : Int[monoUp[y]]) returns (o : Int[monoUp[x,y]]) {
+
+
+    if (x < 5) {
+        
+    }
+
+    o := x + y
+}
