@@ -39,8 +39,8 @@ object Main {
       return
     }
 
-    // val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/WhileLoopSkip.hhl"
-    var programAbsPath = args(0)
+    // var programAbsPath = args(0)
+    var programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/mono4.hhl"
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
     val program = programSource.mkString
@@ -63,7 +63,7 @@ object Main {
     Generator.autoSelectRules = true
     new Logger(f"The input program is read from $programAbsPath.").log()
 
-    try {
+    // try {
       // [DOC] parse program
       val t0 = System.nanoTime()
       val res = fastparse.parse(program, Parser.program(_))
@@ -136,15 +136,15 @@ object Main {
         println(extra.trace().longMsg)
         new Logger(extra.trace().msg, Logger.ERR).addTitle("Parser Error").addOffset((pos, pos+10)).log()
       }
-    } catch {
-      case e: VerifierException =>
-        verified = 1
-        println(e.errMsg)
-      case e: Logger =>
-        e.log()
-      case e: Exception =>
-        verified = 1
-        new Logger(e.getMessage, Logger.ERR).addTitle("Unkown Exception").log()
-    }
+    // } catch {
+    //   case e: VerifierException =>
+    //     verified = 1
+    //     println(e.errMsg)
+    //   case e: Logger =>
+    //     e.log()
+    //   case e: Exception =>
+    //     verified = 1
+    //     new Logger(e.getMessage, Logger.ERR).addTitle("Unkown Exception").log()
+    // }
   }
 }

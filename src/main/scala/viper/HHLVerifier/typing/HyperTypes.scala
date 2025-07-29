@@ -209,7 +209,13 @@ case class MonoTypeCollection(val mono: MonoHyperType) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: MonoTypeCollection => this.mono == that.mono
+      case that: MonoTypeCollection => {
+        (this.mono, that.mono) match {
+          case (MonoUp(ids1), MonoUp(ids2)) => ids1 == ids2
+          case (MonoDown(ids1), MonoDown(ids2)) => ids1 == ids2
+          case _ => false
+        }
+      }
       case _ => false
     }
   }
@@ -433,7 +439,15 @@ case class HyperTypeCollection(
   def joinMono(other: HyperTypeCollection, pc: HyperType): Option[MonoTypeCollection] = {
     // used to combine traces after i.e. if-else branch
 
-    if (pc == Low() && this == other) {
+    if (this.value.isDefined && this.value.get == Zero()) {
+      return other.mono
+    }
+
+    if (other.value.isDefined && other.value.get == Zero()) {
+      return this.mono
+    }
+
+    if (pc == Low() && this == other ) {
       // If the program counter is low, we can just return the mono type of this collection
       return this.mono
 

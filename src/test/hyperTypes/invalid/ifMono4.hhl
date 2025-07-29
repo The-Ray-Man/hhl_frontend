@@ -1,0 +1,9 @@
+
+
+method ifMono3(x: Int, y : Int[pos]) returns (o: Int[monoDown[x]]) {
+    o := 1
+    if (x < 0) {
+        o := o + y
+    }
+
+}

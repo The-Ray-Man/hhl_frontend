@@ -1,0 +1,10 @@
+
+
+method ifMono3(x: Int[monoUp[x]], y : Int[low, pos]) returns (o: Int[monoUp[x]]) {
+    o := x
+    if (0 < x) {
+        o := o + y
+        
+    }
+
+}

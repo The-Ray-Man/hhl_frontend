@@ -1,4 +1,4 @@
-method example(x : Int[monoUp[x]], y : Int[monoUp[y]]) returns (o : Int[monoUp[x,y]]) {
+method example(x : Int, y : Int[monoUp[y]]) returns (o : Int[monoUp[x,y]]) {
 
 
     if (x < 5) {
