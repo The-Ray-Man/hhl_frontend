@@ -409,9 +409,7 @@ case class HyperTypeCollection(
     (this.value, after.value) match {
       case (_, None) => None
       case (Some(Pos()), Some(Pos())) => Some(Pos())
-      case (Some(Neg()), Some(Neg())) => Some(Pos())
-      case (Some(Pos()), Some(Neg())) => Some(Neg())
-      case (Some(Neg()), Some(Pos())) => Some(Neg())
+      case (Some(Neg()), Some(Neg())) => Some(Neg())
       case (Some(Zero()), Some(Zero())) => Some(Zero())
       case (Some(Zero()), Some(Pos())) => Some(Pos())
       case (Some(Zero()), Some(Neg())) => Some(Neg())
