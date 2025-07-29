@@ -151,6 +151,7 @@ object TypeChecker {
         hty match {
           case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
           case MonoUp(ids) => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
+          case _ => {}
         }
         typeCheckExprWithChecks(fold, id, false)
       } 
@@ -158,6 +159,7 @@ object TypeChecker {
         hty match {
           case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
           case MonoUp(ids) => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
+          case _ => {}
         }
         typeCheckExprWithChecks(unfold, id, false)
 
