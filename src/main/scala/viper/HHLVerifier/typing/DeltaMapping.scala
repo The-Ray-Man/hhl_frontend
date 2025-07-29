@@ -181,7 +181,7 @@ object DeltaMapping {
         // If None is returned, it means that the result is no longer dependent on the variable (e.g. 0 * x)
         op match {
             case "+" => {
-                val infFlowType = firstType.joinInfFlow(secondType);
+                val infFlowType = firstDelta.joinInfFlow(secondType);
                 (firstDelta.value, secondType.value) match {
                     case (None, _) => {
                         Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
@@ -207,7 +207,7 @@ object DeltaMapping {
                 } 
             }
             case "*" => {
-                val infFlowType = firstType.joinInfFlow(secondType);
+                val infFlowType = firstDelta.joinInfFlow(secondType);
                 (firstDelta.value, secondType.value) match {
                     case (None, _) => {
                         Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
@@ -302,7 +302,7 @@ object DeltaMapping {
         // Combines one part that depends on variable and a constant part. This function is only used for non-commutative operations like - and / where the non-constant part is on the left side.
         op match {
             case "-" => {
-                val infFlowType = leftType.joinInfFlow(rightType);
+                val infFlowType = leftDelta.joinInfFlow(rightType);
                 (leftDelta.value) match {
                     case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
                     case Some(Zero()) => {
@@ -339,7 +339,7 @@ object DeltaMapping {
                 }
             }
             case "/" => {
-                val infFlowType = leftType.joinInfFlow(rightType);
+                val infFlowType = leftDelta.joinInfFlow(rightType);
                 (leftDelta.value) match {
                     case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
                     case Some(Zero()) => {
@@ -444,7 +444,7 @@ object DeltaMapping {
             case "-" => {
                 // x'' = leftType - x'
                 // What is x'' - x?
-                val infFlowType = leftType.joinInfFlow(rightType);
+                val infFlowType = leftDelta.joinInfFlow(rightType);
                 (leftDelta.value) match {
                     case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
                     case Some(Zero()) => {
@@ -464,7 +464,7 @@ object DeltaMapping {
             case "/" => {
                 // x'' = leftType / x'
                 // What is x'' - x?
-                val infFlowType = leftType.joinInfFlow(rightType);
+                val infFlowType = leftDelta.joinInfFlow(rightType);
                 (leftDelta.value) match {
                     case None => Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
                     // The other cases are very complicated and currently not supported.
