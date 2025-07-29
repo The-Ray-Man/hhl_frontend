@@ -1,0 +1,11 @@
+method mono(n: Int, x : Int[monoUp[n]]) returns (o: Int[monoUp[n]]) {
+    
+    var i : Int
+    i := x
+
+    while (i < n) {
+        i := i + 1
+    }
+
+    o := i
+}

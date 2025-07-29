@@ -137,7 +137,7 @@ object HyperTypeChecker {
             val (mappingIf, deltaIf) = typeCheckStmt(mapping, DeltaCollection(Map.empty), ifStmt, new_pc)
             val (mappingElse, deltaElse) = typeCheckStmt(mapping, DeltaCollection(Map.empty), elseStmt, new_pc)
             val newMapping = mappingIf.combine(mappingElse, path_condition)
-            val deltaBranch = deltaIf.combine(deltaElse)
+            val deltaBranch = deltaIf.combine(deltaElse, condType)
 
             val deltaNew = delta.concat(deltaBranch)
 
@@ -162,15 +162,12 @@ object HyperTypeChecker {
         (newMapping, delta)
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
-        val (valueConditionType, deltaSub) = typeCheckExpression(mapping, delta, cond)
+        var (valueConditionType, deltaSub) = typeCheckExpression(mapping, delta, cond)
         if (valueConditionType.value == Some(False())) {
           // If the condition is false, we can skip the loop
           return (mapping, delta)
         }
-        var new_pc_mono : Option[MonoTypeCollection] = None
-        if (pc.mono.isEmpty) {
-          new_pc_mono = valueConditionType.mono
-        }
+
 
         val initial_mapping = mapping
         var previous_mapping = mapping
@@ -183,30 +180,62 @@ object HyperTypeChecker {
           previous_mapping = newMapping
           val (condType, _) = typeCheckExpression(newMapping, DeltaCollection(Map()), cond)
           val new_pc_inf = condType.joinInfFlow(pc);
-          val new_pc = HyperTypeCollection(informationFlow=new_pc_inf)
-          val res  = typeCheckStmt(newMapping, delta, body, new_pc)
+          valueConditionType = HyperTypeCollection(informationFlow=new_pc_inf)
+          val res  = typeCheckStmt(newMapping, delta, body, valueConditionType)
           newMapping = res._1
           val resDelta = typeCheckStmt(mappingForDelta, DeltaCollection(Map()), body, pc)
           mappingForDelta = resDelta._1
           deltas = deltas :+ resDelta._2
-          newMapping = newMapping.combine(previous_mapping, new_pc_inf)
+          newMapping = newMapping.combine(previous_mapping, valueConditionType.informationFlow)
         } while (newMapping != previous_mapping)
         newMapping = previous_mapping.combine(initial_mapping, valueConditionType.informationFlow)
 
         // We need to compute how the delta changes in the body of the loop.
-        bodyDelta = deltas.reduce((d1, d2) => d1.combine(d2))
+        bodyDelta = deltas.reduce((d1, d2) => d1.concat(d2))
        
 
         val loopMono = HyperTypeChecker.findMonotonicityOfLoop(cond, initial_mapping, bodyDelta)
-
+        println("Monotonicity of loop condition", loopMono)
         // // Variables that are present in the condition of the while loop.
         
         if (loopMono.nonEmpty) {
           // After the loop, all variables which were before low, and every loop iteration has the same effect i.e. increasing/decresing with low, will become monotonic.
           val newMappingWithMonotonicity = initial_mapping.mapping.map { case (name, collection) =>
             if (collection.informationFlow == High()) {
-              // The value before was high, hence we cannot say something about monotonicity.
+              // If the value was monotonic before, and the loop condition is monotonic as well, we may be able to keep the monotonicity.
+
+              if (collection.mono.nonEmpty) {
+                bodyDelta.collection.get(name) match {
+                  case Some(changeInLoopMapping) => {
+                    val changeInLoop = changeInLoopMapping.mapping.get(name).get
+                    val baseHyperTypeCollection = newMapping.getUnsafe(name)
+                    (collection.mono.get.mono, loopMono.get.mono, changeInLoop.informationFlow, changeInLoop.value) match {
+                      case (MonoUp(beforeLoop), MonoUp(loopMonoVars), Low(), Some(Pos())) if beforeLoop == loopMonoVars => {
+                        (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono))
+                      }
+                      case (MonoDown(beforeLoop), MonoDown(loopMonoVars), Low(), Some(Pos())) if beforeLoop == loopMonoVars => {
+                        (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono))
+                      }
+                      case (MonoUp(beforeLoop), MonoDown(loopMonoVars), Low(), Some(Neg())) if beforeLoop == loopMonoVars => {
+                        (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(MonoTypeCollection(MonoUp(beforeLoop)))))
+                      }
+                      case (MonoDown(beforeLoop), MonoUp(loopMonoVars), Low(), Some(Neg())) if beforeLoop == loopMonoVars => {
+                        (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(MonoTypeCollection(MonoDown(beforeLoop)))))
+                      }
+                      case _ => {
+                        // Here we could add even more cases
+                        (name, newMapping.getUnsafe(name))
+                      }
+
+                    }
+                  }
+                  case None => {
+                    (name, newMapping.getUnsafe(name))
+                  }
+                }
+              } else {
               (name, newMapping.getUnsafe(name))
+              }
             } else {
               bodyDelta.collection.get(name) match {
                 case Some(changeInLoop) => {
@@ -215,10 +244,10 @@ object HyperTypeChecker {
                       if (value.informationFlow == Low() && (value.value == Some(Pos()) || value.value == Some(Neg()))) {
                         val baseHyperTypeCollection = newMapping.getUnsafe(name)
                         value.value match {
-                          case ( Some(Pos())) => {
+                          case (Some(Pos())) => {
                             (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = loopMono))
                           }
-                          case ( Some(Neg())) => {
+                          case (Some(Neg())) => {
                             (name, HyperTypeCollection(informationFlow = baseHyperTypeCollection.informationFlow, value = baseHyperTypeCollection.value, mono = Some(loopMono.get.flip)))
                           }
                           case _ => {
@@ -246,10 +275,10 @@ object HyperTypeChecker {
               }
             }
           }
-          return (HyperMapping(newMappingWithMonotonicity), bodyDelta.combine(delta))
+          return (HyperMapping(newMappingWithMonotonicity), bodyDelta.combine(delta, valueConditionType))
         } else {
           // No monotonicity found, return the mapping and delta as is.
-          return (newMapping, bodyDelta.combine(delta))
+          return (newMapping, bodyDelta.combine(delta, valueConditionType))
         }
       }
 
@@ -393,7 +422,7 @@ object HyperTypeChecker {
         if (delta.collection.contains(name)) {
           return (hyperType, delta.collection(name))
         } else {
-          return (hyperType, new DeltaMapping(Map(name -> new HyperTypeCollection(informationFlow = hyperType.informationFlow, value = Some(Zero())))))
+          return (hyperType, new DeltaMapping(Map(name -> new HyperTypeCollection(informationFlow = Low(), value = Some(Zero())))))
         }
       }
       case BinaryExpr(e1, op, e2) => 
