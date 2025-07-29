@@ -6,7 +6,7 @@ import viper.HHLVerifier.management.PrettyPrinter
 case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
 
 
-    def combine(other: DeltaCollection): DeltaCollection = {
+    def combine(other: DeltaCollection, condType : HyperTypeCollection): DeltaCollection = {
         // Combines two DeltaCollection. This should be used to combine two delta collections from two different paths in the program. (like if-else branches)
         val keys = this.collection.keySet.intersect(other.collection.keySet)
         val newMapping = keys.map { key =>
@@ -14,7 +14,7 @@ case class DeltaCollection(val collection: Map[String,DeltaMapping]) {
             val yType = other.collection.get(key)
             (xType, yType) match {
                 case (Some(x), Some(y)) => {
-                    key -> x.combine(y)
+                    key -> x.combine(y, condType)
                 }
                 case _ => {
                     throw new NoSuchElementException(s"Key $key not found in some mapping")
@@ -120,7 +120,7 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
         new DeltaMapping(newMapping)
     }
 
-    def combine(other: DeltaMapping) : DeltaMapping = {
+    def combine(other: DeltaMapping, condType: HyperTypeCollection) : DeltaMapping = {
         val keys = this.mapping.keySet.intersect(other.mapping.keySet)
 
         val newMapping = keys.map { key =>
@@ -133,7 +133,7 @@ case class DeltaMapping(val mapping: Map[String, HyperTypeCollection]) {
                         case Some(True()) | Some(False()) | Some(Zero()) => {
                             Low()
                         }
-                        case _ => x.joinInfFlow(y)
+                        case _ => HyperTypeCollection(informationFlow=x.joinInfFlow(y)).joinInfFlow(condType)
                     }
 
                     key -> HyperTypeCollection(informationFlow = infFlow, value = value);
