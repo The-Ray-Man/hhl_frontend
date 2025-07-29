@@ -1,0 +1,9 @@
+method mono(n: Int, x:Int[monoUp[n]], y: Int[monoUp[n]]) returns (o: Int[monoUp[n]]) {
+    
+    o := x
+
+    if (x < n) {
+        o := y
+    }
+
+}
