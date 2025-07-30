@@ -1,0 +1,9 @@
+method test(v0: Int[low],v1: Int[monoDown[id]],id: Int[]) returns (o : Int) {
+unfold (low) v0
+unfold (monoDown[id]) v1
+
+o := v0 + v1
+fold (monoDown[id]) o
+
+        }
+        

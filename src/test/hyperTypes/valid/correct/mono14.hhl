@@ -1,0 +1,8 @@
+method mono(n: Int) returns (o: Int[monoDown[n]]) {
+    
+    o := (-2)
+
+    o := o * n
+
+
+}

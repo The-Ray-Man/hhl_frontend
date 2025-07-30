@@ -1,0 +1,9 @@
+method mono(n: Int, x:Int[low]) returns (o: Int[monoDown[n]]) {
+    
+    o := x
+
+    if (o < n) {
+        o :=  o - 2
+    }
+
+}

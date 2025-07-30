@@ -1,0 +1,11 @@
+method test(v0: Int[absLtOne,pos],v1: Int[absLtOne,neg],id: Int[]) returns (o : Int) {
+unfold (absLtOne) v0
+unfold (pos) v0
+unfold (absLtOne) v1
+unfold (neg) v1
+
+o := v0 + v1
+fold (absLtOne) o
+
+        }
+        
