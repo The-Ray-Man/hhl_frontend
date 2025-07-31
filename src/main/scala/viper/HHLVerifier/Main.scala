@@ -13,6 +13,7 @@ import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
 import viper.HHLVerifier.typing.{HyperTypeChecker}
 import viper.HHLVerifier.test.HyperTest
 import viper.HHLVerifier.typing.HyperTranslate
+import viper.HHLVerifier.test.RuleSoundnessTests
 
 /** Main Method */
 object Main {
@@ -39,7 +40,12 @@ object Main {
       return
     }
 
-    // val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/WhileLoopSkip.hhl"
+    if (args.contains("--testRules")) {
+      RuleSoundnessTests.main()
+      return
+    }
+
+    // val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/mono2.hhl"
     var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
