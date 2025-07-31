@@ -8,6 +8,7 @@ import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.ExpressionOperator
 import viper.HHLVerifier.typing.rules.DeltaContains
+import viper.HHLVerifier.typing.rules.BinaryExpressionDerivationRule
 
 
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
@@ -56,7 +57,7 @@ case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction {
 }
 
 
-case class AdditionDerivationRule() extends ExpressionDerivationRule {
+case class AdditionDerivationRule() extends BinaryExpressionDerivationRule {
 
   override val operator: ExpressionOperator = ExpressionOperator.Add
 
