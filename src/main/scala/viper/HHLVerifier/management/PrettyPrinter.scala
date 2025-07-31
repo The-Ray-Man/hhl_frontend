@@ -160,7 +160,7 @@ object PrettyPrinter {
 
   def formatDeltaMapping(delta: DeltaMapping) : String = {
     delta.collection.map { case (key, value) =>
-      s"$key: ${formatDeltaMapping(value)}"
+      s"$key: ${formatDeltaCollection(value)}"
     }.mkString(", ")
   }
 

@@ -3,7 +3,7 @@ package viper.HHLVerifier.typing
 import viper.HHLVerifier.ast.Stmt
 import viper.HHLVerifier.management.PrettyPrinter
 
-case class DeltaMapping(val collection: Map[String,DeltaMapping]) {
+case class DeltaMapping(val collection: Map[String,DeltaCollection]) {
 
     override def equals(other: Any): Boolean = {
         other match {
