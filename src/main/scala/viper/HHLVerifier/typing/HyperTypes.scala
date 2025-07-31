@@ -258,7 +258,7 @@ case class GreaterOne() extends AbsValueHyperType {
   def semantic_vpr(id: Id, s0VarName: String, STemp: vpr.LocalVar) : (Option[vpr.Exp], Seq[vpr.LocalVar]) = {
     val s0 = State.localVarDecl(s0VarName)
     val stmt = vpr.Forall(Seq(s0), Seq.empty, vpr.Implies(SetState.getInSetApp(Seq(s0.localVar, STemp)), 
-      vpr.And(vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(-1)())(),vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(1)())())()
+      vpr.Or(vpr.LtCmp(State.get(s0.localVar, id), vpr.IntLit(-1)())(),vpr.GtCmp(State.get(s0.localVar, id), vpr.IntLit(1)())())()
     )())()
     (Some(stmt), Seq.empty)
   }
@@ -267,7 +267,7 @@ case class LessOne() extends AbsValueHyperType {
     def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
-    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(BinaryExpr(LookupExpr(s1_assert, id),">",UnaryExpr("-",Num(1))), "||", BinaryExpr(LookupExpr(s1_assert, id),"<",Num(1)))))
+    val stmt = Assertion("forall", Seq(s1), ImpliesExpr(StateExistsExpr(s1_assert, false) ,BinaryExpr(BinaryExpr(LookupExpr(s1_assert, id),">",UnaryExpr("-",Num(1))), "&&", BinaryExpr(LookupExpr(s1_assert, id),"<",Num(1)))))
     return stmt
   }
 
