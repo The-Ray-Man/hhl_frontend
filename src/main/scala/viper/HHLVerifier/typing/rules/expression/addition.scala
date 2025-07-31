@@ -1,13 +1,13 @@
-package viper.HHLVerifier.test.rules
+package viper.HHLVerifier.typing.rules.expression
 
-import viper.HHLVerifier.test.binaryFunctionImplication
-import viper.HHLVerifier.test.binaryCombineFunction
-import viper.HHLVerifier.test.ElementOf
+import viper.HHLVerifier.typing.rules.binaryFunctionImplication
+import viper.HHLVerifier.typing.rules.binaryCombineFunction
+import viper.HHLVerifier.typing.rules.ElementOf
 import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.test.ExpressionDerivationRule
-import viper.HHLVerifier.test.ExpressionOperator
-import viper.HHLVerifier.test.DeltaContains
+import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
+import viper.HHLVerifier.typing.rules.ExpressionOperator
+import viper.HHLVerifier.typing.rules.DeltaContains
 
 
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
