@@ -1,0 +1,63 @@
+package viper.HHLVerifier.test.rules
+
+import viper.HHLVerifier.test.binaryFunctionImplication
+import viper.HHLVerifier.test.binaryCombineFunction
+import viper.HHLVerifier.test.ElementOf
+import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
+import viper.HHLVerifier.ast.Id
+import viper.HHLVerifier.test.ExpressionDerivationRule
+import viper.HHLVerifier.test.ExpressionOperator
+
+
+case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
+    val rules = Seq(
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low()))),
+        // binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(), Seq(ElementOf(Low()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(One())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One()))), 
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One())), Seq(), Seq(ElementOf(One()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()))),
+    )
+}
+
+
+case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction {
+    val rules = Seq()
+}
+
+
+case class AdditionDerivationRule() extends ExpressionDerivationRule {
+
+  override val operator: ExpressionOperator = ExpressionOperator.Add
+
+  override val combineFunctionHypertype: binaryCombineFunction = AdditionCombineFunctionHypertype()
+
+  override val combineFunctionDelta: binaryCombineFunction = AdditionCombineFunctionDeltatype()
+
+}

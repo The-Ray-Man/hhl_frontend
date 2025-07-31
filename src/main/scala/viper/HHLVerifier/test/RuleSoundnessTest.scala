@@ -114,7 +114,6 @@ abstract class ExpressionDerivationRule {
             val program = HHLProgram(Seq(
                 Method("test", Seq(e1,e1prime, e2, e2prime, monoId), Seq(output), preconditions, conclusion, CompositeStmt(Seq(AssignStmt(output, operator.expression(e1,e2)))))
             ))
-            println(program)
 
             testPrograms :+= program
 
@@ -127,63 +126,14 @@ abstract class ExpressionDerivationRule {
 
 
 case class binaryFunctionImplication(e1Hypertype : Seq[Condition], e1Delta : Seq[Condition], e2Hypertype : Seq[Condition], e2Delta : Seq[Condition], conclusion: Seq[Condition]) {}
-
+case class unaryFunctionImplication(eHypertype : Seq[Condition], eDelta : Seq[Condition], conclusion: Seq[Condition]) {}
 
 abstract class binaryCombineFunction {
     val rules : Seq[binaryFunctionImplication]
 }
 
-case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
-    val rules = Seq(
-        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low()))),
-        // binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(), Seq(ElementOf(Low()))),
-        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
-        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
-        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()))),
-        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()))),
-        binaryFunctionImplication(Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
-        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
-        binaryFunctionImplication(Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
-        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
-        binaryFunctionImplication(Seq(ElementOf(One())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One()))), 
-        binaryFunctionImplication(Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One())), Seq(), Seq(ElementOf(One()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()))),
-        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
-        binaryFunctionImplication(Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(LessOne()))),
-        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()))),
-    )
-}
-
-
-case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction {
-    val rules = Seq()
-}
-
-
-case class AdditionDerivationRule() extends ExpressionDerivationRule {
-
-  override val operator: ExpressionOperator = ExpressionOperator.Add
-
-  override val combineFunctionHypertype: binaryCombineFunction = AdditionCombineFunctionHypertype()
-
-  override val combineFunctionDelta: binaryCombineFunction = AdditionCombineFunctionDeltatype()
-
+abstract class unaryCombineFunction {
+    val rules : Seq[unaryFunctionImplication]
 }
 
 
@@ -410,7 +360,7 @@ object RuleSoundnessTests {
 
 
     def main() : Unit = {
-        testExpressionRule(AdditionDerivationRule())
+        testExpressionRule(rules.AdditionDerivationRule())
         return
         HyperTypeExpressionAddition.generateTestPrograms
 
