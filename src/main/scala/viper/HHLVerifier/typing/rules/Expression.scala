@@ -15,22 +15,38 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.DeltaMapping
 
 
-trait Condition {
+trait Condition {}
+
+trait HyperTypeCondition extends Condition {
     def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean
+}
+
+trait DeltaCondition extends Condition {
     def deltaApplies(deltaCollection: DeltaCollection): Boolean
 }
-case class ElementOf(val hyperType: HyperType) extends Condition {
+
+case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
     override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = false
+}
+case class DeltaContains(val variable : Id, val hyperType: HyperType) extends DeltaCondition {
     override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
 }
-case class DeltaContains(val variable : Id, val hyperType: HyperType) extends Condition {
-    override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = false
+case class VarNotInDelta(val variable: Id) extends DeltaCondition {
     override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
 }
-case class VarNotInDelta(val variable: Id) extends Condition {
-    override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = false
-    override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
-}
+
+trait Conclusion {}
+
+
+trait HyperTypeConclusion extends Conclusion {}
+
+trait DeltaConclusion extends Conclusion {}
+
+
+case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {}
+
+case class VarHasDeltaType(val variable: Id, val hyperType: HyperType) extends DeltaConclusion {}
+
 
 sealed trait ExpressionOperator {
     def expression(e1: Expr, e2: Expr): Expr
@@ -63,8 +79,8 @@ trait ExpressionDerivationRule {
 
 abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
     val operator : ExpressionOperator
-    val combineFunctionHypertype : binaryCombineFunction
-    val combineFunctionDelta : binaryCombineFunction
+    val combineFunctionHypertype : binaryCombineFunction[HyperTypeConclusion]
+    val combineFunctionDelta : binaryCombineFunction[DeltaConclusion]
     def generateSoundnessTests : Seq[HHLProgram] = {
 
         var testPrograms = Seq.empty[HHLProgram]
@@ -105,9 +121,9 @@ abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
 
             val conclusion = rule.conclusion.map(cond => {
                 cond match {
-                    case ElementOf(hyperType) => {
-                        HyperTypes.semantic(hyperType, output)
-                    }
+                    // case ElementOf(hyperType) => {
+                    //     HyperTypes.semantic(hyperType, output)
+                    // }
                     case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
                 }
             })
@@ -126,12 +142,12 @@ abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
 
 
 
-case class binaryFunctionImplication(e1Hypertype : Seq[Condition], e1Delta : Seq[Condition], e2Hypertype : Seq[Condition], e2Delta : Seq[Condition], conclusion: Seq[Condition]) {}
-case class unaryFunctionImplication(eHypertype : Seq[Condition], eDelta : Seq[Condition], conclusion: Seq[Condition]) {}
+case class binaryFunctionImplication[C <: Conclusion](e1Hypertype : Seq[HyperTypeCondition], e1Delta : Seq[DeltaCondition], e2Hypertype : Seq[HyperTypeCondition], e2Delta : Seq[DeltaCondition], conclusion: Seq[C]) {}
+case class unaryFunctionImplication[C <: Conclusion](eHypertype : Seq[HyperTypeCondition], eDelta : Seq[DeltaCondition], conclusion: Seq[C]) {}
 
-abstract class binaryCombineFunction  extends CombineFunction {
-    val rules : Seq[binaryFunctionImplication]
-    def filterApplies(e1HyperType : HyperTypeCollection, e2Delta: DeltaCollection, e2HyperType: HyperTypeCollection, e1Delta: DeltaCollection): Seq[Seq[Condition]] = {
+abstract class binaryCombineFunction[C <: Conclusion]  extends CombineFunction {
+    val rules : Seq[binaryFunctionImplication[C]]
+    def filterApplies(e1HyperType : HyperTypeCollection, e2Delta: DeltaCollection, e2HyperType: HyperTypeCollection, e1Delta: DeltaCollection): Seq[Seq[Conclusion]] = {
         rules.filter(rule => {
             rule.e1Hypertype.forall(cond => cond.hyperApplies(e1HyperType)) &&
             rule.e1Delta.forall(cond => cond.deltaApplies(e1Delta)) &&
@@ -140,9 +156,10 @@ abstract class binaryCombineFunction  extends CombineFunction {
         }).map(rule => {
             rule.conclusion
         })
+        // Seq.empty[Seq[Conclusion]] // Placeholder for actual implementation
     }
 }
 
-abstract class unaryCombineFunction extends CombineFunction {
-    val rules : Seq[unaryFunctionImplication]
+abstract class unaryCombineFunction[C <: Conclusion] extends CombineFunction {
+    val rules : Seq[unaryFunctionImplication[C]]
 }
