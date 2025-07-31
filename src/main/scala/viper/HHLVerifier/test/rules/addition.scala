@@ -7,6 +7,7 @@ import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoU
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.test.ExpressionDerivationRule
 import viper.HHLVerifier.test.ExpressionOperator
+import viper.HHLVerifier.test.DeltaContains
 
 
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
@@ -48,7 +49,11 @@ case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
 
 
 case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction {
-    val rules = Seq()
+    val rules = Seq(
+        binaryFunctionImplication(Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(ElementOf(Low())), Seq(), Seq(DeltaContains(Id("x"), Low()))),
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(DeltaContains(Id("x"), Low()))),
+        binaryFunctionImplication(Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(DeltaContains(Id("x"), Low()))),
+    )
 }
 
 

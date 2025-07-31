@@ -33,8 +33,9 @@ import org.checkerframework.checker.units.qual.s
 
 
 trait Condition {}
-
-case class ElementOf(val hyperType: HyperType) extends Condition 
+case class ElementOf(val hyperType: HyperType) extends Condition
+case class DeltaContains(val variable : Id, val hyperType: HyperType) extends Condition
+case class VarNotInDelta(val variable: Id) extends Condition
 
 
 sealed trait ExpressionOperator {
