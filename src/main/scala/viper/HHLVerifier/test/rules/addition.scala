@@ -13,7 +13,6 @@ import viper.HHLVerifier.test.DeltaContains
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
     val rules = Seq(
         binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low()))),
-        // binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(), Seq(ElementOf(Low()))),
         binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
         binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos()))),
         binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
