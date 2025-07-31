@@ -55,7 +55,7 @@ object HyperTypeChecker {
     println("final mapping", finalMapping.mapping)
     println("delta mapping")
     deltaMapping.collection.foreach { case (key, value) =>
-      println(s"$key: ${value.collection}")
+      println(s"$key: ${value.mapping}")
     }
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
