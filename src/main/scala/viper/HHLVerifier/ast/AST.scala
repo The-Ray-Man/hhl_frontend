@@ -33,7 +33,7 @@ sealed class Expr() extends ErrorData {
    * operations with composite objects. For example, for intSeq[0] the type is Int, while the base type is Seq[Int] */
   var baseType: Type = UnknownType() // Additional type information needed to generate (e.g. type of map from which value is accessed)
 
-  var hyperType: Option[Seq[HyperType]] = null
+  var hyperType: Option[Seq[HyperType]] = None
 
   /** Relates an expression to an earlier, untransformed expression
    * used in the generator */
