@@ -224,21 +224,21 @@ object DeltaMapping {
                             case (_, None) => Some(HyperTypeCollection(informationFlow = infFlowType))
                             case (Pos(), Some(GreaterOne())) => {
                                 // Multiplication with a value greater than 1. Hence the difference will increase.
-                                Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                Some(HyperTypeCollection(informationFlow = High(), value = Some(Pos())))
                             }
                             case (Pos(), Some(One())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
                             case (_, _) => {
-                                Some(HyperTypeCollection(informationFlow = infFlowType))
+                                Some(HyperTypeCollection(informationFlow = High()))
                             }
                         }
                     }
                     case (Some(Neg()), Some(value)) => {
                         // delta = x' - x < 0. Hence we know x' < x
                         (value, secondType.absValue) match {
-                            case (_, None) => Some(HyperTypeCollection(informationFlow = infFlowType))
-                            case (Pos(), Some(GreaterOne())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                            case (_, None) => Some(HyperTypeCollection(informationFlow = High()))
+                            case (Pos(), Some(GreaterOne())) => Some(HyperTypeCollection(informationFlow = High(), value = Some(Neg())))
                             case (Pos(), Some(One())) => Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
-                            case (_, _) => Some(HyperTypeCollection(informationFlow = infFlowType))
+                            case (_, _) => Some(HyperTypeCollection(informationFlow = High()))
                         }
                     }
                     case (Some(Zero()), Some(value)) => {
@@ -259,30 +259,30 @@ object DeltaMapping {
                                     // x' > 0. 
                                     if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == GreaterOne()) {
                                         // Multiplication with a value greater than 1. Hence the difference will increase.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Pos())))
                                     } else if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == LessOne()) {
                                         // Multiplication with a value less than 1. Hence the difference will decrease.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Neg())))
                                     } else if (value == Neg()) {
                                         // Multiplication with a negative value. Hence the difference will decrease.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Neg())))
                                     } else {
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = None))
                                     }
                                 }
                                 case Some(Neg()) => {
                                     // x' < 0
                                     if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == GreaterOne()) {
                                         // Multiplication with a value greater than 1. Hence the difference will decrease.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Neg())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Neg())))
                                     } else if (value == Pos() && secondType.absValue.isDefined && secondType.absValue.get == LessOne()) {
                                         // Multiplication with a value less than 1. Hence the difference will increase.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Pos())))
                                     } else if (value == Neg()) {
                                         // Multiplication with a negative value. Hence the difference will increase.
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = Some(Pos())))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = Some(Pos())))
                                     } else {
-                                        Some(HyperTypeCollection(informationFlow = infFlowType, value = None))
+                                        Some(HyperTypeCollection(informationFlow = High(), value = None))
                                     }
                                 }
                             }
