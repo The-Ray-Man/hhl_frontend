@@ -17,6 +17,175 @@ import viper.HHLVerifier.generation.Generator
 import viper.HHLVerifier.management.ViperRunner
 import viper.silver.verifier.Success
 import viper.silver.verifier.Failure 
+import viper.silicon.state.terms.Fun
+import viper.HHLVerifier.test.ExpressionOperator.Add
+import viper.HHLVerifier.ast.HHLProgram
+import viper.HHLVerifier.ast.Method
+import viper.HHLVerifier.ast.CompositeStmt
+import viper.HHLVerifier.ast.Expr
+import viper.HHLVerifier.ast.Stmt
+import viper.HHLVerifier.ast.BinaryExpr
+import upack.Binary
+import viper.HHLVerifier.typing.HyperTypes
+import viper.HHLVerifier.ast.AssignStmt
+import viper.HHLVerifier.typing.IntType
+import org.checkerframework.checker.units.qual.s
+
+
+trait Condition {}
+
+case class ElementOf(val hyperType: HyperType) extends Condition 
+
+
+sealed trait ExpressionOperator {
+    def expression(e1: Expr, e2: Expr): Expr
+}
+
+object ExpressionOperator {
+    case object Add extends ExpressionOperator {
+      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "+" ,e2)
+    }
+    case object Subtract extends ExpressionOperator {
+      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "-" ,e2)
+    }
+    case object Multiply extends ExpressionOperator {
+      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "*" ,e2)
+    }
+    case object Divide extends ExpressionOperator {
+      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "/" ,e2)
+    }
+}
+
+
+abstract class ExpressionDerivationRule {
+    val operator : ExpressionOperator
+    val combineFunctionHypertype : binaryCombineFunction
+    val combineFunctionDelta : binaryCombineFunction
+    def generateSoundnessTests : Seq[HHLProgram] = {
+
+        var testPrograms = Seq.empty[HHLProgram]
+        for (rule <- combineFunctionHypertype.rules) {
+            val e1 = Id("e1")
+            e1.typ = IntType()
+            val e1prime = Id("e1prime")
+            e1prime.typ = IntType()
+            val e2 = Id("e2")
+            e2.typ = IntType()
+            val e2prime = Id("e2prime")
+            e2prime.typ = IntType()
+
+            val monoId = Id("monoId")
+            monoId.typ = IntType()
+
+            val output = Id("output")
+            output.typ = IntType()
+
+
+            val preconditionsE1 = rule.e1Hypertype.map(cond => {
+                cond match {
+                    case ElementOf(hyperType) => {
+                        HyperTypes.semantic(hyperType, e1)
+                    }
+                    case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
+                    
+                }
+            })
+            val preconditionsE2 = rule.e2Hypertype.map(cond => {
+                cond match {
+                    case ElementOf(hyperType) => {
+                        HyperTypes.semantic(hyperType, e2)
+                    }
+                    case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
+                    
+                }
+            })
+
+            val preconditions = preconditionsE1 ++ preconditionsE2
+
+            val conclusion = rule.conclusion.map(cond => {
+                cond match {
+                    case ElementOf(hyperType) => {
+                        HyperTypes.semantic(hyperType, output)
+                    }
+                    case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
+                }
+            })
+
+            val program = HHLProgram(Seq(
+                Method("test", Seq(e1,e1prime, e2, e2prime, monoId), Seq(output), preconditions, conclusion, CompositeStmt(Seq(AssignStmt(output, operator.expression(e1,e2)))))
+            ))
+            println(program)
+
+            testPrograms :+= program
+
+        }
+
+        testPrograms
+    }
+}
+
+
+
+case class binaryFunctionImplication(e1Hypertype : Seq[Condition], e1Delta : Seq[Condition], e2Hypertype : Seq[Condition], e2Delta : Seq[Condition], conclusion: Seq[Condition]) {}
+
+
+abstract class binaryCombineFunction {
+    val rules : Seq[binaryFunctionImplication]
+}
+
+case class AdditionCombineFunctionHypertype() extends binaryCombineFunction {
+    val rules = Seq(
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(Low()))),
+        // binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(), Seq(ElementOf(Low()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Neg()))),
+        binaryFunctionImplication(Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId")))))),
+        binaryFunctionImplication(Seq(ElementOf(One())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One()))), 
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(One())), Seq(), Seq(ElementOf(One()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Zero())), Seq(), Seq(ElementOf(GreaterOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(GreaterOne()))),
+        binaryFunctionImplication(Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Neg())), Seq(), Seq(ElementOf(LessOne()))),
+        binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(LessOne()), ElementOf(Pos())), Seq(), Seq(ElementOf(LessOne()))),
+    )
+}
+
+
+case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction {
+    val rules = Seq()
+}
+
+
+case class AdditionDerivationRule() extends ExpressionDerivationRule {
+
+  override val operator: ExpressionOperator = ExpressionOperator.Add
+
+  override val combineFunctionHypertype: binaryCombineFunction = AdditionCombineFunctionHypertype()
+
+  override val combineFunctionDelta: binaryCombineFunction = AdditionCombineFunctionDeltatype()
+
+}
+
 
 
 object TestGeneratorHelper {
@@ -166,7 +335,7 @@ object RuleSoundnessTests {
             HyperTypeChecker.typeCheckProg(parsedProgram)
             parsedProgram = HyperTranslate.translateProgram(parsedProgram)
             SymbolChecker.checkSymbolsProg(parsedProgram)
-            TypeChecker.typeCheckProg(parsedProgram)
+            println("symbol check done")
             val viperProgram = Generator.generate(parsedProgram, program)
             val consistencyErrors = viperProgram.checkTransitively
             if (consistencyErrors.isEmpty) {
@@ -185,8 +354,64 @@ object RuleSoundnessTests {
         }
     }
 
+    def runTest(program: HHLProgram) : Unit = {
+        SymbolChecker.reset()
+        TypeChecker.reset()
+        Generator.reset()
 
-    def main(args: Array[String]) : Unit = {
+
+        HyperTypeChecker.typeCheckProg(program)
+        println("hypertypecheck done")
+        val programTranslated = HyperTranslate.translateProgram(program)
+        println("hypertranslate done")
+        SymbolChecker.checkSymbolsProg(programTranslated)
+        println("symbol check done")
+        TypeChecker.typeCheckProg(programTranslated)
+        println("type check done")
+        val viperProgram = Generator.generate(programTranslated, "")
+        val consistencyErrors = viperProgram.checkTransitively
+        if (consistencyErrors.isEmpty) {
+            val result = ViperRunner.runSiliconAndCarbon(viperProgram)
+            result match {
+                case Success =>
+                    println(s"Test passed successfully.")
+                case Failure(errors) =>
+                    throw new RuntimeException(s"Test failed with errors: ${errors.mkString(", ")}")
+            }
+        } else {
+            throw new RuntimeException(s"Test failed with errors: ${consistencyErrors.mkString(", ")}")
+        }
+    }
+
+    def testExpressionRule(rule: ExpressionDerivationRule) =  {
+        val tests = rule.generateSoundnessTests
+        var successTests = Seq.empty[String]
+        var failureTests = Seq.empty[String]
+        for ((test, id) <- tests.zipWithIndex) {
+            println(s"Running test $id for rule ${rule.operator}")
+            try {
+                runTest(test)
+                successTests :+= s"Test $id for rule ${rule.operator} passed."
+            } catch {
+                case e: Exception =>
+                    println(s"Test $id for rule ${rule.operator} failed with exception: ${e.getMessage}")
+                    failureTests :+= s"Test $id for rule ${rule.operator} failed."
+            }
+        }
+
+        println(s"Total tests ${tests.size} for rule ${rule.operator}.")
+        println(s"Successful tests: ${successTests.size}")
+        println(s"Failed tests: ${failureTests.size}")
+        if (failureTests.nonEmpty) {
+            println("Failed tests:")
+            failureTests.foreach(println)
+        }
+    }
+
+
+    def main() : Unit = {
+        testExpressionRule(AdditionDerivationRule())
+        return
         HyperTypeExpressionAddition.generateTestPrograms
 
         // list all files in the test folder
