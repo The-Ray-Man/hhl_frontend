@@ -5,7 +5,6 @@ import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, A
 import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, StateType, StmtBlockType, Type, UnknownType}
 import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.typing.Low
-import viper.HHLVerifier.typing.High
 import viper.HHLVerifier.typing.Pos
 import viper.HHLVerifier.typing.Neg
 import viper.HHLVerifier.typing.Zero
@@ -15,7 +14,6 @@ import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.FoldStmt
-import viper.HHLVerifier.management.Logger.format
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.MonoDown
@@ -130,7 +128,6 @@ object PrettyPrinter {
   def formatHyperType(ty: HyperType): String = {
     ty match {
       case Low() => "low"
-      case High() => "high"
       case Pos() => "pos"
       case Neg() => "neg"
       case Zero() => "zero"
@@ -146,19 +143,7 @@ object PrettyPrinter {
   }
 
   def formatHyperTypeCollection(col: HyperTypeCollection) : String = {
-    var types = Seq.empty[String]
-    types = types :+ formatHyperType(col.informationFlow)
-    col.value match {
-      case Some(ty) => types = types :+ formatHyperType(ty)
-      case None =>  {}
-    }
-    if (col.mono.nonEmpty) {
-      types = types :+ formatHyperType(col.mono.get.mono)
-    }
-    if (col.absValue.nonEmpty) {
-      types = types :+ formatHyperType(col.absValue.get)
-    }
-    types.mkString(", ")
+    col.hypertypes.map(ty => PrettyPrinter.formatHyperType(ty)).mkString(", ")
   }
 
   def formatHyperTypeMapping(mapping: HyperMapping) : String = {
@@ -167,13 +152,13 @@ object PrettyPrinter {
     }.mkString(", ")
   }
 
-  def formatDeltaMapping(mapping: DeltaMapping) : String = {
+  def formatDeltaCollection(mapping: DeltaCollection) : String = {
     mapping.mapping.map { case (key, value) =>
       s"$key -> ${formatHyperTypeCollection(value)}"
     }.mkString(", ")
   }
 
-  def formatDeltaCollection(delta: DeltaCollection) : String = {
+  def formatDeltaMapping(delta: DeltaMapping) : String = {
     delta.collection.map { case (key, value) =>
       s"$key: ${formatDeltaMapping(value)}"
     }.mkString(", ")

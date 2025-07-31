@@ -13,29 +13,6 @@ case class HyperMapping(val mapping : Map[String, HyperTypeCollection]) {
     }
   }
 
-  def combine(other: HyperMapping, pc: HyperType): HyperMapping = {
-    val keys = this.mapping.keySet ++ other.mapping.keySet
-
-    val newMapping = keys.map { key =>
-      val xType = this.mapping.get(key)
-      val yType = other.mapping.get(key)
-      (xType, yType) match {
-        case (Some(x), Some(y)) => {
-          val infFlow = x.joinInfFlow(y);
-          val value = x.joinValue(y);
-          val mono = x.joinMono(y, pc)
-          val absValue = x.joinAbsValue(y)
-          key -> HyperTypeCollection(informationFlow = infFlow, value = value, mono = mono, absValue = absValue);
-        }
-        case _ => {
-          key -> HyperTypeCollection(informationFlow = High(), value = None, mono = None, absValue = None) 
-        }
-      }
-    }.toMap
-
-    val result = new HyperMapping(newMapping)
-    result
-  }
 
   def set(key: String, value: HyperTypeCollection): HyperMapping = {
     val newMapping = mapping + (key -> value)
