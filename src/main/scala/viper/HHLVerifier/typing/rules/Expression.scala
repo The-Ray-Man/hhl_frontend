@@ -150,6 +150,34 @@ abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
 }
 
 
+abstract class NullaryExpressionDerivationRule extends ExpressionDerivationRule {
+    val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion]
+    val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion]
+
+    def derive(mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+        val applicableRulesHypertypes = combineFunctionHypertype.filterApplies(mapping)
+        val applicableRulesDeltas = combineFunctionDelta.filterApplies(mapping)
+
+        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.flatten.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        val tmp = applicableRulesHypertypes.flatten.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        hyperTypeCollection = tmp._1
+        deltaTypeCollection = tmp._2
+        (hyperTypeCollection, deltaTypeCollection)
+    }
+
+    def generateSoundnessTests: Seq[HHLProgram] = {
+        Seq.empty[HHLProgram] // TODO
+    }
+
+}
+
+
 
 case class binaryFunctionImplication[C <: Conclusion](e1Hypertype : Seq[HyperTypeCondition], e1Delta : Seq[DeltaCondition], e2Hypertype : Seq[HyperTypeCondition], e2Delta : Seq[DeltaCondition], sideCondition: Seq[SideCondition], conclusion: Seq[C]) {}
 case class unaryFunctionImplication[C <: Conclusion](eHypertype : Seq[HyperTypeCondition], eDelta : Seq[DeltaCondition], sideCondition: Seq[SideCondition], conclusion: Seq[C]) {}
