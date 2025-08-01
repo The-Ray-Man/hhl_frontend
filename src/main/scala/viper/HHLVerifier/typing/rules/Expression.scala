@@ -15,53 +15,10 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
+import viper.HHLVerifier.ast.Num
 
 
-trait Condition {}
 
-trait HyperTypeCondition extends Condition {
-    def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean
-}
-
-trait DeltaCondition extends Condition {
-    def deltaApplies(deltaCollection: DeltaCollection): Boolean
-}
-
-case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
-    override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = false
-}
-case class DeltaContains(val variable : Id, val hyperType: HyperType) extends DeltaCondition {
-    override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
-}
-case class VarNotInDelta(val variable: Id) extends DeltaCondition {
-    override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
-}
-
-trait Conclusion {
-    def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection)
-}
-
-
-trait HyperTypeConclusion extends Conclusion {}
-
-trait DeltaConclusion extends Conclusion {}
-
-
-case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {
-
-  override def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection) = {
-    (hyperTypeCollection.add(hyperType), deltaCollection)
-  }
-
-}
-
-case class VarHasDeltaType(val variable: Id, val hyperType: HyperType) extends DeltaConclusion {
-
-  override def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection) = {
-    (hyperTypeCollection, deltaCollection.add(variable.name, hyperType))
-  }
-
-}
 
 
 sealed trait ExpressionOperator {
@@ -194,8 +151,9 @@ abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
 
 
 
-case class binaryFunctionImplication[C <: Conclusion](e1Hypertype : Seq[HyperTypeCondition], e1Delta : Seq[DeltaCondition], e2Hypertype : Seq[HyperTypeCondition], e2Delta : Seq[DeltaCondition], conclusion: Seq[C]) {}
-case class unaryFunctionImplication[C <: Conclusion](eHypertype : Seq[HyperTypeCondition], eDelta : Seq[DeltaCondition], conclusion: Seq[C]) {}
+case class binaryFunctionImplication[C <: Conclusion](e1Hypertype : Seq[HyperTypeCondition], e1Delta : Seq[DeltaCondition], e2Hypertype : Seq[HyperTypeCondition], e2Delta : Seq[DeltaCondition], sideCondition: Seq[SideCondition], conclusion: Seq[C]) {}
+case class unaryFunctionImplication[C <: Conclusion](eHypertype : Seq[HyperTypeCondition], eDelta : Seq[DeltaCondition], sideCondition: Seq[SideCondition], conclusion: Seq[C]) {}
+case class nullaryFunctionImplication[C <: Conclusion](sideCondition: Seq[SideCondition], conclusion: Seq[C]) {}
 
 abstract class binaryCombineFunction[C <: Conclusion]  extends CombineFunction {
     val rules : Seq[binaryFunctionImplication[C]]
@@ -208,10 +166,28 @@ abstract class binaryCombineFunction[C <: Conclusion]  extends CombineFunction {
         }).map(rule => {
             rule.conclusion
         })
-        // Seq.empty[Seq[Conclusion]] // Placeholder for actual implementation
     }
 }
 
 abstract class unaryCombineFunction[C <: Conclusion] extends CombineFunction {
     val rules : Seq[unaryFunctionImplication[C]]
+    def filterApplies(hyperType : HyperTypeCollection, delta: DeltaCollection): Seq[Seq[Conclusion]] = {
+        rules.filter(rule => {
+            rule.eHypertype.forall(cond => cond.hyperApplies(hyperType)) &&
+            rule.eDelta.forall(cond => cond.deltaApplies(delta))
+        }).map(rule => {
+            rule.conclusion
+        })
+    }
+}
+
+abstract class nullaryCombineFunction[C <: Conclusion] extends CombineFunction {
+    val rules : Seq[nullaryFunctionImplication[C]]
+    def filterApplies(context: Any): Seq[Seq[Conclusion]] = {
+        rules.filter(rule => {
+            rule.sideCondition.forall(cond => cond.applies(context))
+        }).map(rule => {
+            rule.conclusion
+        })
+    }
 }
