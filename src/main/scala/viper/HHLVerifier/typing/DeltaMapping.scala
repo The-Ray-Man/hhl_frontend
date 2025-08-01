@@ -57,4 +57,12 @@ case class DeltaCollection(val mapping: Map[String, HyperTypeCollection]) {
         mapping.isEmpty
     }
 
+    def add(variable: String, hyperType: HyperType): DeltaCollection = {
+        val updatedMapping = mapping.get(variable) match {
+            case Some(existingCollection) => mapping.updated(variable, existingCollection.add(hyperType))
+            case None => mapping.updated(variable, HyperTypeCollection(Set(hyperType)))
+        }
+        DeltaCollection(updatedMapping)
+    }
+
 }

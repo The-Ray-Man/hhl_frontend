@@ -24,6 +24,9 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
+import viper.HHLVerifier.typing.rules.BinaryExpressionDerivationRule
+import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 
 object HyperTypeChecker {
 
@@ -143,49 +146,7 @@ object HyperTypeChecker {
 
 
   def typeCheckExpression(mapping: HyperMapping, e: Expr) : (HyperTypeCollection, DeltaCollection) = {
-    e match {
-      case BoolLit(b) => {
-        val value = if (b) True() else False()
-        (new HyperTypeCollection(Set(Low(), value)), DeltaCollection(Map()))
-      }
-      case Num(n) => {
-        val value = if (n > 0) Pos() else if (n < 0) Neg() else Zero()
-        val absValue = if (n < 1 && n > -1) LessOne() else if (n==1 || n == -1) One() else GreaterOne()
-        (new HyperTypeCollection(Set(Low(), value, absValue)), DeltaCollection(Map()))
-      }
-      case Id(name) => {
-        (mapping.getUnsafe(name), DeltaCollection(Map()))
-      }
-      case BinaryExpr(e1, op, e2) => 
-        {
-          val (type1, delta1) = typeCheckExpression(mapping, e1)
-          (type1, DeltaCollection(Map()))
-        }
-
-      case LengthExpr(id) => {
-        typeCheckExpression(mapping, id)
-      }
-      case UnaryExpr(op, e) => {
-        op match {
-          case "-" => {
-            return typeCheckExpression(mapping, BinaryExpr(Num(0), "-", e))
-          }
-          case "!" => {
-            // Negation of boolean
-            return typeCheckExpression(mapping, BinaryExpr(e, "==", BoolLit(false)))
-          }
-          case _ => throw new Exception("Unknown unary operator: " + op)
-        }
-      }
-      case LookupExpr(id, index) => {
-        val (idType, _) = typeCheckExpression(mapping, id)
-        val (indexType, _) = typeCheckExpression(mapping, index)
-        (idType, new DeltaCollection(Map()))
-      }
-      case _ => {
-        throw new Exception("Type error: cannot yet type check expression " + e)
-      }
-     }
+    ExpressionDerivationRule.derive(e, mapping)
   }
 
   def getVariables(expr: Expr) : Set[String] = {

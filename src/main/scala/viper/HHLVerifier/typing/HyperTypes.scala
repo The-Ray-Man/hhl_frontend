@@ -302,6 +302,10 @@ case class HyperTypeCollection(
   def add(ty: HyperType): HyperTypeCollection = {
     new HyperTypeCollection(this.hypertypes + ty)
   }
+
+  def extend(other: HyperTypeCollection): HyperTypeCollection = {
+    new HyperTypeCollection(this.hypertypes ++ other.hypertypes)
+  }
 }
 
 object HyperTypeCollection {

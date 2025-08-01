@@ -13,6 +13,8 @@ import viper.HHLVerifier.ast.AssignStmt
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.DeltaMapping
+import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
 
 
 trait Condition {}
@@ -35,7 +37,9 @@ case class VarNotInDelta(val variable: Id) extends DeltaCondition {
     override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
 }
 
-trait Conclusion {}
+trait Conclusion {
+    def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection)
+}
 
 
 trait HyperTypeConclusion extends Conclusion {}
@@ -43,9 +47,21 @@ trait HyperTypeConclusion extends Conclusion {}
 trait DeltaConclusion extends Conclusion {}
 
 
-case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {}
+case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {
 
-case class VarHasDeltaType(val variable: Id, val hyperType: HyperType) extends DeltaConclusion {}
+  override def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection) = {
+    (hyperTypeCollection.add(hyperType), deltaCollection)
+  }
+
+}
+
+case class VarHasDeltaType(val variable: Id, val hyperType: HyperType) extends DeltaConclusion {
+
+  override def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection): (HyperTypeCollection, DeltaCollection) = {
+    (hyperTypeCollection, deltaCollection.add(variable.name, hyperType))
+  }
+
+}
 
 
 sealed trait ExpressionOperator {
@@ -76,11 +92,47 @@ trait ExpressionDerivationRule {
     def generateSoundnessTests: Seq[HHLProgram]
 }
 
+object ExpressionDerivationRule {
+    def derive(e: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
+        e match {
+            case BinaryExpr(e1, op, e2) => {
+                op match {
+                    case "+" => AdditionDerivationRule().derive(e1, e2, mapping)
+                    case _ => throw new Exception("Unknown binary operator: " + op)
+                }
+            }
+            case _ => throw new Exception("Cannot derive expression: " + e)
+        }
+    }
+}
+
 
 abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
     val operator : ExpressionOperator
     val combineFunctionHypertype : binaryCombineFunction[HyperTypeConclusion]
     val combineFunctionDelta : binaryCombineFunction[DeltaConclusion]
+
+    def derive(e1: Expr, e2: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+        val (type1, delta1) = ExpressionDerivationRule.derive(e1, mapping)
+        val (type2, delta2) = ExpressionDerivationRule.derive(e2, mapping)
+
+        val applicableRulesHypertypes = combineFunctionHypertype.filterApplies(type1, delta1, type2, delta2)
+
+        val applicableRulesDeltas = combineFunctionDelta.filterApplies(type1, delta1, type2, delta2)
+
+        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.flatten.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        val tmp = applicableRulesHypertypes.flatten.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        hyperTypeCollection = tmp._1
+        deltaTypeCollection = tmp._2
+        (hyperTypeCollection, deltaTypeCollection)
+    }
+
     def generateSoundnessTests : Seq[HHLProgram] = {
 
         var testPrograms = Seq.empty[HHLProgram]
