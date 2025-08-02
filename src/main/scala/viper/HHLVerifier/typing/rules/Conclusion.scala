@@ -31,3 +31,16 @@ case class VarHasDeltaType(val variable: Id, val hyperType: HyperType) extends D
   }
 
 }
+
+case class LookupAndAddHyperType() extends HyperTypeConclusion {
+
+  override def apply(hyperTypeCollection: HyperTypeCollection, deltaCollection: DeltaCollection, mapping: HyperMapping, context: Any): (HyperTypeCollection, DeltaCollection) = {
+    val varName = context match {
+      case id: Id => id.name
+      case _ => throw new Exception("Expected Id, got: " + context)
+    }
+    
+    (hyperTypeCollection.extend(mapping.getUnsafe(varName)), deltaCollection)
+  }
+
+}

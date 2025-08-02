@@ -16,6 +16,10 @@ import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
 import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.ast.BoolLit
+import viper.HHLVerifier.typing.rules.expression.BooleanDerivationRule
+import viper.HHLVerifier.typing.rules.expression.NumericalDerivationRule
+import viper.HHLVerifier.typing.rules.expression.IdentifierDerivationRule
 
 
 
@@ -52,12 +56,15 @@ trait ExpressionDerivationRule {
 object ExpressionDerivationRule {
     def derive(e: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
         e match {
-            case BinaryExpr(e1, op, e2) => {
+            case binaryExpr@BinaryExpr(_, op, _) => {
                 op match {
-                    case "+" => AdditionDerivationRule().derive(e1, e2, mapping)
+                    case "+" => AdditionDerivationRule().derive(binaryExpr, mapping)
                     case _ => throw new Exception("Unknown binary operator: " + op)
                 }
             }
+            case BoolLit(_) => BooleanDerivationRule().derive(e, mapping)
+            case Num(_) => NumericalDerivationRule().derive(e, mapping)
+            case Id(_) => IdentifierDerivationRule().derive(e, mapping)
             case _ => throw new Exception("Cannot derive expression: " + e)
         }
     }
@@ -69,20 +76,20 @@ abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
     val combineFunctionHypertype : binaryCombineFunction[HyperTypeConclusion]
     val combineFunctionDelta : binaryCombineFunction[DeltaConclusion]
 
-    def derive(e1: Expr, e2: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
-        val (type1, delta1) = ExpressionDerivationRule.derive(e1, mapping)
-        val (type2, delta2) = ExpressionDerivationRule.derive(e2, mapping)
+    def derive(expression : BinaryExpr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+        val (type1, delta1) = ExpressionDerivationRule.derive(expression.e1, mapping)
+        val (type2, delta2) = ExpressionDerivationRule.derive(expression.e2, mapping)
 
         val applicableRulesHypertypes = combineFunctionHypertype.filterApplies(type1, delta1, type2, delta2)
 
         val applicableRulesDeltas = combineFunctionDelta.filterApplies(type1, delta1, type2, delta2)
 
         var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.flatten.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
+            rule.apply(acc._1, acc._2, mapping, expression)
         }
 
         val tmp = applicableRulesHypertypes.flatten.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
+            rule.apply(acc._1, acc._2, mapping, expression)
         }
 
         hyperTypeCollection = tmp._1
@@ -154,16 +161,16 @@ abstract class NullaryExpressionDerivationRule extends ExpressionDerivationRule 
     val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion]
     val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion]
 
-    def derive(mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
-        val applicableRulesHypertypes = combineFunctionHypertype.filterApplies(mapping)
-        val applicableRulesDeltas = combineFunctionDelta.filterApplies(mapping)
+    def derive(expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+        val applicableRulesHypertypes = combineFunctionHypertype.filterApplies(expression)
+        val applicableRulesDeltas = combineFunctionDelta.filterApplies(expression)
 
         var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.flatten.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
+            rule.apply(acc._1, acc._2, mapping, expression)
         }
 
         val tmp = applicableRulesHypertypes.flatten.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
+            rule.apply(acc._1, acc._2, mapping, expression)
         }
 
         hyperTypeCollection = tmp._1
