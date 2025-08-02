@@ -29,6 +29,7 @@ case class NumericalCombineFunctionHypertype() extends nullaryCombineFunction[Hy
         EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
         EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
         EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low())))),
     )
 }
 

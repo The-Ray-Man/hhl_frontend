@@ -22,7 +22,7 @@ trait SideCondition extends Condition {
 }
 
 case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
-    override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = false
+    override def hyperApplies(hyperTypeCollection: HyperTypeCollection): Boolean = hyperTypeCollection.hypertypes.contains(hyperType)
 }
 case class DeltaContains(val variable : Id, val hyperType: HyperType) extends DeltaCondition {
     override def deltaApplies(deltaCollection: DeltaCollection): Boolean = false
