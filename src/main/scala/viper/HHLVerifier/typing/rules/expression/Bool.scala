@@ -11,13 +11,14 @@ import viper.HHLVerifier.typing.rules.ConstTrue
 import viper.HHLVerifier.typing.rules.ConstFalse
 import viper.HHLVerifier.typing.True
 import viper.HHLVerifier.typing.False
+import viper.HHLVerifier.typing.rules.EmptyWrapper
 
 
 
 case class BooleanCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
     val rules = Seq(
-        nullaryFunctionImplication(Seq(ConstTrue()), Seq(ContainsHyperType(True()))),
-        nullaryFunctionImplication(Seq(ConstFalse()), Seq(ContainsHyperType(False()))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstTrue()), Seq(ContainsHyperType(True())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstFalse()), Seq(ContainsHyperType(False())))),
     )
 }
 

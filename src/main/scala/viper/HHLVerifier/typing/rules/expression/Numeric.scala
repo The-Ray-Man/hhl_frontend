@@ -17,17 +17,18 @@ import viper.HHLVerifier.typing.rules.NullaryExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.nullaryFunctionImplication
 import viper.HHLVerifier.typing.rules.{ConstAbsGtOne, ConstAbsLtOne, ConstAbsOne, ConstPositiveInt, ConstNegativeInt}
 import viper.HHLVerifier.typing.rules.ConstZeroInt
+import viper.HHLVerifier.typing.rules.EmptyWrapper
 
 
 
 case class NumericalCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
     val rules = Seq(
-        nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne()))),
-        nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne()))),
-        nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One()))),
-        nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos()))),
-        nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg()))),
-        nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero()))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
+        EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
     )
 }
 

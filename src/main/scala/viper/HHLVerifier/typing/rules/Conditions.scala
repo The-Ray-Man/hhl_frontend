@@ -18,7 +18,7 @@ trait DeltaCondition extends Condition {
 }
 
 trait SideCondition extends Condition {
-    def applies(context: Any): Boolean
+    def applies(context: ExpressionDerivationContext): Boolean
 }
 
 case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
@@ -32,8 +32,8 @@ case class VarNotInDelta(val variable: Id) extends DeltaCondition {
 }
 
 case class ConstPositiveInt() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value > 0
             case _ => false
         }
@@ -41,8 +41,8 @@ case class ConstPositiveInt() extends SideCondition {
 }
 
 case class ConstNegativeInt() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value < 0
             case _ => false
         }
@@ -50,8 +50,8 @@ case class ConstNegativeInt() extends SideCondition {
 }
 
 case class ConstZeroInt() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value == 0
             case _ => false
         }
@@ -59,8 +59,8 @@ case class ConstZeroInt() extends SideCondition {
 }
 
 case class ConstAbsGtOne() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value.abs > 1
             case _ => false
         }
@@ -68,8 +68,8 @@ case class ConstAbsGtOne() extends SideCondition {
 }
 
 case class ConstAbsLtOne() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value.abs < 1
             case _ => false
         }
@@ -77,8 +77,8 @@ case class ConstAbsLtOne() extends SideCondition {
 }
 
 case class ConstAbsOne() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case i: Num => i.value.abs == 1
             case _ => false
         }
@@ -86,8 +86,8 @@ case class ConstAbsOne() extends SideCondition {
 }
 
 case class ConstTrue() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case b: BoolLit => b.value
             case _ => false
         }
@@ -95,8 +95,8 @@ case class ConstTrue() extends SideCondition {
 }
 
 case class ConstFalse() extends SideCondition {
-    override def applies(context: Any): Boolean = {
-        context match {
+    override def applies(context: ExpressionDerivationContext): Boolean = {
+        context.expression match {
             case b: BoolLit => !b.value
             case _ => false
         }
