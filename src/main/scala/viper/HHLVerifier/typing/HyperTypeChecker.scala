@@ -149,14 +149,14 @@ object HyperTypeChecker {
     ExpressionDerivationRule.derive(e, mapping)
   }
 
-  def getVariables(expr: Expr) : Set[String] = {
+  def getVariables(expr: Expr) : Set[Id] = {
     expr match {
-      case Id(name) => Set(name)
+      case Id(name) => Set(Id(name))
       case BinaryExpr(e1, _, e2) => getVariables(e1) ++ getVariables(e2)
       case UnaryExpr(_, e) => getVariables(e)
       case LookupExpr(id, index) => getVariables(id) ++ getVariables(index)
       case LengthExpr(id) => getVariables(id)
-      case _ => {Set.empty[String]}
+      case _ => {Set.empty[Id]}
     }
   }
 }

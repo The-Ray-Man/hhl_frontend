@@ -20,6 +20,7 @@ import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.rules.expression.BooleanDerivationRule
 import viper.HHLVerifier.typing.rules.expression.NumericalDerivationRule
 import viper.HHLVerifier.typing.rules.expression.IdentifierDerivationRule
+import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 
 
 
@@ -201,18 +202,11 @@ case class nullaryFunctionImplication[C <: Conclusion](sideCondition: Seq[SideCo
 
 case class RuleCheckContext(variables: Seq[Id]) {}
 
-trait RuleWrapper[C <: Conclusion] {
-    def getActions(context: ExpressionDerivationContext): Seq[Action]
-}
 
-case class ApplyForEveryVariable[C <: Conclusion](rule : Rule[C]) extends RuleWrapper[C] {
-    def getActions(context: ExpressionDerivationContext): Seq[Action] = {
-        throw new Exception("ApplyForEveryVariable is not implemented yet")
-    }
-}
-case class EmptyWrapper[C <: Conclusion](rule : Rule[C]) extends RuleWrapper[C] {
-    def getActions(context: ExpressionDerivationContext): Seq[Action] = {
-        val ruleCheckContext = RuleCheckContext(Seq())
+
+abstract class RuleWrapper[C <: Conclusion](rule: Rule[C]) {
+    def getActions(context: ExpressionDerivationContext): Seq[Action] 
+    def checkRules(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
         rule match {
             case binaryFunc@binaryFunctionImplication(_, _, _, _, _, _) => {
                 val rule_result = binaryFunc.e1Hypertype.forall(cond => cond.hyperApplies(context.premisses.head.hyperTypeCollection)) &&
@@ -249,6 +243,24 @@ case class EmptyWrapper[C <: Conclusion](rule : Rule[C]) extends RuleWrapper[C] 
             }
             case _ => throw new Exception("Unknown rule type: " + rule)
         }
+    }
+}
+
+case class ApplyForEveryVariable[C <: Conclusion](rule: Rule[C]) extends RuleWrapper[C](rule: Rule[C]) {
+    def getActions(context: ExpressionDerivationContext): Seq[Action] = {
+        val variablesInExpression = getVariables(context.expression)
+        val variablesInHyperMapping = context.mapping.mapping.keySet.map(Id(_))
+        val allVariables = variablesInExpression ++ variablesInHyperMapping
+        allVariables.map(id => {
+            val ruleCheckContext = RuleCheckContext(Seq(id))
+            checkRules(context, ruleCheckContext)
+        }).toSeq.flatten
+    }
+}
+case class EmptyWrapper[C <: Conclusion](rule : Rule[C]) extends RuleWrapper[C](rule : Rule[C]) {
+    def getActions(context: ExpressionDerivationContext): Seq[Action] = {
+        val ruleCheckContext = RuleCheckContext(Seq())
+        checkRules(context, ruleCheckContext)
     }
 }
 
