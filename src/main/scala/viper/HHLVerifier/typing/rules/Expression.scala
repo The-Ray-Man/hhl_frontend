@@ -209,11 +209,11 @@ abstract class RuleWrapper[C <: Conclusion](rule: Rule[C]) {
     def checkRules(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
         rule match {
             case binaryFunc@binaryFunctionImplication(_, _, _, _, _, _) => {
-                val rule_result = binaryFunc.e1Hypertype.forall(cond => cond.hyperApplies(context.premisses.head.hyperTypeCollection)) &&
-                binaryFunc.e1Delta.forall(cond => cond.deltaApplies(context.premisses.head.deltaCollection)) &&
-                binaryFunc.e2Hypertype.forall(cond => cond.hyperApplies(context.premisses(1).hyperTypeCollection)) &&
-                binaryFunc.e2Delta.forall(cond => cond.deltaApplies(context.premisses(1).deltaCollection)) &&
-                binaryFunc.sideCondition.forall(cond => cond.applies(context))
+                val rule_result = binaryFunc.e1Hypertype.forall(cond => cond.hyperApplies(context, ruleCheckContext, context.premisses.head.hyperTypeCollection)) &&
+                binaryFunc.e1Delta.forall(cond => cond.deltaApplies(context, ruleCheckContext, context.premisses.head.deltaCollection)) &&
+                binaryFunc.e2Hypertype.forall(cond => cond.hyperApplies(context, ruleCheckContext, context.premisses(1).hyperTypeCollection)) &&
+                binaryFunc.e2Delta.forall(cond => cond.deltaApplies(context, ruleCheckContext, context.premisses(1).deltaCollection)) &&
+                binaryFunc.sideCondition.forall(cond => cond.applies(context, ruleCheckContext))
 
                 if (rule_result) {
                     binaryFunc.conclusion.map(conclusion => conclusion.toActions(context, ruleCheckContext)).flatten
@@ -222,9 +222,9 @@ abstract class RuleWrapper[C <: Conclusion](rule: Rule[C]) {
                 }
             }
             case unaryFunc@unaryFunctionImplication(_, _, _, _) => {
-                val rule_result = unaryFunc.eHypertype.forall(cond => cond.hyperApplies(context.premisses.head.hyperTypeCollection)) &&
-                unaryFunc.eDelta.forall(cond => cond.deltaApplies(context.premisses.head.deltaCollection)) &&
-                unaryFunc.sideCondition.forall(cond => cond.applies(context))
+                val rule_result = unaryFunc.eHypertype.forall(cond => cond.hyperApplies(context, ruleCheckContext, context.premisses.head.hyperTypeCollection)) &&
+                unaryFunc.eDelta.forall(cond => cond.deltaApplies(context, ruleCheckContext, context.premisses.head.deltaCollection)) &&
+                unaryFunc.sideCondition.forall(cond => cond.applies(context, ruleCheckContext))
 
                 if (rule_result) {
                     unaryFunc.conclusion.map(conclusion => conclusion.toActions(context, ruleCheckContext)).flatten
@@ -233,7 +233,7 @@ abstract class RuleWrapper[C <: Conclusion](rule: Rule[C]) {
                 }
             }
             case nullaryFunc@nullaryFunctionImplication(_, _) => {
-                val rule_result = nullaryFunc.sideCondition.forall(cond => cond.applies(context))
+                val rule_result = nullaryFunc.sideCondition.forall(cond => cond.applies(context, ruleCheckContext))
 
                 if (rule_result) {
                     nullaryFunc.conclusion.map(conclusion => conclusion.toActions(context, ruleCheckContext)).flatten
@@ -246,7 +246,7 @@ abstract class RuleWrapper[C <: Conclusion](rule: Rule[C]) {
     }
 }
 
-case class ApplyForEveryVariable[C <: Conclusion](rule: Rule[C]) extends RuleWrapper[C](rule: Rule[C]) {
+case class ForanyVariableWrapper[C <: Conclusion](rule: Rule[C]) extends RuleWrapper[C](rule: Rule[C]) {
     def getActions(context: ExpressionDerivationContext): Seq[Action] = {
         val variablesInExpression = getVariables(context.expression)
         val variablesInHyperMapping = context.mapping.mapping.keySet.map(Id(_))

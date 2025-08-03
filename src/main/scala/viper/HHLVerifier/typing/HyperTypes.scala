@@ -17,19 +17,39 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.ast.ImpliesExpr
 import viper.silicon.state.terms.Greater
+import viper.HHLVerifier.typing.rules.RuleCheckContext
 
 sealed trait HyperType {
   override def toString: String = {
     PrettyPrinter.formatHyperType(this)
   }
+  def deriveTransformId(ruleContext: RuleCheckContext) : HyperType
 }
 
-sealed trait MonoHyperType extends HyperType {}
+abstract class MonoHyperType(ids: Set[Id]) extends HyperType {
+    override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = {
+    MonoUp(ids.map(i => {
+      if (i.name.toIntOption.isDefined) {
+        val valIndex = i.name.toInt
+        if (ruleContext.variables.length <= valIndex) {
+          throw new Exception(s"Variable with index $valIndex does not exist in the rule Context.")
+        } else {
+          Id(ruleContext.variables(valIndex).name)
+        }
+      } else {
+        throw new Exception("Expected Id with integer name, got: " + i)
+      }
+    }))
+  }
+}
 sealed trait AbsValueHyperType extends HyperType {}
 sealed trait ValueHyperType extends HyperType {}
 sealed trait InformationFlowType extends HyperType {}
 
 case class Low() extends InformationFlowType {
+
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
   def semantic(id: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -52,6 +72,8 @@ case class Low() extends InformationFlowType {
 } 
 
 case class Pos() extends ValueHyperType {
+  
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
 
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
@@ -71,6 +93,9 @@ case class Pos() extends ValueHyperType {
 
 case class Neg() extends ValueHyperType {
 
+  
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -88,6 +113,10 @@ case class Neg() extends ValueHyperType {
 }
 
 case class Zero() extends ValueHyperType {
+
+  
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -105,6 +134,10 @@ case class Zero() extends ValueHyperType {
 }
 
 case class True() extends ValueHyperType {
+
+  
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -120,6 +153,10 @@ case class True() extends ValueHyperType {
 }
 
 case class False() extends ValueHyperType {
+
+  
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
  def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -134,7 +171,9 @@ case class False() extends ValueHyperType {
   }
 }
 
-case class MonoUp(val ids : Set[Id]) extends MonoHyperType {
+case class MonoUp(val ids : Set[Id]) extends MonoHyperType(ids) {
+
+
   def semantic(valId: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -164,7 +203,7 @@ case class MonoUp(val ids : Set[Id]) extends MonoHyperType {
       (Some(stmt), Seq.empty)
   }
 }
-case class MonoDown(val ids : Set[Id]) extends MonoHyperType {
+case class MonoDown(val ids : Set[Id]) extends MonoHyperType(ids) {
 def semantic(valId: Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s2_assert = AssertVar("_s2")
@@ -195,6 +234,9 @@ def semantic(valId: Id) : Assertion = {
 }
 
 case class GreaterOne() extends AbsValueHyperType {
+
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
   def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -211,6 +253,9 @@ case class GreaterOne() extends AbsValueHyperType {
   }
 }
 case class LessOne() extends AbsValueHyperType {
+
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
     def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -227,6 +272,9 @@ case class LessOne() extends AbsValueHyperType {
   }
 }
 case class One() extends AbsValueHyperType {
+
+  override def deriveTransformId(ruleContext: RuleCheckContext): HyperType = this
+
     def semantic(id : Id) : Assertion = {
     val s1_assert = AssertVar("_s1")
     val s1 = AssertVarDecl(s1_assert, StateType())
@@ -305,6 +353,10 @@ case class HyperTypeCollection(
 
   def extend(other: HyperTypeCollection): HyperTypeCollection = {
     new HyperTypeCollection(this.hypertypes ++ other.hypertypes)
+  }
+
+  override def toString: String = {
+    PrettyPrinter.formatHyperTypeCollection(this)
   }
 }
 

@@ -13,6 +13,8 @@ import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.DeltaConclusion
 import viper.HHLVerifier.typing.rules.VarHasDeltaType
 import viper.HHLVerifier.typing.rules.EmptyWrapper
+import viper.HHLVerifier.typing.rules.ForanyVariableWrapper
+import viper.HHLVerifier.typing.rules.VarNotInDelta
 
 
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction[HyperTypeConclusion] {
@@ -28,10 +30,10 @@ case class AdditionCombineFunctionHypertype() extends binaryCombineFunction[Hype
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(GreaterOne())), Seq(), Seq(), Seq(ContainsHyperType(Pos())))),
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(), Seq(ContainsHyperType(Neg())))),
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Pos()), ElementOf(LessOne())), Seq(), Seq(ElementOf(Neg()), ElementOf(GreaterOne())), Seq(), Seq(), Seq(ContainsHyperType(Neg())))),
-        EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(),   Seq(),  Seq(ContainsHyperType(MonoUp(Set(Id("monoId"))))))),
-        EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("monoId"))))), Seq(),   Seq(),  Seq(ContainsHyperType(MonoUp(Set(Id("monoId"))))))),
-        EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(),  Seq(ContainsHyperType(MonoDown(Set(Id("monoId"))))))),
-        EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("monoId"))))), Seq(), Seq(),  Seq(ContainsHyperType(MonoDown(Set(Id("monoId"))))))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(MonoUp(Set(Id("0"))))), Seq(), Seq(ElementOf(Low())), Seq(),   Seq(),  Seq(ContainsHyperType(MonoUp(Set(Id("0"))))))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoUp(Set(Id("0"))))), Seq(),   Seq(),  Seq(ContainsHyperType(MonoUp(Set(Id("0"))))))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(MonoDown(Set(Id("0"))))), Seq(), Seq(ElementOf(Low())), Seq(), Seq(),  Seq(ContainsHyperType(MonoDown(Set(Id("0"))))))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(ElementOf(MonoDown(Set(Id("0"))))), Seq(), Seq(),  Seq(ContainsHyperType(MonoDown(Set(Id("0"))))))),
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(One())), Seq(), Seq(ElementOf(Zero())), Seq(), Seq(),  Seq(ContainsHyperType(One())))), 
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(GreaterOne())), Seq(), Seq(ElementOf(Zero())), Seq(),Seq(),  Seq(ContainsHyperType(GreaterOne())))),
         EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(LessOne())), Seq(), Seq(ElementOf(Zero())), Seq(),Seq(),  Seq(ContainsHyperType(LessOne())))),
@@ -54,9 +56,12 @@ case class AdditionCombineFunctionHypertype() extends binaryCombineFunction[Hype
 
 case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction[DeltaConclusion] {
     val rules = Seq(
-        EmptyWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(ElementOf(Low())), Seq(), Seq(),  Seq(VarHasDeltaType( Low())))),
-        EmptyWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(), Seq(VarHasDeltaType(Low())))),
-        EmptyWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(Id("x"), Low())), Seq(), Seq(DeltaContains(Id("x"), Low())),Seq(),  Seq(VarHasDeltaType(Low())))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(),  Seq(VarHasDeltaType(0, Low())))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(DeltaContains(0, Low())),Seq(),  Seq(VarHasDeltaType(0, Low())))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(DeltaContains(0, Zero())), Seq(), Seq(VarHasDeltaType(0, Pos())))),
+        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Zero())), Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(VarHasDeltaType(0, Pos())))),
+
     )
 }
 

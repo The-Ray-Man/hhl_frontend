@@ -43,20 +43,22 @@ case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusi
   }
 
 
-case class VarHasDeltaType(val hyperType: HyperType) extends DeltaConclusion {
+case class VarHasDeltaType(val varId: Int, val hyperType: HyperType) extends DeltaConclusion {
 
   override def toActions(context : ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
-      ruleCheckContext.variables.head match {
-          case id: Id => Seq(ExtendDeltaMapping(id, hyperType))
-          case _ => throw new Exception("Expected Id, got: " + context)
+      if (ruleCheckContext.variables.length <= varId) {
+          throw new Exception("Variable index out of bounds: " + varId + " for variables: " + ruleCheckContext.variables)
       }
+
+      val variable = ruleCheckContext.variables(varId)
+      Seq(ExtendDeltaMapping(variable, hyperType))
   }
 }
 
-case class LookupAndAddHyperType() extends HyperTypeConclusion {
+case class LookupAndAddHyperType(val varId: Int) extends HyperTypeConclusion {
 
   override def toActions(context : ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
-      val hyperTypes = context.mapping.getUnsafe(ruleCheckContext.variables.head.name)
+      val hyperTypes = context.mapping.getUnsafe(ruleCheckContext.variables(varId).name)
       val result = hyperTypes.hypertypes.map(ht =>
           AddHyperType(ht)
       ).toSeq
