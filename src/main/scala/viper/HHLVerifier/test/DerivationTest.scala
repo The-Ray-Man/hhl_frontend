@@ -4,6 +4,10 @@ import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
+import viper.HHLVerifier.ast.Id
+import viper.HHLVerifier.typing.HyperTypeCollection
+import viper.HHLVerifier.typing.{Low, Zero}
+import viper.HHLVerifier.ast.Expr
 
 
 
@@ -11,11 +15,24 @@ object DerivationTests {
 
     def main(args: Array[String]): Unit = {
 
+        var expression : Expr = null
+        expression = BinaryExpr(Num(1), "+", Num(2))
+        var mapping = HyperMapping(Map())
+        var res = ExpressionDerivationRule.derive(expression, mapping)
+        println(s"$expression :: {${res._1}}, {${res._2}}")
 
-        val expression1 = BinaryExpr(Num(1), "+", Num(2))
-        val mapping = HyperMapping(Map())
 
-        val result = ExpressionDerivationRule.derive(expression1, mapping)
-        println(s"Result of derivation: $result")
+        expression = BinaryExpr(Id("x"), "+", Num(2))
+        mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(Low(), Zero())))))
+
+        res = ExpressionDerivationRule.derive(expression, mapping)
+        println(s"$expression :: {${res._1}}, {${res._2}}")
+
+        expression = Id("x") 
+        mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(Low(), Zero())))))
+
+        res = ExpressionDerivationRule.derive(expression, mapping)
+        println(s"$expression :: {${res._1}}, {${res._2}}")
+
     }
 }
