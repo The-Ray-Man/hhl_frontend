@@ -22,25 +22,21 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.Num
 
-
-
 case class NumericalCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq(
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low())))),
-    )
+  val rules = Seq(
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low()))))
+  )
 }
-
 
 case class NumericalCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class NumericalDerivationRule() extends ExpressionDerivationRule {
 
@@ -48,12 +44,10 @@ case class NumericalDerivationRule() extends ExpressionDerivationRule {
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-        case _@Num(_) => super.applyNullary(system, expression, mapping)
-        case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      case _ @Num(_) => super.applyNullary(system, expression, mapping)
+      case _         => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
-
 
   override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = NumericalCombineFunctionHypertype()
 

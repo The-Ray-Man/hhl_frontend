@@ -21,9 +21,7 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
 
-package object expression {
-  
-}
+package object expression {}
 case class ExpressionSystem(
     identifierRule: IdentifierDerivationRule = IdentifierDerivationRule(),
     constRule: NumericalDerivationRule = NumericalDerivationRule(),
@@ -32,19 +30,19 @@ case class ExpressionSystem(
     unaryRule: UnaryExpressionDerivationRule = UnaryExpressionDerivationRule(),
     methodCallRule: MethodDerivationRule = MethodDerivationRule(),
     lookupRule: LookupDerivationRule = LookupDerivationRule(),
-    lengthRule: LengthDerivationRule = LengthDerivationRule(),
+    lengthRule: LengthDerivationRule = LengthDerivationRule()
 ) {
-    def derive(e: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
-        e match {
-            case id@Id(_) => identifierRule.derive(this, id, mapping)
-            case num@Num(_) => constRule.derive(this, num, mapping)
-            case bool@BoolLit(_) => boolRule.derive(this, bool, mapping)
-            case binaryExpr@BinaryExpr(_, _, _) => binaryRule.derive(this, binaryExpr, mapping)
-            case unaryExpr@UnaryExpr(_, _) => unaryRule.derive(this, unaryExpr, mapping)
-            case methodCall@MethodCallExpr(_, _) => methodCallRule.derive(this, methodCall, mapping)
-            case lookup@LookupExpr(_, _) => lookupRule.derive(this, lookup, mapping)
-            case lengthExpr@LengthExpr(_) => lengthRule.derive(this, lengthExpr, mapping)
-            case _ => throw new Exception("Cannot derive expression: " + e)
-        }
+  def derive(e: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+    e match {
+      case id @ Id(_)                        => identifierRule.derive(this, id, mapping)
+      case num @ Num(_)                      => constRule.derive(this, num, mapping)
+      case bool @ BoolLit(_)                 => boolRule.derive(this, bool, mapping)
+      case binaryExpr @ BinaryExpr(_, _, _)  => binaryRule.derive(this, binaryExpr, mapping)
+      case unaryExpr @ UnaryExpr(_, _)       => unaryRule.derive(this, unaryExpr, mapping)
+      case methodCall @ MethodCallExpr(_, _) => methodCallRule.derive(this, methodCall, mapping)
+      case lookup @ LookupExpr(_, _)         => lookupRule.derive(this, lookup, mapping)
+      case lengthExpr @ LengthExpr(_)        => lengthRule.derive(this, lengthExpr, mapping)
+      case _                                 => throw new Exception("Cannot derive expression: " + e)
     }
+  }
 }

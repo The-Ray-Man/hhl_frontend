@@ -1,6 +1,5 @@
 package viper.HHLVerifier.typing.rules.expression
 
-
 import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.DeltaConclusion
 import viper.HHLVerifier.typing.rules.nullaryCombineFunction
@@ -19,21 +18,17 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.Id
 
-
-
 case class IdentifierCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq(
-        ForanyVariableWrapper(nullaryFunctionImplication(Seq(VarInHyperMapping(0)), Seq(LookupAndAddHyperType(0)))),
-    )
+  val rules = Seq(
+    ForanyVariableWrapper(nullaryFunctionImplication(Seq(VarInHyperMapping(0)), Seq(LookupAndAddHyperType(0))))
+  )
 }
-
 
 case class IdentifierCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
-    val rules = Seq(
-        ForanyVariableWrapper(nullaryFunctionImplication(Seq(ExpressionIsVar(0)), Seq(VarHasDeltaType(0, Zero())))),
-    )
+  val rules = Seq(
+    ForanyVariableWrapper(nullaryFunctionImplication(Seq(ExpressionIsVar(0)), Seq(VarHasDeltaType(0, Zero()))))
+  )
 }
-
 
 case class IdentifierDerivationRule() extends ExpressionDerivationRule {
 
@@ -41,11 +36,10 @@ case class IdentifierDerivationRule() extends ExpressionDerivationRule {
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-      case _@Id(_) => applyNullary(system, expression, mapping)
-      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      case _ @Id(_) => applyNullary(system, expression, mapping)
+      case _        => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
 
   override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = IdentifierCombineFunctionHypertype()
 

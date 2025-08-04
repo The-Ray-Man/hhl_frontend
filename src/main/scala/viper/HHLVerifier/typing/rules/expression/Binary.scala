@@ -13,27 +13,26 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.typing.rules.CombineFunction
 
-
 case class BinaryExpressionDerivationRule(
-    val additionRule : ExpressionDerivationRule = binaryOp.AdditionDerivationRule(),
+    val additionRule: ExpressionDerivationRule = binaryOp.AdditionDerivationRule()
     // TODO: Add other binary rules here
 ) extends ExpressionDerivationRule {
 
-    override val combineFunctionHypertype: CombineFunction[HyperTypeConclusion] = null
+  override val combineFunctionHypertype: CombineFunction[HyperTypeConclusion] = null
 
-    override val combineFunctionDelta: CombineFunction[DeltaConclusion] = null
+  override val combineFunctionDelta: CombineFunction[DeltaConclusion] = null
 
-    override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
+  override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-    override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
-        expression match {
-            case binaryExpr@BinaryExpr(e1, op, e2) => {
-                op match {
-                    case "+" => additionRule.derive(system, expression, mapping)
-                    case _ => throw new Exception("Unsupported binary operator: " + op)
-                }
-            }
-            case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+    expression match {
+      case binaryExpr @ BinaryExpr(e1, op, e2) => {
+        op match {
+          case "+" => additionRule.derive(system, expression, mapping)
+          case _   => throw new Exception("Unsupported binary operator: " + op)
         }
+      }
+      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
+  }
 }

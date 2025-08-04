@@ -21,44 +21,38 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.UnaryExpr
 
-
 case class MinusCombineFunctionHypertype() extends unaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class MinusCombineFunctionDeltatype() extends unaryCombineFunction[DeltaConclusion] {
-    val rules = Seq(
-        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(),  Seq(VarHasDeltaType(0, Low())))),
-        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
-        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(DeltaContains(0, Low())),Seq(),  Seq(VarHasDeltaType(0, Low())))),
-        ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(DeltaContains(0, Zero())), Seq(), Seq(VarHasDeltaType(0, Pos())))),
-        ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Zero())), Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(VarHasDeltaType(0, Pos())))),
-
-    )
+  val rules = Seq(
+    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(), Seq(VarHasDeltaType(0, Low())))),
+    ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
+    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
+    ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(DeltaContains(0, Zero())), Seq(), Seq(VarHasDeltaType(0, Pos())))),
+    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Zero())), Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(VarHasDeltaType(0, Pos()))))
+  )
 }
-
 
 case class MinusDerivationRule() extends ExpressionDerivationRule {
 
-  override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram] 
+  override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-        case unaryExpr@UnaryExpr(op, e) => {
-            op match {
-                case "-" => super.applyUnary(system, expression, e, mapping)
-                case _ => throw new IllegalArgumentException(s"Wrong rule applied for unary operator: ${op}")
-            }
+      case unaryExpr @ UnaryExpr(op, e) => {
+        op match {
+          case "-" => super.applyUnary(system, expression, e, mapping)
+          case _   => throw new IllegalArgumentException(s"Wrong rule applied for unary operator: ${op}")
         }
-        case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      }
+      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
 
   override val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = MinusCombineFunctionHypertype()
 
   override val combineFunctionDelta: unaryCombineFunction[DeltaConclusion] = MinusCombineFunctionDeltatype()
-
 
 }

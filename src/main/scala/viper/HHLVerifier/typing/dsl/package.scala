@@ -1,5 +1,3 @@
 package viper.HHLVerifier.typing
 
-package object dsl {
-  
-}
+package object dsl {}

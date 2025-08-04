@@ -22,17 +22,13 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.MethodCallExpr
 
-
-
 case class MethodCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class MethodCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class MethodDerivationRule() extends ExpressionDerivationRule {
 
@@ -43,7 +39,6 @@ case class MethodDerivationRule() extends ExpressionDerivationRule {
       case _ => throw new IllegalArgumentException(s"Function Expressions are not implemented yet")
     }
   }
-
 
   override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = MethodCombineFunctionHypertype()
 

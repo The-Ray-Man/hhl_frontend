@@ -15,30 +15,28 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.rules.expression.unaryOp.MinusDerivationRule
 import viper.HHLVerifier.typing.rules.CombineFunction
 
-
 case class UnaryExpressionDerivationRule(
-    val minusRule : ExpressionDerivationRule = MinusDerivationRule(),
+    val minusRule: ExpressionDerivationRule = MinusDerivationRule()
     // TODO: Add other unary rules here
 
 ) extends ExpressionDerivationRule {
 
-    override val combineFunctionHypertype: CombineFunction[HyperTypeConclusion] = null
+  override val combineFunctionHypertype: CombineFunction[HyperTypeConclusion] = null
 
-    override val combineFunctionDelta: CombineFunction[DeltaConclusion] = null
+  override val combineFunctionDelta: CombineFunction[DeltaConclusion] = null
 
-    
-    def generateSoundnessTests: Seq[HHLProgram] = Seq()
-    def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  def generateSoundnessTests: Seq[HHLProgram]                                                                           = Seq()
+  def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
 
-        expression match {
-            case unaryExpr@UnaryExpr(_, _) => {
-                unaryExpr.op match {
-                    case "-" => minusRule.derive(system, expression, mapping)
-                    case _ => throw new Exception("Unsupported unary operator: " + unaryExpr.op)
-                }
-            }
-            case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+    expression match {
+      case unaryExpr @ UnaryExpr(_, _) => {
+        unaryExpr.op match {
+          case "-" => minusRule.derive(system, expression, mapping)
+          case _   => throw new Exception("Unsupported unary operator: " + unaryExpr.op)
         }
-        
+      }
+      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
+
+  }
 }

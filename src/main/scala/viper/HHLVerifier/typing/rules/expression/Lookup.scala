@@ -22,17 +22,13 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.LookupExpr
 
-
-
 case class LookupCombineFunctionHypertype() extends binaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class LookupCombineFunctionDeltatype() extends binaryCombineFunction[DeltaConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class LookupDerivationRule() extends ExpressionDerivationRule {
 
@@ -40,11 +36,10 @@ case class LookupDerivationRule() extends ExpressionDerivationRule {
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-      case _@LookupExpr(e1, e2) => super.applyBinary(system, expression, e1, e2, mapping)
-      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      case _ @LookupExpr(e1, e2) => super.applyBinary(system, expression, e1, e2, mapping)
+      case _                     => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
 
   override val combineFunctionHypertype: binaryCombineFunction[HyperTypeConclusion] = LookupCombineFunctionHypertype()
 

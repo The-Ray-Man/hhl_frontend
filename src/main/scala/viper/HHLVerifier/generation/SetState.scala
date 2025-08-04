@@ -5,42 +5,38 @@ import viper.silver.{ast => vpr}
 // All functionality regarding SetStates and the corresponding domain
 object SetState {
   // Frequently used constants
-  val sVarName = "_s"
-  val setStateDomainName = "SetState"
-  val inSetFuncName = "in_set"
-  val inSetForAllFuncName = "in_set_forall"
+  val sVarName                   = "_s"
+  val setStateDomainName         = "SetState"
+  val inSetFuncName              = "in_set"
+  val inSetForAllFuncName        = "in_set_forall"
   val inSetForAllLimitedFuncName = "in_set_forall_limited"
-  val inSetExistsFuncName = "in_set_exists"
+  val inSetExistsFuncName        = "in_set_exists"
   val inSetExistsLimitedFuncName = "in_set_exists_limited"
-  val setUnionFuncName = "set_union"
+  val setUnionFuncName           = "set_union"
 
   // Associated types
   val setStateType = vpr.DomainType(setStateDomainName, Map.empty)(Seq.empty)
 
-  def localVar(name: String): vpr.LocalVar = vpr.LocalVar(name, setStateType)()
+  def localVar(name: String): vpr.LocalVar         = vpr.LocalVar(name, setStateType)()
   def localVarDecl(name: String): vpr.LocalVarDecl = vpr.LocalVarDecl(name, setStateType)()
 
   // generates the domain
   def domain(): vpr.Domain = {
     // necessary variables
-    val sVar = State.localVarDecl("s")
-    val SVar = localVarDecl("S")
+    val sVar  = State.localVarDecl("s")
+    val SVar  = localVarDecl("S")
     val S1Var = localVarDecl("S1")
     val S2Var = localVarDecl("S2")
 
     val setUnionForallAxiomBody = {
-      val inS1OrS2 = vpr.Or(getInSetApp(Seq(sVar.localVar, S1Var.localVar)),
-        getInSetApp(Seq(sVar.localVar, S2Var.localVar))
-      )()
-      val inUnion = getInSetApp(Seq(sVar.localVar, getSetUnionApp(Seq(S1Var.localVar, S2Var.localVar))))
+      val inS1OrS2 = vpr.Or(getInSetApp(Seq(sVar.localVar, S1Var.localVar)), getInSetApp(Seq(sVar.localVar, S2Var.localVar)))()
+      val inUnion  = getInSetApp(Seq(sVar.localVar, getSetUnionApp(Seq(S1Var.localVar, S2Var.localVar))))
       vpr.EqCmp(inS1OrS2, inUnion)()
     }
 
     val setUnionExistsAxiomBody = {
-      val inS1OrS2 = vpr.Or(getInSetApp(Seq(sVar.localVar, S1Var.localVar), useForAll=false),
-        getInSetApp(Seq(sVar.localVar, S2Var.localVar), useForAll=false)
-      )()
-      val inUnion = getInSetApp(Seq(sVar.localVar, getSetUnionApp(Seq(S1Var.localVar, S2Var.localVar))), useForAll=false)
+      val inS1OrS2 = vpr.Or(getInSetApp(Seq(sVar.localVar, S1Var.localVar), useForAll = false), getInSetApp(Seq(sVar.localVar, S2Var.localVar), useForAll = false))()
+      val inUnion  = getInSetApp(Seq(sVar.localVar, getSetUnionApp(Seq(S1Var.localVar, S2Var.localVar))), useForAll = false)
       vpr.EqCmp(inS1OrS2, inUnion)()
     }
 
@@ -87,7 +83,7 @@ object SetState {
             Seq(sVar, SVar),
             Seq(vpr.Trigger(Seq(getInSetApp(Seq(sVar.localVar, SVar.localVar))))()),
             vpr.EqCmp(
-              getInSetApp(Seq(sVar.localVar, SVar.localVar), useLimited=true),
+              getInSetApp(Seq(sVar.localVar, SVar.localVar), useLimited = true),
               getInSetApp(Seq(sVar.localVar, SVar.localVar))
             )()
           )()
@@ -96,10 +92,10 @@ object SetState {
           inSetExistsLimitedFuncName + "_def",
           vpr.Forall(
             Seq(sVar, SVar),
-            Seq(vpr.Trigger(Seq(getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll=false)))()),
+            Seq(vpr.Trigger(Seq(getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll = false)))()),
             vpr.EqCmp(
-              getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll=false, useLimited=true),
-              getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll=false)
+              getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll = false, useLimited = true),
+              getInSetApp(Seq(sVar.localVar, SVar.localVar), useForAll = false)
             )()
           )()
         )(domainName = setStateDomainName)

@@ -19,20 +19,16 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.rules.ExpressionDerivationContext
 import viper.HHLVerifier.ast.Expr
 
-
-
 case class BooleanCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq(
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstTrue()), Seq(ContainsHyperType(True())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstFalse()), Seq(ContainsHyperType(False())))),
-    )
+  val rules = Seq(
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstTrue()), Seq(ContainsHyperType(True())))),
+    EmptyWrapper(nullaryFunctionImplication(Seq(ConstFalse()), Seq(ContainsHyperType(False()))))
+  )
 }
-
 
 case class BooleanCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class BooleanDerivationRule() extends ExpressionDerivationRule {
 
@@ -40,12 +36,12 @@ case class BooleanDerivationRule() extends ExpressionDerivationRule {
 
   val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = BooleanCombineFunctionDeltatype()
 
-    def generateSoundnessTests: Seq[viper.HHLVerifier.ast.HHLProgram] = Seq()
-    def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) ={ 
-        expression match {
-            case BoolLit(value) => applyNullary(system, expression, mapping)
-            case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
-            }
-        }
+  def generateSoundnessTests: Seq[viper.HHLVerifier.ast.HHLProgram]                                                     = Seq()
+  def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+    expression match {
+      case BoolLit(value) => applyNullary(system, expression, mapping)
+      case _              => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+    }
+  }
 
 }

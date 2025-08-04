@@ -47,8 +47,8 @@ object ViperRunner {
     if (consistencyErrors.nonEmpty) {
       consistencyErrors.foreach(err => new Logger(err.readableMessage, Logger.ERR).addTitle("Consistency Error").log())
       sys.exit(1)
-    } else{
-      val carbon = CarbonVerifier(NoopReporter)
+    } else {
+      val carbon  = CarbonVerifier(NoopReporter)
       val silicon = Silicon.fromPartialCommandLineArguments(Seq.empty, NoopReporter)
 
       try {
@@ -92,7 +92,7 @@ object ViperRunner {
                 if (!resPromise.isCompleted) {
                   if (!checkSideCondition) {
                     new Logger("Carbon failed to verify the program.").log()
-                    //err.foreach(e => println(e.readableMessage))
+                    // err.foreach(e => println(e.readableMessage))
                   }
                   if (!siliconRes.isCompleted) {
                     try {
@@ -145,19 +145,19 @@ object ViperRunner {
           case Failure(_) =>
         }
         val resultFuture = resPromise.future
-        val result = Await.result(resultFuture, overallTimeout.seconds)
+        val result       = Await.result(resultFuture, overallTimeout.seconds)
         result
       } catch {
-          case _: java.util.concurrent.TimeoutException => ResFailure(Seq(TimeoutOccurred(overallTimeout, "seconds")))
+        case _: java.util.concurrent.TimeoutException => ResFailure(Seq(TimeoutOccurred(overallTimeout, "seconds")))
       }
     }
   }
 
   def interpretResult(res: VerificationResult): Boolean = {
     res match {
-      case ResSuccess => true
+      case ResSuccess    => true
       case ResFailure(_) => false
-      case _ => false
+      case _             => false
     }
   }
 }

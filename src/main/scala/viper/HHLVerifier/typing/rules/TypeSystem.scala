@@ -7,9 +7,5 @@ case class TypeSystem(
     expressionSystem: ExpressionSystem = ExpressionSystem()
 ) {}
 
-
 case class StatementTypeSystem(
-
 )
-
-

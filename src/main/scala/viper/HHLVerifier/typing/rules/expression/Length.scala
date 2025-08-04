@@ -23,17 +23,13 @@ import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LengthExpr
 
-
-
 case class LengthCombineFunctionHypertype() extends unaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class LengthCombineFunctionDeltatype() extends unaryCombineFunction[DeltaConclusion] {
-    val rules = Seq()
+  val rules = Seq()
 }
-
 
 case class LengthDerivationRule() extends ExpressionDerivationRule {
 
@@ -41,11 +37,10 @@ case class LengthDerivationRule() extends ExpressionDerivationRule {
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-      case _@LengthExpr(e) => super.applyUnary(system, expression, e, mapping)
-      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      case _ @LengthExpr(e) => super.applyUnary(system, expression, e, mapping)
+      case _                => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
 
   override val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = LengthCombineFunctionHypertype()
 

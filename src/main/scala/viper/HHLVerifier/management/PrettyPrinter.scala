@@ -51,14 +51,14 @@ object PrettyPrinter {
       case IfElseStmt(cond, ifStmt, elseStmt) =>
         // If statement, creates condition and executable statement
         // May include else statement
-        val ifStmtStr = "if ( " + formatExpr(cond) + " ) {\n" + formatStmt(ifStmt) + "\n}"
+        val ifStmtStr   = "if ( " + formatExpr(cond) + " ) {\n" + formatStmt(ifStmt) + "\n}"
         val elseStmtStr = if (elseStmt.stmts.nonEmpty) "" else " else {\n" + formatStmt(elseStmt) + "\n}"
         ifStmtStr + elseStmtStr
       case WhileLoopStmt(cond, body, inv, decr, rule) =>
         // While Statement, includes (possibly) specified rule, condition, invariant, variant, body
         val ruleStr = if (rule == "unspecified") "" else rule
         val condStr = "while " + ruleStr + " ( " + formatExpr(cond) + " ) {\n"
-        val invStr = if (inv.isEmpty) "" else inv.map(i => "invariant " + formatExpr(i._2) + "\n").mkString
+        val invStr  = if (inv.isEmpty) "" else inv.map(i => "invariant " + formatExpr(i._2) + "\n").mkString
         val decrStr = if (decr.isEmpty) "" else "decreases " + formatExpr(decr.get) + "\n"
         condStr + invStr + decrStr + "{\n" + formatStmt(body) + "\n}"
       case PVarDecl(vName, vType) =>
@@ -73,95 +73,101 @@ object PrettyPrinter {
       case DeclareStmt(blockName, stmts) =>
         // declare statement
         "declare " + formatExpr(blockName) + " {\n" + formatStmt(stmts) + "\n}"
-      case ReuseStmt(blockName) => "reuse " + formatExpr(blockName)
-      case UseHintStmt(hint) => "use " + formatExpr(hint)
+      case ReuseStmt(blockName)             => "reuse " + formatExpr(blockName)
+      case UseHintStmt(hint)                => "use " + formatExpr(hint)
       case MethodCallStmt(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
-      case UnfoldStmt(t, id) => "unfold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
-      case FoldStmt(t, id) => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
+      case UnfoldStmt(t, id)                => "unfold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
+      case FoldStmt(t, id)                  => "fold (" + formatHyperType(t) + ") " + formatExpr(id) + "\n"
     }
   }
 
   // prints expression by matching recursively on AST
   def formatExpr(expr: Expr): String = {
     expr match {
-      case Id(name) => name
-      case AssertVar(name) => name
-      case ProofVar(name) => name
-      case AssertVarDecl(vName, vType) => vName + ": " + formatType(vType)
-      case Num(value) => value.toString
-      case BoolLit(value) => value.toString
-      case BinaryExpr(e1, op, e2) => "(" + formatExpr(e1) + ") " + op + " (" + formatExpr(e2) + ")"
-      case UnaryExpr(op, e) => op + "(" + formatExpr(e) + ")"
-      case ImpliesExpr(left, right) => "(" + formatExpr(left) + ") ==> (" + formatExpr(right) + ")"
+      case Id(name)                                    => name
+      case AssertVar(name)                             => name
+      case ProofVar(name)                              => name
+      case AssertVarDecl(vName, vType)                 => vName + ": " + formatType(vType)
+      case Num(value)                                  => value.toString
+      case BoolLit(value)                              => value.toString
+      case BinaryExpr(e1, op, e2)                      => "(" + formatExpr(e1) + ") " + op + " (" + formatExpr(e2) + ")"
+      case UnaryExpr(op, e)                            => op + "(" + formatExpr(e) + ")"
+      case ImpliesExpr(left, right)                    => "(" + formatExpr(left) + ") ==> (" + formatExpr(right) + ")"
       case Assertion(quantifier, assertVarDecls, body) =>
         quantifier + " " + assertVarDecls.map(a => "<" + formatExpr(a) + ">").mkString(", ") + " :: (" + formatExpr(body) + ")"
-      case StateExistsExpr(state, err) => if (err) "<<" + formatExpr(state) + ">>" else "<" + formatExpr(state) + ">"
-      case LoopIndex() => "$n"
-      case HintDecl(name) => "(" + name + ")"
-      case Hint(name, arg) => name + "(" + formatExpr(arg) + ")"
+      case StateExistsExpr(state, err)      => if (err) "<<" + formatExpr(state) + ">>" else "<" + formatExpr(state) + ">"
+      case LoopIndex()                      => "$n"
+      case HintDecl(name)                   => "(" + name + ")"
+      case Hint(name, arg)                  => name + "(" + formatExpr(arg) + ")"
       case MethodCallExpr(methodName, args) => methodName + "(" + args.map(a => formatExpr(a)).mkString(", ") + ")"
-      case SeqAssignExpr(elements) => "Seq(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b)}, ") + ")"
-      case SetAssignExpr(elements) => "Set(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b)}, ") + ")"
-      case MapAssignExpr(elements) => "Map(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b.k)} := ${formatExpr(b.v)}, ") + ")"
-      case LookupExpr(id, ind) => f"${formatExpr(id)}[${formatExpr(ind)}]"
-      case LengthExpr(id) => f"|${formatExpr(id)}|"
-      case CombExpr(lhs, rhs, op) => f"${formatExpr(lhs)} $op ${formatExpr(rhs)}"
-      case UpdateMapExpr(base, update) => f"${formatExpr(base)}[${formatExpr(update)}]"
-      case MapTupleExpr(k, v) => f"$k := $v"
+      case SeqAssignExpr(elements)          => "Seq(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b)}, ") + ")"
+      case SetAssignExpr(elements)          => "Set(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b)}, ") + ")"
+      case MapAssignExpr(elements)          => "Map(" + elements.foldLeft("")((a, b) => f"$a${formatExpr(b.k)} := ${formatExpr(b.v)}, ") + ")"
+      case LookupExpr(id, ind)              => f"${formatExpr(id)}[${formatExpr(ind)}]"
+      case LengthExpr(id)                   => f"|${formatExpr(id)}|"
+      case CombExpr(lhs, rhs, op)           => f"${formatExpr(lhs)} $op ${formatExpr(rhs)}"
+      case UpdateMapExpr(base, update)      => f"${formatExpr(base)}[${formatExpr(update)}]"
+      case MapTupleExpr(k, v)               => f"$k := $v"
     }
   }
 
   // prints type by simple case distinction
   def formatType(typ: Type): String = {
     typ match {
-      case _: UnknownType => "unknown"
-      case _: IntType => "int"
-      case _: BoolType => "bool"
-      case _: StateType => "state"
+      case _: UnknownType   => "unknown"
+      case _: IntType       => "int"
+      case _: BoolType      => "bool"
+      case _: StateType     => "state"
       case _: StmtBlockType => "StmtBlock"
-      case t: SetType => f"set_${formatType(t.sType)}_"
-      case t: SeqType => f"seq_${formatType(t.sType)}_"
-      case t: MapType => f"map_${formatType(t.kType)}1${formatType(t.vType)}_"
+      case t: SetType       => f"set_${formatType(t.sType)}_"
+      case t: SeqType       => f"seq_${formatType(t.sType)}_"
+      case t: MapType       => f"map_${formatType(t.kType)}1${formatType(t.vType)}_"
     }
   }
 
   def formatHyperType(ty: HyperType): String = {
     ty match {
-      case Low() => "low"
-      case Pos() => "pos"
-      case Neg() => "neg"
-      case Zero() => "zero"
-      case True() => "true"
-      case False() => "false"
-      case One() => "absOne" 
-      case GreaterOne() => "absGtOne"
-      case LessOne() => "absLtOne" 
-      case MonoUp(ids) => "monoUp[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
+      case Low()         => "low"
+      case Pos()         => "pos"
+      case Neg()         => "neg"
+      case Zero()        => "zero"
+      case True()        => "true"
+      case False()       => "false"
+      case One()         => "absOne"
+      case GreaterOne()  => "absGtOne"
+      case LessOne()     => "absLtOne"
+      case MonoUp(ids)   => "monoUp[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
       case MonoDown(ids) => "monoDown[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
-      case _ => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
+      case _             => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
     }
   }
 
-  def formatHyperTypeCollection(col: HyperTypeCollection) : String = {
+  def formatHyperTypeCollection(col: HyperTypeCollection): String = {
     col.hypertypes.map(ty => PrettyPrinter.formatHyperType(ty)).mkString(", ")
   }
 
-  def formatHyperTypeMapping(mapping: HyperMapping) : String = {
-    mapping.mapping.map { case (key, value) =>
-      s"$key -> ${formatHyperTypeCollection(value)}"
-    }.mkString(", ")
+  def formatHyperTypeMapping(mapping: HyperMapping): String = {
+    mapping.mapping
+      .map { case (key, value) =>
+        s"$key -> ${formatHyperTypeCollection(value)}"
+      }
+      .mkString(", ")
   }
 
-  def formatDeltaCollection(mapping: DeltaCollection) : String = {
-    mapping.mapping.map { case (key, value) =>
-      s"$key -> ${formatHyperTypeCollection(value)}"
-    }.mkString(", ")
+  def formatDeltaCollection(mapping: DeltaCollection): String = {
+    mapping.mapping
+      .map { case (key, value) =>
+        s"$key -> ${formatHyperTypeCollection(value)}"
+      }
+      .mkString(", ")
   }
 
-  def formatDeltaMapping(delta: DeltaMapping) : String = {
-    delta.collection.map { case (key, value) =>
-      s"$key: ${formatDeltaCollection(value)}"
-    }.mkString(", ")
+  def formatDeltaMapping(delta: DeltaMapping): String = {
+    delta.collection
+      .map { case (key, value) =>
+        s"$key: ${formatDeltaCollection(value)}"
+      }
+      .mkString(", ")
   }
 
   def getErrorMessage(expr: Expr, source: String): String = {
@@ -175,7 +181,7 @@ object PrettyPrinter {
     val lines = source.split("\n")
 
     var currentCharCount = 0
-    var lineNumber = 0
+    var lineNumber       = 0
 
     for (i <- lines.indices) {
       currentCharCount += lines(i).length + 1

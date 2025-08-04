@@ -8,17 +8,17 @@ import viper.silver.{ast => vpr}
 // All functionality regarding States and the corresponding domain
 object State {
   // Frequently used constants
-  val getFuncPrefix = "get_"
+  val getFuncPrefix   = "get_"
   val stateDomainName = "State"
-  val equalFuncName = "equal_on_everything_except"
-  val axiomPrefix = "equal_on_everything_except_def_"
-  val identType = vpr.Int
+  val equalFuncName   = "equal_on_everything_except"
+  val axiomPrefix     = "equal_on_everything_except_def_"
+  val identType       = vpr.Int
 
   // Associated types
   val stateType = vpr.DomainType(stateDomainName, Map.empty)(Seq.empty)
 
-  def identifier(name: String): vpr.LocalVarDecl = vpr.LocalVarDecl(name, identType)()
-  def localVar(name: String): vpr.LocalVar = vpr.LocalVar(name, stateType)()
+  def identifier(name: String): vpr.LocalVarDecl   = vpr.LocalVarDecl(name, identType)()
+  def localVar(name: String): vpr.LocalVar         = vpr.LocalVar(name, stateType)()
   def localVarDecl(name: String): vpr.LocalVarDecl = vpr.LocalVarDecl(name, stateType)()
 
   def get(state: vpr.LocalVar, id: Id): vpr.DomainFuncApp = apply(
@@ -38,7 +38,7 @@ object State {
   // generates the domain
   def domain(usedTypes: Set[Type]): vpr.Domain = {
     // generate get functions
-    val gets = usedTypes.map(genGetFunction).toSeq :+ genEqualFunc()
+    val gets   = usedTypes.map(genGetFunction).toSeq :+ genEqualFunc()
     val axioms = usedTypes.map(genAxiom).toSeq
 
     vpr.Domain(stateDomainName, gets, axioms)()
@@ -70,10 +70,10 @@ object State {
   private def genAxiom(typ: Type): vpr.DomainAxiom = {
     val state1Var = vpr.LocalVarDecl("s1", stateType)()
     val state2Var = vpr.LocalVarDecl("s2", stateType)()
-    val idVar = vpr.LocalVarDecl("x", vpr.Int)()
-    val notIdVar = vpr.LocalVarDecl("y", vpr.Int)()
-    val typeID = typ.toString()
-    val vprType = translateType(typ)
+    val idVar     = vpr.LocalVarDecl("x", vpr.Int)()
+    val notIdVar  = vpr.LocalVarDecl("y", vpr.Int)()
+    val typeID    = typ.toString()
+    val vprType   = translateType(typ)
 
     vpr.NamedDomainAxiom(
       // Name of the axiom
@@ -92,7 +92,8 @@ object State {
           vpr.Forall(
             Seq(notIdVar),
             Seq.empty,
-            vpr.Implies(vpr.NeCmp(idVar.localVar, notIdVar.localVar)(),
+            vpr.Implies(
+              vpr.NeCmp(idVar.localVar, notIdVar.localVar)(),
               vpr.EqCmp(
                 apply(getFuncPrefix + typeID, Seq(state1Var.localVar, notIdVar.localVar), vprType),
                 apply(getFuncPrefix + typeID, Seq(state2Var.localVar, notIdVar.localVar), vprType)
@@ -100,7 +101,8 @@ object State {
             )()
           )()
         )()
-      )())(domainName = stateDomainName)
+      )()
+    )(domainName = stateDomainName)
   }
 
   private def apply(name: String, args: Seq[vpr.Exp], retType: vpr.Type): vpr.DomainFuncApp = vpr.DomainFuncApp(

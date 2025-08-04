@@ -19,10 +19,10 @@ import viper.HHLVerifier.test.RuleSoundnessTests
 object Main {
 
   // [DOC] Variables
-  var verified = 0  // 0: unknown, 1: failure, 2: success
-  var runtime = 0.0
-  var test = false
-  var testWithLogs = false
+  var verified                 = 0 // 0: unknown, 1: failure, 2: success
+  var runtime                  = 0.0
+  var test                     = false
+  var testWithLogs             = false
   var errMessages: Seq[String] = Seq("")
 
   def main(args: Array[String]): Unit = {
@@ -49,7 +49,7 @@ object Main {
     var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
-    val program = programSource.mkString
+    val program       = programSource.mkString
     Logger.setSourceCode(program)
     programSource.close()
 
@@ -73,7 +73,7 @@ object Main {
 
     try {
       // [DOC] parse program
-      val t0 = System.nanoTime()
+      val t0  = System.nanoTime()
       val res = fastparse.parse(program, Parser.program(_))
 
       if (res.isSuccess) {
@@ -98,8 +98,6 @@ object Main {
 
         // HyperType checking
 
-
-
         // return
         // Generate the Viper program
         val viperProgram = Generator.generate(parsedProgram, program)
@@ -120,15 +118,15 @@ object Main {
         }
 
         val consistencyErrors = viperProgram.checkTransitively
-        //We check whether the program is well-defined (i.e., has no consistency errors such as ill-typed expressions)
+        // We check whether the program is well-defined (i.e., has no consistency errors such as ill-typed expressions)
         if (consistencyErrors.nonEmpty) {
           verified = 1
           consistencyErrors.foreach(err => new Logger(err.readableMessage, Logger.ERR).addTitle("Consistency Error").log())
         } else {
           new Logger("Translated program is being verified by Viper.").log()
           val result = ViperRunner.runSiliconAndCarbon(viperProgram)
-          val t1 = System.nanoTime()
-          runtime = (t1 - t0) / 1E9
+          val t1     = System.nanoTime()
+          runtime = (t1 - t0) / 1e9
           result match {
             case ResSuccess =>
               verified = 2
@@ -142,7 +140,7 @@ object Main {
       } else {
         val Parsed.Failure(expc, pos, extra) = res
         println(extra.trace().longMsg)
-        new Logger(extra.trace().msg, Logger.ERR).addTitle("Parser Error").addOffset((pos, pos+10)).log()
+        new Logger(extra.trace().msg, Logger.ERR).addTitle("Parser Error").addOffset((pos, pos + 10)).log()
       }
     } catch {
       case e: VerifierException =>
