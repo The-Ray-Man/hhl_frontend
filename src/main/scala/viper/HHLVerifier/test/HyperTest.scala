@@ -15,6 +15,7 @@ import viper.HHLVerifier.typing.TypeChecker
 import viper.silicon.rules.evaluator.eval
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
 import viper.HHLVerifier.typing.HyperTranslate
+import viper.HHLVerifier.typing.rules.TypeSystem
 
 trait VerificationResult{}
 case class VerificationSuccess() extends VerificationResult
@@ -101,8 +102,9 @@ object HyperTest {
   }
 
   def hyperTypeCheck(program: HHLProgram, test : (File, TestResult)): Unit = {
+    val system = TypeSystem()
     try {
-      HyperTypeChecker.typeCheckProg(program)
+      HyperTypeChecker.typeCheckProg(system, program)
     } catch {
       case e: Exception => {
         val error = TypeCheckFailure(Some(e.getMessage()))

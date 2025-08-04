@@ -69,6 +69,8 @@ object Main {
     Generator.autoSelectRules = true
     new Logger(f"The input program is read from $programAbsPath.").log()
 
+    val hyperTypeSystem = typing.rules.TypeSystem()
+
     try {
       // [DOC] parse program
       val t0 = System.nanoTime()
@@ -78,7 +80,7 @@ object Main {
         new Logger("Parsing successful.").log()
 
         var parsedProgram: HHLProgram = res.get.value
-        HyperTypeChecker.typeCheckProg(parsedProgram)
+        HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
 
         new Logger("HyperType checking successful.").log()
         if (args.contains("--hypraToHypra")) {

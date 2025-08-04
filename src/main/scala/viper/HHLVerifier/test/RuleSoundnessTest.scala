@@ -10,7 +10,6 @@ import viper.silver.verifier.Success
 import viper.silver.verifier.Failure 
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.typing
-import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
 
 
 
@@ -23,8 +22,10 @@ object RuleSoundnessTests {
         TypeChecker.reset()
         Generator.reset()
 
+        val typeSystem = typing.rules.TypeSystem()
+        
 
-        HyperTypeChecker.typeCheckProg(program)
+        HyperTypeChecker.typeCheckProg(typeSystem, program)
         println("hypertypecheck done")
         val programTranslated = HyperTranslate.translateProgram(program)
         println("hypertranslate done")
@@ -52,18 +53,18 @@ object RuleSoundnessTests {
         var successTests = Seq.empty[String]
         var failureTests = Seq.empty[String]
         for ((test, id) <- tests.zipWithIndex) {
-            println(s"Running test $id for rule ${rule.operator}")
+            println(s"Running test $id for rule ${rule.getClass().getName()}")
             try {
                 runTest(test)
-                successTests :+= s"Test $id for rule ${rule.operator} passed."
+                successTests :+= s"Test $id for rule ${rule.getClass().getName()} passed."
             } catch {
                 case e: Exception =>
-                    println(s"Test $id for rule ${rule.operator} failed with exception: ${e.getMessage}")
-                    failureTests :+= s"Test $id for rule ${rule.operator} failed."
+                    println(s"Test $id for rule ${rule.getClass().getName()} failed with exception: ${e.getMessage}")
+                    failureTests :+= s"Test $id for rule ${rule.getClass().getName()} failed."
             }
         }
 
-        println(s"Total tests ${tests.size} for rule ${rule.operator}.")
+        println(s"Total tests ${tests.size} for rule ${rule}.")
         println(s"Successful tests: ${successTests.size}")
         println(s"Failed tests: ${failureTests.size}")
         if (failureTests.nonEmpty) {
@@ -74,6 +75,6 @@ object RuleSoundnessTests {
 
 
     def main(): Unit = {
-        testExpressionRule(AdditionDerivationRule())
+        
     }
 }

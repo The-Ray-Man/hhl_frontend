@@ -20,43 +20,34 @@ import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
 import viper.HHLVerifier.typing.rules.ExpressionSystem
-import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.ast.LookupExpr
 
 
 
-case class NumericalCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-    val rules = Seq(
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
-        EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low())))),
-    )
-}
-
-
-case class NumericalCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
+case class LookupCombineFunctionHypertype() extends binaryCombineFunction[HyperTypeConclusion] {
     val rules = Seq()
 }
 
 
-case class NumericalDerivationRule() extends ExpressionDerivationRule {
+case class LookupCombineFunctionDeltatype() extends binaryCombineFunction[DeltaConclusion] {
+    val rules = Seq()
+}
+
+
+case class LookupDerivationRule() extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
   override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
-        case _@Num(_) => super.applyNullary(system, expression, mapping)
-        case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
+      case _@LookupExpr(e1, e2) => super.applyBinary(system, expression, e1, e2, mapping)
+      case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
 
 
+  override val combineFunctionHypertype: binaryCombineFunction[HyperTypeConclusion] = LookupCombineFunctionHypertype()
 
-  override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = NumericalCombineFunctionHypertype()
-
-  override val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = NumericalCombineFunctionDeltatype()
+  override val combineFunctionDelta: binaryCombineFunction[DeltaConclusion] = LookupCombineFunctionDeltatype()
 
 }

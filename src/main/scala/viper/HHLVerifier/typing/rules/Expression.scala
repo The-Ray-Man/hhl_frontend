@@ -14,185 +14,91 @@ import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
 import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.rules.expression.BooleanDerivationRule
 import viper.HHLVerifier.typing.rules.expression.NumericalDerivationRule
 import viper.HHLVerifier.typing.rules.expression.IdentifierDerivationRule
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
+import viper.HHLVerifier.ast.UnaryExpr
 
 
 
 
 
-sealed trait ExpressionOperator {
-    def expression(e1: Expr, e2: Expr): Expr
-}
-
-object ExpressionOperator {
-    case object Add extends ExpressionOperator {
-      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "+" ,e2)
-    }
-    case object Subtract extends ExpressionOperator {
-      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "-" ,e2)
-    }
-    case object Multiply extends ExpressionOperator {
-      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "*" ,e2)
-    }
-    case object Divide extends ExpressionOperator {
-      override def expression(e1: Expr, e2: Expr): Expr = BinaryExpr(e1, "/" ,e2)
-    }
-}
-
-
-
-trait ExpressionDerivationRule {
-    val operator: ExpressionOperator
+abstract class ExpressionDerivationRule {
     val combineFunctionHypertype: CombineFunction[HyperTypeConclusion]
     val combineFunctionDelta: CombineFunction[DeltaConclusion]
-    def generateSoundnessTests: Seq[HHLProgram]
-}
 
-object ExpressionDerivationRule {
-    def derive(e: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
-        e match {
-            case binaryExpr@BinaryExpr(_, op, _) => {
-                op match {
-                    case "+" => AdditionDerivationRule().derive(binaryExpr, mapping)
-                    case _ => throw new Exception("Unknown binary operator: " + op)
-                }
-            }
-            case BoolLit(_) => BooleanDerivationRule().derive(e, mapping)
-            case Num(_) => NumericalDerivationRule().derive(e, mapping)
-            case Id(_) => IdentifierDerivationRule().derive(e, mapping)
-            case _ => throw new Exception("Cannot derive expression: " + e)
+    def generateSoundnessTests: Seq[HHLProgram]
+    def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection)
+
+    def applyBinary(system : ExpressionSystem, e: Expr, e1: Expr, e2: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
+        val (type1, delta1) = system.derive(e1, mapping)
+        val (type2, delta2) = system.derive(e2, mapping)
+
+        val derivationContext = ExpressionDerivationContext(e, mapping, Seq(ExpressionDerivationResult(type1, delta1), ExpressionDerivationResult(type2, delta2)))
+        val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
+        val applicableRulesDeltas = combineFunctionDelta.getActions(derivationContext)
+
+        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
         }
+
+        val tmp = applicableRulesHypertypes.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        hyperTypeCollection = tmp._1
+        deltaTypeCollection = tmp._2
+        (hyperTypeCollection, deltaTypeCollection)
+    }
+
+    def applyUnary(system : ExpressionSystem, e: Expr, e1: Expr, mapping: HyperMapping) : (HyperTypeCollection, DeltaCollection) = {
+        val (type1, delta1) = system.derive(e1, mapping)
+
+        val derivationContext = ExpressionDerivationContext(e, mapping, Seq(ExpressionDerivationResult(type1, delta1)))
+        val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
+        val applicableRulesDeltas = combineFunctionDelta.getActions(derivationContext)
+
+        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        val tmp = applicableRulesHypertypes.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        hyperTypeCollection = tmp._1
+        deltaTypeCollection = tmp._2
+        (hyperTypeCollection, deltaTypeCollection)
+    }
+
+    def applyNullary(system: ExpressionSystem, e: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+        val derivationContext = ExpressionDerivationContext(e, mapping, Seq())
+        val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
+        val applicableRulesDeltas = combineFunctionDelta.getActions(derivationContext)
+
+        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        val tmp = applicableRulesHypertypes.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
+            rule.apply(acc._1, acc._2)
+        }
+
+        hyperTypeCollection = tmp._1
+        deltaTypeCollection = tmp._2
+        (hyperTypeCollection, deltaTypeCollection)
     }
 }
+
+
 
 case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection) {}
 case class ExpressionDerivationContext(val expression: Expr, val mapping: HyperMapping, val premisses: Seq[ExpressionDerivationResult]) {}
 
 
-abstract class BinaryExpressionDerivationRule extends ExpressionDerivationRule {
-    val operator : ExpressionOperator
-    val combineFunctionHypertype : binaryCombineFunction[HyperTypeConclusion]
-    val combineFunctionDelta : binaryCombineFunction[DeltaConclusion]
-
-    def derive(expression : BinaryExpr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
-        val (type1, delta1) = ExpressionDerivationRule.derive(expression.e1, mapping)
-        val (type2, delta2) = ExpressionDerivationRule.derive(expression.e2, mapping)
-
-        val derivationContext = ExpressionDerivationContext(expression, mapping, Seq(ExpressionDerivationResult(type1, delta1), ExpressionDerivationResult(type2, delta2)))
-
-        val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
-
-        val applicableRulesDeltas = combineFunctionDelta.getActions(derivationContext)
-
-        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
-        }
-
-        val tmp = applicableRulesHypertypes.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
-        }
-
-        hyperTypeCollection = tmp._1
-        deltaTypeCollection = tmp._2
-        (hyperTypeCollection, deltaTypeCollection)
-    }
-
-    def generateSoundnessTests : Seq[HHLProgram] = {
-
-        // var testPrograms = Seq.empty[HHLProgram]
-        // for (rule <- combineFunctionHypertype.rules) {
-        //     val e1 = Id("e1")
-        //     e1.typ = IntType()
-
-        //     val e2 = Id("e2")
-        //     e2.typ = IntType()
-
-        //     val monoId = Id("monoId")
-        //     monoId.typ = IntType()
-
-        //     val output = Id("output")
-        //     output.typ = IntType()
-
-
-        //     val preconditionsE1 = rule.e1Hypertype.map(cond => {
-        //         cond match {
-        //             case ElementOf(hyperType) => {
-        //                 HyperTypes.semantic(hyperType, e1)
-        //             }
-        //             case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
-                    
-        //         }
-        //     })
-        //     val preconditionsE2 = rule.e2Hypertype.map(cond => {
-        //         cond match {
-        //             case ElementOf(hyperType) => {
-        //                 HyperTypes.semantic(hyperType, e2)
-        //             }
-        //             case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
-                    
-        //         }
-        //     })
-
-        //     val preconditions = preconditionsE1 ++ preconditionsE2
-
-        //     val conclusion = rule.conclusion.map(cond => {
-        //         cond match {
-        //             // case ElementOf(hyperType) => {
-        //             //     HyperTypes.semantic(hyperType, output)
-        //             // }
-        //             case _ => throw new IllegalArgumentException(s"Unknown condition: $cond")
-        //         }
-        //     })
-
-        //     val program = HHLProgram(Seq(
-        //         Method("test", Seq(e1, e2, monoId), Seq(output), preconditions, conclusion, CompositeStmt(Seq(AssignStmt(output, operator.expression(e1,e2)))))
-        //     ))
-
-        //     testPrograms :+= program
-
-        // }
-
-        // testPrograms
-        Seq.empty[HHLProgram] // TODO: Implement soundness tests
-    }
-}
-
-
-abstract class NullaryExpressionDerivationRule extends ExpressionDerivationRule {
-    val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion]
-    val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion]
-
-    def derive(expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
-
-        val derivationContext = ExpressionDerivationContext(expression, mapping, Seq())
-
-        val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
-        val applicableRulesDeltas = combineFunctionDelta.getActions(derivationContext)
-
-        var (hyperTypeCollection, deltaTypeCollection) = applicableRulesDeltas.foldLeft((HyperTypeCollection(), DeltaCollection(Map()))) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
-        }
-
-        val tmp = applicableRulesHypertypes.foldLeft((hyperTypeCollection, deltaTypeCollection)) { (acc, rule) =>
-            rule.apply(acc._1, acc._2)
-        }
-
-        hyperTypeCollection = tmp._1
-        deltaTypeCollection = tmp._2
-        (hyperTypeCollection, deltaTypeCollection)
-    }
-
-    def generateSoundnessTests: Seq[HHLProgram] = {
-        Seq.empty[HHLProgram] // TODO
-    }
-
-}
 
 trait Rule[C <: Conclusion] {}
 

@@ -1,13 +1,11 @@
-package viper.HHLVerifier.typing.rules.expression
+package viper.HHLVerifier.typing.rules.expression.binaryOp
 
 import viper.HHLVerifier.typing.rules.binaryFunctionImplication
 import viper.HHLVerifier.typing.rules.binaryCombineFunction
 import viper.HHLVerifier.typing.rules.ElementOf
 import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.typing.rules.ExpressionOperator
 import viper.HHLVerifier.typing.rules.DeltaContains
-import viper.HHLVerifier.typing.rules.BinaryExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.ContainsHyperType
 import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.DeltaConclusion
@@ -15,6 +13,12 @@ import viper.HHLVerifier.typing.rules.VarHasDeltaType
 import viper.HHLVerifier.typing.rules.EmptyWrapper
 import viper.HHLVerifier.typing.rules.ForanyVariableWrapper
 import viper.HHLVerifier.typing.rules.VarNotInDelta
+import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
+import viper.HHLVerifier.ast.HHLProgram
+import viper.HHLVerifier.ast.Expr
+import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
+import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.ast.BinaryExpr
 
 
 case class AdditionCombineFunctionHypertype() extends binaryCombineFunction[HyperTypeConclusion] {
@@ -66,12 +70,21 @@ case class AdditionCombineFunctionDeltatype() extends binaryCombineFunction[Delt
 }
 
 
-case class AdditionDerivationRule() extends BinaryExpressionDerivationRule {
+case class AdditionDerivationRule() extends ExpressionDerivationRule {
 
-  override val operator: ExpressionOperator = ExpressionOperator.Add
+  override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram] // Placeholder for soundness tests, if needed
+
+  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+    expression match {
+      case binaryExpr@BinaryExpr(e1, op, e2) => super.applyBinary(system, expression, e1, e2, mapping) 
+      case _ => throw new IllegalArgumentException(s"Wrong rule applied!")
+    }
+  }
+
 
   override val combineFunctionHypertype: binaryCombineFunction[HyperTypeConclusion] = AdditionCombineFunctionHypertype()
 
   override val combineFunctionDelta: binaryCombineFunction[DeltaConclusion] = AdditionCombineFunctionDeltatype()
+
 
 }

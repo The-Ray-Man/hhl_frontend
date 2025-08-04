@@ -24,9 +24,9 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.HyperType
-import viper.HHLVerifier.typing.rules.expression.AdditionDerivationRule
-import viper.HHLVerifier.typing.rules.BinaryExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
+import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.TypeSystem
 
 object HyperTypeChecker {
 
@@ -37,12 +37,12 @@ object HyperTypeChecker {
   var method : Option[Method] = None 
 
 
-  def typeCheckProg(p: HHLProgram): Unit = {
+  def typeCheckProg(system: TypeSystem, p: HHLProgram): Unit = {
       program = p
-      program.content.foreach(m => {this.method = Some(m); typeCheckMethod(m)})
+      program.content.foreach(m => {this.method = Some(m); typeCheckMethod(system, m)})
   }
 
-  def typeCheckMethod(m: Method): Unit = {
+  def typeCheckMethod(system: TypeSystem, m: Method): Unit = {
     // Type check the method body
     val pc = new HyperTypeCollection(Set(Low()))
 
@@ -54,7 +54,7 @@ object HyperTypeChecker {
 
     println("mapping at method start\n", hyperMapping)
 
-    val (finalMapping, deltaMapping) = typeCheckStmt(hyperMapping, DeltaMapping(Map()), m.body, pc)
+    val (finalMapping, deltaMapping) = typeCheckStmt(system, hyperMapping, DeltaMapping(Map()), m.body, pc)
     println("final mapping", finalMapping.mapping)
     println("delta mapping")
     deltaMapping.collection.foreach { case (key, value) =>
@@ -69,7 +69,7 @@ object HyperTypeChecker {
     })
   }
 
-  def typeCheckStmt(mapping:  HyperMapping, delta: DeltaMapping, s : Stmt, pc: HyperTypeCollection) : (HyperMapping, DeltaMapping) = {
+  def typeCheckStmt(system: TypeSystem, mapping:  HyperMapping, delta: DeltaMapping, s : Stmt, pc: HyperTypeCollection) : (HyperMapping, DeltaMapping) = {
     s match {
       case AssignStmt(left, right) => {      
         return (mapping, delta)
@@ -80,13 +80,13 @@ object HyperTypeChecker {
       case CompositeStmt(stmts) => {
         val res =  stmts.foldLeft((mapping, delta))((acc, stmt) => {
           val (currentMapping, delta) = acc
-          val (newMapping, newDelta) = typeCheckStmt(currentMapping, DeltaMapping(Map.empty), stmt, pc)
+          val (newMapping, newDelta) = typeCheckStmt(system, currentMapping, DeltaMapping(Map.empty), stmt, pc)
           (mapping, delta)
           })
         return res
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
-        val (condType, _) = typeCheckExpression(mapping, cond)
+        val (condType, _) = typeCheckExpression(system.expressionSystem, mapping, cond)
         (mapping, delta)
       }
       case UnfoldStmt(t, id) => {
@@ -128,25 +128,9 @@ object HyperTypeChecker {
     }
   }
 
-  def typeCheckMethodExpr(mapping: HyperMapping, delta : DeltaCollection, e: MethodCallExpr) : Seq[HyperTypeCollection] = {
-    val method = program.methods.find(_.mName == e.methodName) match {
-      case None => throw new Exception("Method not found: " + e.methodName + " in " + program.methods.map(_.mName).mkString(", "))
-      case Some(value) => value
-    }
-    val methodArgTypes = method.params.map(p => HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq())))
-   
-    for ((name, ty) <- e.args.zip(methodArgTypes)) {
-      val (actual_type, _) = typeCheckExpression(mapping, name)
-      if (!actual_type.isSubTypeOf(ty)) {
-        throw new Exception("Type error: argument " + name + " of type " + actual_type + " does not match expected type " + ty)
-      }
-    }
-    method.res.map(r => HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq())))
-  }
 
-
-  def typeCheckExpression(mapping: HyperMapping, e: Expr) : (HyperTypeCollection, DeltaCollection) = {
-    ExpressionDerivationRule.derive(e, mapping)
+  def typeCheckExpression(system: ExpressionSystem, mapping: HyperMapping, e: Expr) : (HyperTypeCollection, DeltaCollection) = {
+    system.derive(e, mapping)
   }
 
   def getVariables(expr: Expr) : Set[Id] = {
