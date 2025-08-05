@@ -3,26 +3,13 @@ package viper.HHLVerifier.management
 import viper.HHLVerifier._
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BinaryExpr, BoolLit, CombExpr, CompositeStmt, DeclareStmt, Expr, FrameStmt, HavocStmt, Hint, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, ImpliesExpr, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, StateExistsExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, StateType, StmtBlockType, Type, UnknownType}
-import viper.HHLVerifier.typing.HyperType
-import viper.HHLVerifier.typing.Low
-import viper.HHLVerifier.typing.Pos
-import viper.HHLVerifier.typing.Neg
-import viper.HHLVerifier.typing.Zero
-import viper.HHLVerifier.typing.True
-import viper.HHLVerifier.typing.False
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
-import viper.HHLVerifier.typing.MonoDown
-import viper.HHLVerifier.typing.MonoUp
 import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.One
-import viper.HHLVerifier.typing.GreaterOne
-import viper.HHLVerifier.typing.LessOne
-
 object PrettyPrinter {
 
   // prints a statement by matching recursively on AST
@@ -125,21 +112,8 @@ object PrettyPrinter {
     }
   }
 
-  def formatHyperType(ty: HyperType): String = {
-    ty match {
-      case Low()         => "low"
-      case Pos()         => "pos"
-      case Neg()         => "neg"
-      case Zero()        => "zero"
-      case True()        => "true"
-      case False()       => "false"
-      case One()         => "absOne"
-      case GreaterOne()  => "absGtOne"
-      case LessOne()     => "absLtOne"
-      case MonoUp(ids)   => "monoUp[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
-      case MonoDown(ids) => "monoDown[" + ids.map(id => formatExpr(id)).mkString(", ") + "]"
-      case _             => throw new IllegalArgumentException(s"Unknown HyperType: $ty")
-    }
+  def formatHyperType(ty: typing.dsl.HyperType): String = {
+    ty.toString()
   }
 
   def formatHyperTypeCollection(col: HyperTypeCollection): String = {

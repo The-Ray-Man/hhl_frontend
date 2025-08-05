@@ -5,9 +5,11 @@ import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, A
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.UnfoldStmt
-import viper.HHLVerifier.typing.MonoHyperType
-import viper.HHLVerifier.typing.MonoDown
-import viper.HHLVerifier.typing.MonoUp
+import viper.HHLVerifier.typing.dsl.HyperType
+import viper.HHLVerifier.typing.dsl.SimpleHyperType
+import viper.HHLVerifier.typing.dsl.HyperTypeWithSetArgs
+import viper.HHLVerifier.typing.dsl.HyperTypeWithListArgs
+import viper.HHLVerifier.typing.dsl.Element
 
 object SymbolChecker {
   // This map is used to keep track of the declared program variables + assertion variables for each method
@@ -243,20 +245,12 @@ object SymbolChecker {
         (varsInArgs, Seq.empty)
 
       case FoldStmt(ty, variable) => {
-        val newSymbols = ty match {
-          case MonoDown(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
-          case MonoUp(ids)   => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
-          case _             => Seq.empty
-        }
+        val newSymbols = null
         (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
       }
 
       case UnfoldStmt(ty, variable) => {
-        val newSymbols = ty match {
-          case MonoDown(ids) => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
-          case MonoUp(ids)   => ids.map(id => (checkSymbolsExpr(id, false, false))).flatten
-          case _             => Seq.empty
-        }
+        val newSymbols = null
         (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
       }
 
@@ -408,5 +402,20 @@ object SymbolChecker {
       case _ =>
     }
     if (!res) throw new Logger("The expression in the use statement is not well-formed:\n " + hint + "\nExpected syntax: use <hints> or use forall: ... ==> <hints>").addTitle("Symbol Checker Error").addOffset((hint.offsetLeft, hint.offsetRight))
+  }
+
+  def checkHyperType(hty: HyperType): Seq[(String, Type)] = {
+    hty match {
+      case SimpleHyperType(_)             => Seq.empty[(String, Type)]
+      case HyperTypeWithSetArgs(_, args)  => args.flatMap(checkElement).toSeq
+      case HyperTypeWithListArgs(_, args) => args.flatMap(checkElement)
+    }
+  }
+
+  def checkElement(elem: Element): Seq[(String, Type)] = {
+    elem match {
+      case Id(name)       => Seq((name, allVarsInCurrScope.get(name).getOrElse(throw new Logger("Identifier " + name + " not found").addTitle("Symbol Checker Error"))))
+      case hty: HyperType => checkHyperType(hty)
+    }
   }
 }

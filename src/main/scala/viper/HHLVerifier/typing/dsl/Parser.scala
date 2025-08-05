@@ -4,6 +4,8 @@ import fastparse._
 import fastparse.NoWhitespace._
 import viper.HHLVerifier.typing.dsl.{Specification, DerivationRule}
 import viper.HHLVerifier.typing.dsl.Mappings._
+import viper.HHLVerifier.parsing.{Parser => HypraParser}
+import viper.HHLVerifier.ast.Id
 
 object Parser {
   def specification[$: P]: P[Specification]   = P(Start ~ derivationRule.rep(1, sep = "\n") ~ End).map(rules => Specification(rules))
@@ -38,14 +40,23 @@ object Parser {
 
   def mapping[$: P]: P[Mapping] = P(deltaCollection | gamma | delta | deltaCollectionResult)
 
-  def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ CharIn("a-zA-Z").rep(1).! ~ ")").map(x => mapMappingAccess(x._1, x._2))
+  def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
   def set[$: P]: P[Set] = P(hyperCollection | mappingAccess | hyperCollectionResult)
 
   def condition[$: P]: P[Condition] = P(inSet)
 
-  def inSet[$: P]: P[InSet]     = P(element ~~ spaces ~ "in" ~~ spaces ~ set).map { case (elem, set) => InSet(elem, set) }
-  def element[$: P]: P[Element] = P(CharIn("a-zA-Z").rep(1).!.map(Element))
+  def inSet[$: P]: P[InSet]                     = P(element ~~ spaces ~ "in" ~~ spaces ~ set).map { case (elem, set) => InSet(elem, set) }
+  def element[$: P]: P[Element]                 = P(variable | hyperType)
+  def variable[$: P]: P[Id]                     = HypraParser.progVar
+  def hyperType[$: P]: P[HyperType]             = P(simpleHyperType | hyperTypeWithSetArgs | hyperTypeWithListArgs)
+  def simpleHyperType[$: P]: P[SimpleHyperType] = P(CharIn("A-Z").rep(1).!.map(SimpleHyperType))
+  def hyperTypeWithSetArgs[$: P]                = P(simpleHyperType ~ "{" ~ element.rep(1, sep = ",") ~ "}").map { case (name, args) =>
+    HyperTypeWithSetArgs(name, args.toSet)
+  }
+  def hyperTypeWithListArgs[$: P] = P(simpleHyperType ~ "(" ~ element.rep(1, sep = ",") ~ ")").map { case (name, args) =>
+    HyperTypeWithListArgs(name, args.toSeq)
+  }
 
   def conclusion[$: P]: P[Conclusion] = P(addToSet)
   def addToSet[$: P]: P[AddToSet]     = P(element ~~ spaces ~ "addTo" ~~ spaces ~ set).map { case (elem, set) => AddToSet(elem, set) }

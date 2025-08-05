@@ -29,7 +29,7 @@ object Mappings {
     Method(items._2, args, res, pre, post, items._8).setOffsets(items._1, items._3)
   }
 
-  def mapMethodVarDecl(items: (Id, (Type, Option[Seq[HyperType]]))): Id = {
+  def mapMethodVarDecl(items: (Id, (Type, Option[Seq[dsl.HyperType]]))): Id = {
     items._1.typ = items._2._1
     items._1.hyperType = items._2._2
     items._1
@@ -92,8 +92,8 @@ object Mappings {
   }
   def mapFrame(items: (Expr, CompositeStmt)): FrameStmt           = FrameStmt(items._1, items._2)
   def mapUseHintStmt(e: Expr): UseHintStmt                        = UseHintStmt(e)
-  def mapUnfoldStmt(t: HyperType, id: Id)                         = UnfoldStmt(t, id)
-  def mapFoldStmt(t: HyperType, id: Id)                           = FoldStmt(t, id)
+  def mapUnfoldStmt(t: dsl.HyperType, id: Id)                     = UnfoldStmt(t, id)
+  def mapFoldStmt(t: dsl.HyperType, id: Id)                       = FoldStmt(t, id)
   def mapMethodCallStmt(items: (String, Seq[Id])): MethodCallStmt = MethodCallStmt(items._1, items._2)
 
   def mapNormalAssertVarDecl(items: (AssertVar, Type)): AssertVarDecl = AssertVarDecl(items._1, items._2)
@@ -217,27 +217,6 @@ object Mappings {
     name match {
       case "Int"  => IntType()
       case "Bool" => BoolType()
-    }
-  }
-
-  def mapHyperTypeName(name: String): HyperType =
-    name match {
-      case "low"      => Low()
-      case "pos"      => Pos()
-      case "neg"      => Neg()
-      case "zero"     => Zero()
-      case "true"     => True()
-      case "false"    => False()
-      case "absOne"   => One()
-      case "absGtOne" => GreaterOne()
-      case "absLtOne" => LessOne()
-      case _          => throw UnknownException("Unknown hyper type: " + name)
-    }
-
-  def mapComplexHyperTypeName(name: String, variable: Seq[Id]): HyperType = {
-    name match {
-      case "monoUp"   => MonoUp(variable.toSet)
-      case "monoDown" => MonoDown(variable.toSet)
     }
   }
 

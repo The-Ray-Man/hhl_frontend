@@ -8,6 +8,7 @@ import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.CompositeStmt
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
+import viper.HHLVerifier.typing.dsl.HyperType
 
 object HyperTranslate {
 
@@ -34,11 +35,11 @@ object HyperTranslate {
 
     stmt match {
       case UnfoldStmt(t, id) => {
-        val semantics = HyperTypes.semantic(t, id)
+        val semantics = t.semantics(id)
         HyperAssumeStmt(semantics);
       }
       case FoldStmt(t, id) => {
-        val semantics = HyperTypes.semantic(t, id)
+        val semantics = t.semantics(id)
         HyperAssertStmt(semantics);
       }
       case _ => stmt

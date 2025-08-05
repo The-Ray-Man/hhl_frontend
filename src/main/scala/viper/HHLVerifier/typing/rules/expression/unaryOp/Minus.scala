@@ -3,7 +3,6 @@ package viper.HHLVerifier.typing.rules.expression.unaryOp
 import viper.HHLVerifier.typing.rules.binaryFunctionImplication
 import viper.HHLVerifier.typing.rules.binaryCombineFunction
 import viper.HHLVerifier.typing.rules.ElementOf
-import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.rules.DeltaContains
 import viper.HHLVerifier.typing.rules.ContainsHyperType
@@ -20,20 +19,18 @@ import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.UnaryExpr
+import viper.HHLVerifier.typing.rules.RuleWrapper
 
-case class MinusCombineFunctionHypertype() extends unaryCombineFunction[HyperTypeConclusion] {
-  val rules = Seq()
-}
-
-case class MinusCombineFunctionDeltatype() extends unaryCombineFunction[DeltaConclusion] {
-  val rules = Seq(
-    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(), Seq(VarHasDeltaType(0, Low())))),
-    ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
-    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
-    ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(DeltaContains(0, Zero())), Seq(), Seq(VarHasDeltaType(0, Pos())))),
-    ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Zero())), Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(VarHasDeltaType(0, Pos()))))
-  )
-}
+case class MinusCombineFunctionHypertype(override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq()) extends unaryCombineFunction[HyperTypeConclusion](rules) {}
+case class MinusCombineFunctionDeltatype(
+    override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq(
+      // ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(), Seq(VarHasDeltaType(0, Low())))),
+      // ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
+      // ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
+      // ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(DeltaContains(0, Zero())), Seq(), Seq(VarHasDeltaType(0, Pos())))),
+      // ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Zero())), Seq(ElementOf(Pos())), Seq(VarNotInDelta(0)), Seq(), Seq(VarHasDeltaType(0, Pos()))))
+    )
+) extends unaryCombineFunction[DeltaConclusion](rules) {}
 
 case class MinusDerivationRule() extends ExpressionDerivationRule {
 

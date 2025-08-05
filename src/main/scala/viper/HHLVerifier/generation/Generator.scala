@@ -984,25 +984,9 @@ object Generator {
         (newStmts, Seq.empty)
 
       // With the fold we add a hyper assert
-      case FoldStmt(hty, id) => {
-        val (stmt, aux_vars) = HyperTypes.semantic_vpr(hty, id, s0VarName, s1VarName, STmp)
-
-        if (!stmt.isEmpty) {
-          val newStmt = vpr.Exhale(stmt.get)()
-          newStmts = newStmts :+ newStmt
-        }
-        (newStmts, aux_vars)
-      }
+      case FoldStmt(_, _) => throw UnknownException("The fold statement should not appear in the translation to a Viper program.")
       // With unfold we add a hyper assume
-      case UnfoldStmt(hty, id) => {
-        val (stmt, aux_vars) = HyperTypes.semantic_vpr(hty, id, s0VarName, s1VarName, STmp)
-
-        if (!stmt.isEmpty) {
-          val newStmt = vpr.Inhale(stmt.get)()
-          newStmts = newStmts :+ newStmt
-        }
-        (newStmts, aux_vars)
-      }
+      case UnfoldStmt(_, _) => throw UnknownException("The unfold statement should not appear in the translation to a Viper program.")
     }
 
   }

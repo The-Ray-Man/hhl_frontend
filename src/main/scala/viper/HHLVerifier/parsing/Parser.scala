@@ -5,7 +5,7 @@ import fastparse._
 import viper.HHLVerifier.parsing.Mappings._
 import viper.HHLVerifier.typing.Type
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BoolLit, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, HintDecl, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, MapTupleExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
-import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.dsl.{Parser => DslParser, HyperType}
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.ast.FoldStmt
 
@@ -72,7 +72,7 @@ object Parser {
 
   /** MultiAssign Statement
     *
-    * Assigns the return values of a function call to multiple variables. Use case: {{{ var a: Int, b: Int, c: Int a, b, c := assignThreeValues() }}}
+    * Assigns the return values of a function call to multiple variables. Use case: {{{var a: Int, b: Int, c: Int a, b, c := assignThreeValues()}}}
     */
   def multiAssign[$: P]: P[MultiAssignStmt] = P(progVar.rep(sep = ",", min = 1) ~ ":=" ~ methodCall).map { items =>
     MultiAssignStmt(items._1, MethodCallExpr(items._2._1, items._2._2))
@@ -82,13 +82,13 @@ object Parser {
 
   /** Assign Statement
     *
-    * Assigns the result of an expression to a program variable. Use case: {{{ var a: Int a := (2 * 3) + 4 }}}
+    * Assigns the result of an expression to a program variable. Use case: {{{var a: Int a := (2 * 3) + 4}}}
     */
   def assign[$: P]: P[AssignStmt] = P(progVar ~ ":=" ~ implicationExpr).map(mapAssign)
 
   /** Havoc Statement
     *
-    * Randomly assigns a value to a program variable. Use case: {{{ var a: Int havoc a }}}
+    * Randomly assigns a value to a program variable. Use case: {{{var a: Int havoc a}}}
     */
   def havoc[$: P]: P[HavocStmt] = P("havoc" ~~ spaces ~ progVar ~ hintDecl.?).map { case (v, hintDecl) => mapHavoc(v, hintDecl) }
 
@@ -122,8 +122,8 @@ object Parser {
   /** UseHint Statement: Use a hint declare trigger for havoc statments. */
   def useHintStmt[$: P]: P[UseHintStmt] = P("use" ~~ spaces ~ expr).map(mapUseHintStmt)
 
-  def unfoldStmt[$: P]: P[UnfoldStmt] = P("unfold" ~ "(" ~ (mapHyperType | mapComplexHyperType) ~ ")" ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id) }
-  def foldStmt[$: P]: P[FoldStmt]     = P("fold" ~ "(" ~ (mapHyperType | mapComplexHyperType) ~ ")" ~ progVar).map { case (t, id) => mapFoldStmt(t, id) }
+  def unfoldStmt[$: P]: P[UnfoldStmt] = P("unfold" ~ "(" ~ mapHyperType ~ ")" ~ progVar).map { case (t, id) => mapUnfoldStmt(t, id) }
+  def foldStmt[$: P]: P[FoldStmt]     = P("fold" ~ "(" ~ mapHyperType ~ ")" ~ progVar).map { case (t, id) => mapFoldStmt(t, id) }
 
   // Utils for statements
   /** LoopInvariant: Declares an invariant in a while loop. */
@@ -250,9 +250,8 @@ object Parser {
 
   // def primitiveHyperTypes[$: P] : P[Type] = P(primitiveTypes ~ ("[" ~ HyperTypeList ~ "]").?).map({case (t, hyperType) => mapPrimitiveHyperType(t, hyperType)})
 
-  def HyperTypeList[$: P]: P[Seq[HyperType]]  = P((mapHyperType | mapComplexHyperType).rep(sep = ","))
-  def mapHyperType[$: P]: P[HyperType]        = P("low" | "pos" | "neg" | "zero" | "true" | "false" | "absOne" | "absGtOne" | "absLtOne").!.map(mapHyperTypeName)
-  def mapComplexHyperType[$: P]: P[HyperType] = P(("monoUp" | "monoDown").! ~ "[" ~ progVar.rep(sep = ",") ~ "]").map { case (name, varName) => mapComplexHyperTypeName(name, varName) }
+  def HyperTypeList[$: P]: P[Seq[HyperType]] = P((mapHyperType).rep(sep = ","))
+  def mapHyperType[$: P]: P[HyperType]       = DslParser.hyperType
 
   /** Primitive Types: Parent for all primitive types. */
   def primitiveTypes[$: P]: P[Type] = P("Int" | "Bool").!.map(mapPrimitiveTypeName)

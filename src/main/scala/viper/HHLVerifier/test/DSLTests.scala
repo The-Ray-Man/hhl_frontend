@@ -6,7 +6,6 @@ import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.{Low, Zero}
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.dsl.MappingAccess
 

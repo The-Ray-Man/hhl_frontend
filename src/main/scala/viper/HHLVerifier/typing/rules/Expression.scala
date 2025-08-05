@@ -1,12 +1,11 @@
 package viper.HHLVerifier.typing.rules
 
-import viper.HHLVerifier.typing.HyperType
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.typing.IntType
-import viper.HHLVerifier.typing.HyperTypes
+import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.ast.Method
 import viper.HHLVerifier.ast.CompositeStmt
 import viper.HHLVerifier.ast.AssignStmt
@@ -163,15 +162,14 @@ case class EmptyWrapper[C <: Conclusion](rule: Rule[C]) extends RuleWrapper[C](r
   }
 }
 
-abstract class CombineFunction[C <: Conclusion] {
-  val rules: Seq[RuleWrapper[C]]
+abstract class CombineFunction[C <: Conclusion](val rules: Seq[RuleWrapper[C]]) {
   def getActions(context: ExpressionDerivationContext): Seq[Action] = {
     rules.flatMap(rule => rule.getActions(context))
   }
 }
 
-abstract class binaryCombineFunction[C <: Conclusion] extends CombineFunction[C] {}
+abstract class binaryCombineFunction[C <: Conclusion](override val rules: Seq[RuleWrapper[C]]) extends CombineFunction[C](rules) {}
 
-abstract class unaryCombineFunction[C <: Conclusion] extends CombineFunction[C] {}
+abstract class unaryCombineFunction[C <: Conclusion](override val rules: Seq[RuleWrapper[C]]) extends CombineFunction[C](rules) {}
 
-abstract class nullaryCombineFunction[C <: Conclusion] extends CombineFunction[C] {}
+abstract class nullaryCombineFunction[C <: Conclusion](override val rules: Seq[RuleWrapper[C]]) extends CombineFunction[C](rules) {}

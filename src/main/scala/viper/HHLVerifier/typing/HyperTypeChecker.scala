@@ -23,7 +23,7 @@ import viper.HHLVerifier.ast.MultiAssignStmt
 import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
-import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.typing.rules.TypeSystem
@@ -43,13 +43,12 @@ object HyperTypeChecker {
 
   def typeCheckMethod(system: TypeSystem, m: Method): Unit = {
     // Type check the method body
-    val pc = new HyperTypeCollection(Set(Low()))
+    val pc = new HyperTypeCollection(Set())
 
     val mapping = m.params
       .map(p =>
         (p.name -> {
-          val baseCollection = HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq()))
-          baseCollection.add(MonoUp(Set(Id(p.name))))
+          HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq()))
         })
       )
       .toMap

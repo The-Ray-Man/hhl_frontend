@@ -6,5 +6,4 @@ object Mappings {
     Specification(derivationRules) // Placeholder, replace with actual mapping logic
   }
 
-  def mapMappingAccess(collection: Mapping, id: String): MappingAccess = MappingAccess(collection, id)
 }

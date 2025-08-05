@@ -2,6 +2,8 @@ package viper.HHLVerifier.ast
 
 import viper.HHLVerifier.management.PrettyPrinter
 import viper.HHLVerifier.typing._
+import viper.HHLVerifier.typing.dsl.Identifier
+import viper.HHLVerifier.typing.dsl.IndexedVariable
 
 /** Trait for adding data used in generating error messages */
 trait ErrorData {
@@ -40,7 +42,7 @@ sealed class Expr() extends ErrorData {
     */
   var baseType: Type = UnknownType() // Additional type information needed to generate (e.g. type of map from which value is accessed)
 
-  var hyperType: Option[Seq[HyperType]] = None
+  var hyperType: Option[Seq[dsl.HyperType]] = None
 
   /** Relates an expression to an earlier, untransformed expression used in the generator
     */
@@ -63,7 +65,16 @@ class SpecialId(name: String) extends Expr {
   * @param name
   *   name of the identifier, has to be unique
   */
-case class Id(name: String) extends Expr
+case class Id(name: String) extends Expr with Identifier {
+
+  override def variables: Set[Id] = Set(this)
+
+  override def toIndexedIdentifier(variableMap: Map[Id, Int]): IndexedVariable = {
+    val index = variableMap.get(this).getOrElse(throw new Exception("Variable " + this.name + " not found in variable map"))
+    IndexedVariable(index)
+  }
+
+}
 
 /** State variable used in Assertions
   *
@@ -261,10 +272,10 @@ case class MethodCallStmt(methodName: String, args: Seq[Id]) extends Stmt {
 }
 
 /** Encodes the unfold statement */
-case class UnfoldStmt(t: HyperType, id: Id) extends Stmt {}
+case class UnfoldStmt(t: dsl.HyperType, id: Id) extends Stmt {}
 
 /** Encodes the fold statement */
-case class FoldStmt(t: HyperType, id: Id) extends Stmt {}
+case class FoldStmt(t: dsl.HyperType, id: Id) extends Stmt {}
 
 /** Encodes a method
   * @param mName

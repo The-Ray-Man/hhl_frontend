@@ -2,7 +2,7 @@ package viper.HHLVerifier.typing.rules
 
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
-import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperMapping
 

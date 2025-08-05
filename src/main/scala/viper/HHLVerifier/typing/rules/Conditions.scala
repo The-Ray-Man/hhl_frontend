@@ -3,7 +3,7 @@ package viper.HHLVerifier.typing.rules
 import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.typing.HyperType
+import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.BoolLit
 
@@ -22,11 +22,11 @@ trait SideCondition extends Condition {
 }
 
 case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
-  override def hyperApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, hyperTypeCollection: HyperTypeCollection): Boolean = hyperTypeCollection.hypertypes.contains(hyperType.deriveTransformId((checkContext)))
+  override def hyperApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, hyperTypeCollection: HyperTypeCollection): Boolean = hyperTypeCollection.hypertypes.contains(hyperType)
 }
 case class DeltaContains(val varId: Int, val hyperType: HyperType) extends DeltaCondition {
   override def deltaApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, deltaCollection: DeltaCollection): Boolean = {
-    checkContext.variables.length > varId && deltaCollection.mapping.contains(checkContext.variables(varId).name) && deltaCollection.mapping(checkContext.variables(varId).name).hypertypes.contains(hyperType.deriveTransformId((checkContext)))
+    checkContext.variables.length > varId && deltaCollection.mapping.contains(checkContext.variables(varId).name) && deltaCollection.mapping(checkContext.variables(varId).name).hypertypes.contains(hyperType)
   }
 }
 case class VarNotInDelta(val varId: Int) extends DeltaCondition {

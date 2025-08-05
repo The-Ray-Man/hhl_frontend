@@ -3,7 +3,6 @@ package viper.HHLVerifier.typing.rules.expression
 import viper.HHLVerifier.typing.rules.binaryFunctionImplication
 import viper.HHLVerifier.typing.rules.unaryCombineFunction
 import viper.HHLVerifier.typing.rules.ElementOf
-import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.rules.DeltaContains
 import viper.HHLVerifier.typing.rules.ContainsHyperType
@@ -22,14 +21,11 @@ import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollect
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LengthExpr
+import viper.HHLVerifier.typing.rules.RuleWrapper
 
-case class LengthCombineFunctionHypertype() extends unaryCombineFunction[HyperTypeConclusion] {
-  val rules = Seq()
-}
+case class LengthCombineFunctionHypertype(override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq()) extends unaryCombineFunction[HyperTypeConclusion](rules) {}
 
-case class LengthCombineFunctionDeltatype() extends unaryCombineFunction[DeltaConclusion] {
-  val rules = Seq()
-}
+case class LengthCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends unaryCombineFunction[DeltaConclusion](rules) {}
 
 case class LengthDerivationRule() extends ExpressionDerivationRule {
 

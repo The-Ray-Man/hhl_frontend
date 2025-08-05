@@ -3,7 +3,6 @@ package viper.HHLVerifier.typing.rules.expression
 import viper.HHLVerifier.typing.rules.binaryFunctionImplication
 import viper.HHLVerifier.typing.rules.binaryCombineFunction
 import viper.HHLVerifier.typing.rules.ElementOf
-import viper.HHLVerifier.typing.{Low, Pos, Zero, Neg, GreaterOne, LessOne, MonoUp, MonoDown, One}
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.rules.DeltaContains
 import viper.HHLVerifier.typing.rules.ContainsHyperType
@@ -21,22 +20,21 @@ import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
 import viper.HHLVerifier.typing.rules.ExpressionSystem
 import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.typing.rules.RuleWrapper
 
-case class NumericalCombineFunctionHypertype() extends nullaryCombineFunction[HyperTypeConclusion] {
-  val rules = Seq(
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
-    EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low()))))
-  )
-}
+case class NumericalCombineFunctionHypertype(
+    override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq(
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsGtOne()), Seq(ContainsHyperType(GreaterOne())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsLtOne()), Seq(ContainsHyperType(LessOne())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstAbsOne()), Seq(ContainsHyperType(One())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstPositiveInt()), Seq(ContainsHyperType(Pos())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstNegativeInt()), Seq(ContainsHyperType(Neg())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(ConstZeroInt()), Seq(ContainsHyperType(Zero())))),
+      // EmptyWrapper(nullaryFunctionImplication(Seq(), Seq(ContainsHyperType(Low()))))
+    )
+) extends nullaryCombineFunction[HyperTypeConclusion](rules) {}
 
-case class NumericalCombineFunctionDeltatype() extends nullaryCombineFunction[DeltaConclusion] {
-  val rules = Seq()
-}
+case class NumericalCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends nullaryCombineFunction[DeltaConclusion](rules) {}
 
 case class NumericalDerivationRule() extends ExpressionDerivationRule {
 

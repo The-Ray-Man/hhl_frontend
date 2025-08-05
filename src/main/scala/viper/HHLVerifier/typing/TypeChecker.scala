@@ -7,6 +7,7 @@ import viper.HHLVerifier._
 import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, AssignStmt, AssumeStmt, BinaryExpr, BoolLit, CombExpr, CompositeStmt, DeclareStmt, Expr, FrameStmt, HHLProgram, HavocStmt, Hint, HyperAssertStmt, HyperAssumeStmt, Id, IfElseStmt, ImpliesExpr, LengthExpr, LookupExpr, LoopIndex, MapAssignExpr, Method, MethodCallExpr, MethodCallStmt, MultiAssignStmt, Num, PVarDecl, ProofVar, ProofVarDecl, ReuseStmt, SeqAssignExpr, SetAssignExpr, StateExistsExpr, Stmt, UnaryExpr, UpdateMapExpr, UseHintStmt, WhileLoopStmt}
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.UnfoldStmt
+import viper.HHLVerifier.typing.dsl.Element
 
 object TypeChecker {
   val boolOp        = List("==", "!=", "&&", "||", "forall", "exists", "==>")
@@ -149,17 +150,18 @@ object TypeChecker {
         if (!res) throw new Logger("The types of the arguments in the call to method " + name + " do not match with the types of the method parameters").addTitle("Type Checker Error").addOffset((call.offsetLeft, call.offsetRight))
       case fold @ FoldStmt(hty, id) => {
         hty match {
-          case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
-          case MonoUp(ids)   => ids.foreach(id => typeCheckExprWithChecks(fold, id, false))
-          case _             => {}
+          case _: dsl.SimpleHyperType => {}
+          case _                      => {}
         }
         typeCheckExprWithChecks(fold, id, false)
       }
       case unfold @ UnfoldStmt(hty, id) => {
         hty match {
-          case MonoDown(ids) => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
-          case MonoUp(ids)   => ids.foreach(id => typeCheckExprWithChecks(unfold, id, false))
-          case _             => {}
+          case _ @dsl.SimpleHyperType(_)              => {}
+          case _ @dsl.HyperTypeWithListArgs(ty, args) => {
+            args.foreach(a => typeCheckElement(unfold, a, false))
+          }
+          case _ => {}
         }
         typeCheckExprWithChecks(unfold, id, false)
 
@@ -349,6 +351,13 @@ object TypeChecker {
     }
     if (!res) throw new Logger(f"The expression has a type error: $e is of type ${e.getClass()}").addTitle("Type Checker Error").addOffset((e.offsetLeft, e.offsetRight))
     isHyperAssertion
+  }
+
+  def typeCheckElement(s: Stmt, e: Element, hyperAssertionExpected: Boolean): Boolean = {
+    e match {
+      case id @ Id(name) => typeCheckExpr(id, hyperAssertionExpected)
+      case _             => true
+    }
   }
 
   def typeCheckAssertionHelper(assertVarDecls: Seq[AssertVarDecl], body: Expr, hyperAssertionExpected: Boolean, polarity: Int): Boolean = {

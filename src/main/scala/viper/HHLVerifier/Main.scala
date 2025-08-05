@@ -69,7 +69,11 @@ object Main {
     Generator.autoSelectRules = true
     new Logger(f"The input program is read from $programAbsPath.").log()
 
-    val hyperTypeSystem = typing.rules.TypeSystem()
+    val hyperTypeSystem = if (args.contains("--typeSystem")) {
+      typing.rules.TypeSystem.loadTypeSystem(args(args.indexOf("--typeSystem") + 1))
+    } else {
+      typing.rules.TypeSystem()
+    }
 
     try {
       // [DOC] parse program
