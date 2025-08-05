@@ -11,14 +11,12 @@ case class StatementTypeSystem()
 
 object TypeSystem {
   def loadTypeSystem(path: String): TypeSystem = {
-    val fileContent = scala.io.Source.fromFile(path).getLines().mkString("\n")
-    println(fileContent)
+    val fileContent   = scala.io.Source.fromFile(path).getLines().mkString("\n")
     val res           = fastparse.parse(fileContent, viper.HHLVerifier.typing.dsl.Parser.specification(_))
     val specification = res match {
       case fastparse.Parsed.Success(value, _) => value
       case failure: fastparse.Parsed.Failure  => throw new Exception(s"Failed to parse type system: ${failure.msg}")
     }
-    println("Parsed success")
     specification.toTypeSystem()
   }
 }

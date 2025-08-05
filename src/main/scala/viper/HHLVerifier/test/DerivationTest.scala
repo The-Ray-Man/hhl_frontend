@@ -36,7 +36,6 @@ object DerivationTests {
     val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(path)
     expression = BinaryExpr(Id("x"), "+", Num(2))
     mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
-
     res = typeSystem.ExpressionTypeSystem.derive(expression, mapping)
     println(s"$expression :: {${res._1}}, {${res._2}}")
 

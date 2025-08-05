@@ -1,53 +1,95 @@
 
-/* BASIC OPERATIONS "/
-
-|var|(Gamma, Delta) = [
-    => Gamma(var) = H
-];
+/* BASIC OPERATIONS */
 
 |n|(Gamma, Delta) = [
     => LOW addTo H
 ];
 
-|b|(Gamma, Delta) = [];
+|var|(Gamma, Delta) = [
+    => LOW addTo H
+];
 
-
+|b|(Gamma, Delta) = [
+    => LOW addTo H
+];
 
 /* ARITHMETIC OPERATIONS */
 |+|(Gamma, Delta, H0, D0, H1, D1) = [
     LOW in H0 && LOW in H1 => LOW addTo H
 ];
-|%|(Gamma, Delta, H0, D0, H1, D1) = [];
-|*|(Gamma, Delta, H0, D0, H1, D1) = [];
-|/|(Gamma, Delta, H0, D0, H1, D1) = [];
-|-|(Gamma, Delta, H0, D0, H1, D1) = [];
-|negate|(Gamma, Delta, H0, D0) = [];
+|%|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|*|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|/|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|-|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|negate|(Gamma, Delta, H0, D0) = [
+    LOW in H0 => LOW addTo H
+];
 
 
 /* BOOLEAN OPERATIONS */
-| || |(Gamma, Delta, H0, D0, H1, D1) = [];
-|==|(Gamma, Delta, H0, D0, H1, D1) = [];
-|!|(Gamma, Delta, H0, D0) = [];
-|&&|(Gamma, Delta, H0, D0, H1, D1) = [];
-|>|(Gamma, Delta, H0, D0, H1, D1) = [];
-|>=|(Gamma, Delta, H0, D0, H1, D1) = [];
-|<|(Gamma, Delta, H0, D0, H1, D1) = [];
-|<=|(Gamma, Delta, H0, D0, H1, D1) = [];
-|==>|(Gamma, Delta, H0, D0, H1, D1) = [];
-|!=|(Gamma, Delta, H0, D0, H1, D1) = [];
+| || |(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|==|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|!|(Gamma, Delta, H0, D0) = [
+    LOW in H0 => LOW addTo H
+];
+|&&|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|>|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|>=|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|<|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|<=|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|==>|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|!=|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
 
 
 
 /* LIST/SET/MAP OPERATIONS */
 
 
-|lookup|(Gamma,Delta, H0, D0, H1, D1) = [];
-|length|(Gamma,Delta, H0, D0) = [];
-|++|(Gamma, Delta, H0, D0, H1, D1) = [];
-|in|(Gamma, Delta, H0, D0, H1, D1) = [];
-|setminus|(Gamma, Delta, H0, D0, H1, D1) = [];
-|union|(Gamma, Delta, H0, D0, H1, D1) = []
+|lookup|(Gamma,Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|length|(Gamma,Delta, H0, D0) = [
+    LOW in H0  => LOW addTo H
+];
+|++|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|in|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|setminus|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+|union|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
 
 
 /* METHOD OPERATIONS */
-|methodCall|(Gamma, Delta) = [];
+|methodCall|(Gamma, Delta) = []

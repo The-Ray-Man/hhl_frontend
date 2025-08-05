@@ -12,7 +12,6 @@ import viper.HHLVerifier.typing.rules.expression.unaryOp._
 case class Specification(derivationRules: Seq[DerivationRule]) {
 
   def toTypeSystem(): TypeSystem = {
-
     val rules = derivationRules.map { rule =>
       rule match {
         case rule @ ExpressionDerivationRule(op, _, _) =>
@@ -67,7 +66,6 @@ trait DerivationRule
 
 case class ExpressionDerivationRule(op: String, inputs: Seq[(HyperCollection, DeltaCollection)], rules: Seq[Rule]) extends DerivationRule {
   def toTypeSystem(): typing.rules.ExpressionDerivationRule = {
-    println("ToTypeSystem")
     val hyperTypeRules = Seq.empty[typing.rules.RuleWrapper[typing.rules.HyperTypeConclusion]]
     val deltaRules     = Seq.empty[typing.rules.RuleWrapper[typing.rules.DeltaConclusion]]
     val arity          = inputs.length

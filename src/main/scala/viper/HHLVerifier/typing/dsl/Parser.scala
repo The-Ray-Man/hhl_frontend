@@ -69,8 +69,8 @@ object Parser {
   def setEquals[$: P]: P[SetEquals]   = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
 
   def operator[$: P]: P[String] = P(
-    "var" |
-      "negate" |
+    "negate" |
+      "var" |
       "n" |
       "b" |
       "++" |
