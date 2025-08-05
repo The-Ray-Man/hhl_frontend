@@ -17,7 +17,7 @@ import viper.HHLVerifier.typing.rules.CombineFunction
 
 case class UnaryExpressionDerivationRule(
     val negateRule: ExpressionDerivationRule = NegateDerivationRule(),
-    val notRule : ExpressionDerivationRule = unaryOp.NotDerivationRule(),
+    val notRule: ExpressionDerivationRule = unaryOp.NotDerivationRule()
 ) extends ExpressionDerivationRule {
 
   override val combineFunctionHypertype: CombineFunction[HyperTypeConclusion] = null

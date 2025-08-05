@@ -22,7 +22,7 @@ case class EqualityDerivationRule(val combineFunctionHypertype: binaryCombineFun
   override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case BinaryExpr(e1, op, e2) => super.applyBinary(system, expression, e1, e2, mapping)
-      case _                                   => throw new IllegalArgumentException(s"Wrong rule applied!")
+      case _                      => throw new IllegalArgumentException(s"Wrong rule applied!")
     }
   }
 }

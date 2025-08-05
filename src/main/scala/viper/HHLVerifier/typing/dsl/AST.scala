@@ -5,6 +5,9 @@ import viper.HHLVerifier.typing
 import scala.collection.immutable
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.Expr
+import viper.HHLVerifier.typing.rules.expression._
+import viper.HHLVerifier.typing.rules.expression.binaryOp._
+import viper.HHLVerifier.typing.rules.expression.unaryOp._
 
 case class Specification(derivationRules: Seq[DerivationRule]) {
 
@@ -19,67 +22,38 @@ case class Specification(derivationRules: Seq[DerivationRule]) {
       }
     }
     val expressionDerivationRules = typing.rules.ExpressionTypeSystem(
-      identifierRule = rules
-        .find(_._1 == "var")
-        .getOrElse(
-          throw new Exception("Identifier rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.IdentifierDerivationRule],
-      constRule = rules
-        .find(_._1 == "n")
-        .getOrElse(
-          throw new Exception("Const rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.NumericalDerivationRule],
-      boolRule = rules
-        .find(_._1 == "b")
-        .getOrElse(
-          throw new Exception("Bool rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.BooleanDerivationRule],
-      binaryRule = typing.rules.expression.BinaryExpressionDerivationRule(
-        additionRule = rules
-          .find(_._1 == "+")
-          .getOrElse(
-            throw new Exception("Addition rule not found in derivation rules")
-          )
-          ._2
-          .asInstanceOf[typing.rules.expression.binaryOp.AdditionDerivationRule]
+      identifierRule = SpecificationUtil.findExpressionRuleByName[IdentifierDerivationRule](rules, "var"),
+      constRule = SpecificationUtil.findExpressionRuleByName[NumericalDerivationRule](rules, "n"),
+      boolRule = SpecificationUtil.findExpressionRuleByName[BooleanDerivationRule](rules, "b"),
+      binaryRule = BinaryExpressionDerivationRule(
+        additionRule = SpecificationUtil.findExpressionRuleByName[AdditionDerivationRule](rules, "+"),
+        andRule = SpecificationUtil.findExpressionRuleByName[AndDerivationRule](rules, "&&"),
+        divisionRule = SpecificationUtil.findExpressionRuleByName[DivisionDerivationRule](rules, "/"),
+        equalityRule = SpecificationUtil.findExpressionRuleByName[EqualityDerivationRule](rules, "=="),
+        extensionRule = SpecificationUtil.findExpressionRuleByName[ExtensionDerivationRule](rules, "++"),
+        greaterRule = SpecificationUtil.findExpressionRuleByName[GreaterDerivationRule](rules, ">"),
+        greaterEqualRule = SpecificationUtil.findExpressionRuleByName[GreaterEqualDerivationRule](rules, ">="),
+        implicationRule = SpecificationUtil.findExpressionRuleByName[ImplicationDerivationRule](rules, "==>"),
+        inRule = SpecificationUtil.findExpressionRuleByName[InDerivationRule](rules, "in"),
+        inequalityRule = SpecificationUtil.findExpressionRuleByName[InequalityDerivationRule](rules, "!="),
+        moduloRule = SpecificationUtil.findExpressionRuleByName[ModuloDerivationRule](rules, "%"),
+        multiplicationRule = SpecificationUtil.findExpressionRuleByName[MultiplicationDerivationRule](rules, "*"),
+        orRule = SpecificationUtil.findExpressionRuleByName[OrDerivationRule](rules, "||"),
+        setminusRule = SpecificationUtil.findExpressionRuleByName[SetminusDerivationRule](rules, "setminus"),
+        smallerRule = SpecificationUtil.findExpressionRuleByName[SmallerDerivationRule](rules, "<"),
+        smallerEqualRule = SpecificationUtil.findExpressionRuleByName[SmallerEqualDerivationRule](rules, "<="),
+        subtractionRule = SpecificationUtil.findExpressionRuleByName[SubtractionDerivationRule](rules, "-"),
+        unionRule = SpecificationUtil.findExpressionRuleByName[UnionDerivationRule](rules, "union")
       ),
       unaryRule = typing.rules.expression.UnaryExpressionDerivationRule(
-        minusRule = rules
-          .find(_._1 == "-")
-          .getOrElse(
-            throw new Exception("Minus rule not found in derivation rules")
-          )
-          ._2
-          .asInstanceOf[typing.rules.expression.unaryOp.NegateDerivationRule]
+        negateRule = SpecificationUtil.findExpressionRuleByName[NegateDerivationRule](rules, "negate"),
+        notRule = SpecificationUtil.findExpressionRuleByName[NotDerivationRule](rules, "!")
       ),
-      methodCallRule = rules
-        .find(_._1 == "methodCall")
-        .getOrElse(
-          throw new Exception("Method call rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.MethodDerivationRule],
-      lookupRule = rules
-        .find(_._1 == "lookup")
-        .getOrElse(
-          throw new Exception("Lookup rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.LookupDerivationRule],
-      lengthRule = rules
-        .find(_._1 == "length")
-        .getOrElse(
-          throw new Exception("Length rule not found in derivation rules")
-        )
-        ._2
-        .asInstanceOf[typing.rules.expression.LengthDerivationRule]
+      methodCallRule = SpecificationUtil.findExpressionRuleByName[MethodDerivationRule](rules, "methodCall"),
+      lookupRule = SpecificationUtil.findExpressionRuleByName[LookupDerivationRule](rules, "lookup"),
+      lengthRule = SpecificationUtil.findExpressionRuleByName[LengthDerivationRule](rules, "length")
     )
+
     val statementTypeSystem = typing.rules.StatementTypeSystem()
 
     TypeSystem(
@@ -119,7 +93,7 @@ case class ExpressionDerivationRule(op: String, inputs: Seq[(HyperCollection, De
         val deltaCombinationFunction = typing.rules.expression.BooleanCombineFunctionDeltatype(res._2)
         typing.rules.expression.BooleanDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
       }
-      case "-" => {
+      case "negate" => {
         val hyperCombinationFunction = typing.rules.expression.unaryOp.NegateCombineFunctionHypertype(res._1)
         val deltaCombinationFunction = typing.rules.expression.unaryOp.NegateCombineFunctionDeltatype(res._2)
         typing.rules.expression.unaryOp.NegateDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
@@ -138,6 +112,96 @@ case class ExpressionDerivationRule(op: String, inputs: Seq[(HyperCollection, De
         val hyperCombinationFunction = typing.rules.expression.LengthCombineFunctionHypertype(res._1)
         val deltaCombinationFunction = typing.rules.expression.LengthCombineFunctionDeltatype(res._2)
         typing.rules.expression.LengthDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "&&" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.AndCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.AndCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.AndDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "||" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.OrCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.OrCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.OrDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "setminus" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.SetminusCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.SetminusCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.SetminusDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "union" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.UnionCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.UnionCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.UnionDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "in" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.InCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.InCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.InDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "==" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.EqualityCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.EqualityCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.EqualityDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "!=" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.InequalityCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.InequalityCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.InequalityDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case ">" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.GreaterCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.GreaterCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.GreaterDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case ">=" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.GreaterEqualCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.GreaterEqualCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.GreaterEqualDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "<" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.SmallerCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.SmallerCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.SmallerDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "<=" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.SmallerEqualCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.SmallerEqualCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.SmallerEqualDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "/" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.DivisionCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.DivisionCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.DivisionDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "++" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.ExtensionCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.ExtensionCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.ExtensionDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "==>" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.ImplicationCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.ImplicationCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.ImplicationDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "%" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.ModuloCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.ModuloCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.ModuloDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "*" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.MultiplicationCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.MultiplicationCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.MultiplicationDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "-" => {
+        val hyperCombinationFunction = typing.rules.expression.binaryOp.SubtractionCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.binaryOp.SubtractionCombineFunctionDeltatype(res._2)
+        typing.rules.expression.binaryOp.SubtractionDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "!" => {
+        val hyperCombinationFunction = typing.rules.expression.unaryOp.NotCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.unaryOp.NotCombineFunctionDeltatype(res._2)
+        typing.rules.expression.unaryOp.NotDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
       }
       case _ => {
         throw new Exception(s"Unsupported operator: $op")
