@@ -17,12 +17,12 @@ import viper.HHLVerifier.typing.rules.unaryCombineFunction
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.rules.RuleWrapper
 
-case class MinusCombineFunctionHypertype(override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq()) extends unaryCombineFunction[HyperTypeConclusion](rules) {}
-case class MinusCombineFunctionDeltatype(
+case class NegateCombineFunctionHypertype(override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq()) extends unaryCombineFunction[HyperTypeConclusion](rules) {}
+case class NegateCombineFunctionDeltatype(
     override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq(
       // ForanyVariableWrapper(binaryFunctionImplication(Seq(), Seq(DeltaContains(0, Low())), Seq(ElementOf(Low())), Seq(), Seq(), Seq(VarHasDeltaType(0, Low())))),
       // ForanyVariableWrapper(binaryFunctionImplication(Seq(ElementOf(Low())), Seq(), Seq(), Seq(DeltaContains(0, Low())), Seq(), Seq(VarHasDeltaType(0, Low())))),
@@ -32,11 +32,11 @@ case class MinusCombineFunctionDeltatype(
     )
 ) extends unaryCombineFunction[DeltaConclusion](rules) {}
 
-case class MinusDerivationRule() extends ExpressionDerivationRule {
+case class NegateDerivationRule(val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = NegateCombineFunctionHypertype(), val combineFunctionDelta: unaryCombineFunction[DeltaConclusion] = NegateCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case unaryExpr @ UnaryExpr(op, e) => {
         op match {
@@ -47,9 +47,4 @@ case class MinusDerivationRule() extends ExpressionDerivationRule {
       case _ => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
-  override val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = MinusCombineFunctionHypertype()
-
-  override val combineFunctionDelta: unaryCombineFunction[DeltaConclusion] = MinusCombineFunctionDeltatype()
-
 }

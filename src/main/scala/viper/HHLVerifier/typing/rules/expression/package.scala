@@ -20,9 +20,10 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 
 package object expression {}
-case class ExpressionSystem(
+case class ExpressionTypeSystem(
     identifierRule: IdentifierDerivationRule = IdentifierDerivationRule(),
     constRule: NumericalDerivationRule = NumericalDerivationRule(),
     boolRule: BooleanDerivationRule = BooleanDerivationRule(),

@@ -1,33 +1,39 @@
 package viper.HHLVerifier.typing.dsl
 
 import fastparse._
-import fastparse.NoWhitespace._
+import fastparse.JavaWhitespace._
 import viper.HHLVerifier.typing.dsl.{Specification, DerivationRule}
 import viper.HHLVerifier.typing.dsl.Mappings._
 import viper.HHLVerifier.parsing.{Parser => HypraParser}
 import viper.HHLVerifier.ast.Id
+// import fastparse.MultiLineWhitespace
 
 object Parser {
-  def specification[$: P]: P[Specification]   = P(Start ~ derivationRule.rep(1, sep = "\n") ~ End).map(rules => Specification(rules))
+  def specification[$: P]: P[Specification] =
+    P(Start ~ derivationRule.rep(sep = ";") ~ ws ~ End)
+      .map(rules => Specification(rules))
+
   def derivationRule[$: P]: P[DerivationRule] = P(expressionDerivationRule)
 
   def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
-    functionPreamble ~ spaces ~
-      functionArguments ~ spaces ~
-      "=" ~ spaces ~
+    functionPreamble ~ ws ~
+      functionArguments ~ ws ~
+      "=" ~ ws ~
       expressionRules
-  ).map { case (op, inputs, rules) =>
-    ExpressionDerivationRule(op, inputs, rules)
+  ).map {
+    case (op, inputs, rules) => {
+      ExpressionDerivationRule(op, inputs, rules)
+    }
   }
 
-  def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ newlines ~ spaces ~ expressionRule.rep(sep = newlines) ~ spaces ~ newlines ~ "]")
+  def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
 
-  def functionPreamble[$: P]: P[String]                                   = P("|" ~ spaces ~ operator ~ spaces ~ "|")
-  def functionArguments[$: P]: P[Seq[(HyperCollection, DeltaCollection)]] = P("(" ~~ spaces ~ gamma ~~ spaces ~ "," ~~ spaces ~ delta ~~ spaces ~ ("," ~~ spaces ~ combinationFunctionInputPair).rep ~ spaces ~ ")")
+  def functionPreamble[$: P]: P[String]                                   = P("|" ~ ws ~ operator ~ ws ~ "|")
+  def functionArguments[$: P]: P[Seq[(HyperCollection, DeltaCollection)]] = P("(" ~ ws ~ gamma ~ ws ~ "," ~ ws ~ delta ~ ws ~ ("," ~ ws ~ combinationFunctionInputPair).rep ~ ws ~ ")")
     .map { case (_, _, combinationPairs) => combinationPairs }
 
-  def combinationFunctionInputPair[$: P]: P[(HyperCollection, DeltaCollection)] = P(spaces ~~ hyperCollection ~~ spaces ~ "," ~~ spaces ~ deltaCollection ~~ spaces)
-  def expressionRule[$: P]: P[Rule]                                             = P(condition.rep ~~ spaces ~ "=>" ~~ spaces ~ conclusion.rep(1)).map { case (conds, conclusion) =>
+  def combinationFunctionInputPair[$: P]: P[(HyperCollection, DeltaCollection)] = P(hyperCollection ~ ws ~ "," ~ ws ~ deltaCollection)
+  def expressionRule[$: P]: P[Rule]                                             = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
     Rule(conds, conclusion) // Placeholder, replace with actual rule creation logic
   }
 
@@ -46,10 +52,10 @@ object Parser {
 
   def condition[$: P]: P[Condition] = P(inSet)
 
-  def inSet[$: P]: P[InSet]                     = P(element ~~ spaces ~ "in" ~~ spaces ~ set).map { case (elem, set) => InSet(elem, set) }
+  def inSet[$: P]: P[InSet]                     = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
   def element[$: P]: P[Element]                 = P(variable | hyperType)
-  def variable[$: P]: P[Id]                     = HypraParser.progVar
-  def hyperType[$: P]: P[HyperType]             = P(simpleHyperType | hyperTypeWithSetArgs | hyperTypeWithListArgs)
+  def variable[$: P]: P[Id]                     = P(CharIn("a-z").rep(1).!.map(Id))
+  def hyperType[$: P]: P[HyperType]             = P(hyperTypeWithSetArgs | hyperTypeWithListArgs | simpleHyperType)
   def simpleHyperType[$: P]: P[SimpleHyperType] = P(CharIn("A-Z").rep(1).!.map(SimpleHyperType))
   def hyperTypeWithSetArgs[$: P]                = P(simpleHyperType ~ "{" ~ element.rep(1, sep = ",") ~ "}").map { case (name, args) =>
     HyperTypeWithSetArgs(name, args.toSet)
@@ -58,12 +64,13 @@ object Parser {
     HyperTypeWithListArgs(name, args.toSeq)
   }
 
-  def conclusion[$: P]: P[Conclusion] = P(addToSet)
-  def addToSet[$: P]: P[AddToSet]     = P(element ~~ spaces ~ "addTo" ~~ spaces ~ set).map { case (elem, set) => AddToSet(elem, set) }
-  def setEquals[$: P]: P[SetEquals]   = P(set ~~ spaces ~ "=" ~~ spaces ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
+  def conclusion[$: P]: P[Conclusion] = P(addToSet | setEquals)
+  def addToSet[$: P]: P[AddToSet]     = P(element ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => AddToSet(elem, set) }
+  def setEquals[$: P]: P[SetEquals]   = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
 
-  def operator[$: P]: P[String] = P("+" | "-" | "*" | "/" | "var" | "n").!
+  def operator[$: P]: P[String] = P("var" | "n" | "b" | "+" | "-" | "methodCall" | "lookup" | "length").!
 
-  def spaces[$: P]: P[Unit]   = P(CharsWhileIn(" \t").rep)
-  def newlines[$: P]: P[Unit] = P(CharsWhileIn("\n").rep)
+  def ws[$: P]: P[Unit]               = P(CharsWhileIn(" \r\n\t").rep)
+  def newlineSeparator[$: P]: P[Unit] = P(CharsWhileIn(" \t").? ~ ("\r\n" | "\n").rep(1))
+
 }

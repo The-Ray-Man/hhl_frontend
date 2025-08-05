@@ -18,9 +18,10 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.typing.rules.RuleWrapper
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 
 case class NumericalCombineFunctionHypertype(
     override val rules: Seq[RuleWrapper[HyperTypeConclusion]] = Seq(
@@ -36,19 +37,15 @@ case class NumericalCombineFunctionHypertype(
 
 case class NumericalCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends nullaryCombineFunction[DeltaConclusion](rules) {}
 
-case class NumericalDerivationRule() extends ExpressionDerivationRule {
+case class NumericalDerivationRule(val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = NumericalCombineFunctionHypertype(), val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = NumericalCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case _ @Num(_) => super.applyNullary(system, expression, mapping)
       case _         => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
-  override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = NumericalCombineFunctionHypertype()
-
-  override val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = NumericalCombineFunctionDeltatype()
 
 }

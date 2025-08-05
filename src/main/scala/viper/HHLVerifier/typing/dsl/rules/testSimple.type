@@ -1,0 +1,3 @@
+|var|(Gamma, Delta) = [
+    POS in Gamma(var) => POS addTo H
+]

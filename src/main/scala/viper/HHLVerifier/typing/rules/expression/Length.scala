@@ -18,7 +18,7 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.typing.rules.RuleWrapper
@@ -27,19 +27,15 @@ case class LengthCombineFunctionHypertype(override val rules: Seq[RuleWrapper[Hy
 
 case class LengthCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends unaryCombineFunction[DeltaConclusion](rules) {}
 
-case class LengthDerivationRule() extends ExpressionDerivationRule {
+case class LengthDerivationRule(val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = LengthCombineFunctionHypertype(), val combineFunctionDelta: unaryCombineFunction[DeltaConclusion] = LengthCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case _ @LengthExpr(e) => super.applyUnary(system, expression, e, mapping)
       case _                => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
-  override val combineFunctionHypertype: unaryCombineFunction[HyperTypeConclusion] = LengthCombineFunctionHypertype()
-
-  override val combineFunctionDelta: unaryCombineFunction[DeltaConclusion] = LengthCombineFunctionDeltatype()
 
 }

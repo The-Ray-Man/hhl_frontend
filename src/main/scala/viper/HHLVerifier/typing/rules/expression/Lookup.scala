@@ -18,7 +18,7 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.typing.rules.RuleWrapper
 
@@ -26,19 +26,15 @@ case class LookupCombineFunctionHypertype(override val rules: Seq[RuleWrapper[Hy
 
 case class LookupCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends binaryCombineFunction[DeltaConclusion](rules) {}
 
-case class LookupDerivationRule() extends ExpressionDerivationRule {
+case class LookupDerivationRule(val combineFunctionHypertype: binaryCombineFunction[HyperTypeConclusion] = LookupCombineFunctionHypertype(), val combineFunctionDelta: binaryCombineFunction[DeltaConclusion] = LookupCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case _ @LookupExpr(e1, e2) => super.applyBinary(system, expression, e1, e2, mapping)
       case _                     => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")
     }
   }
-
-  override val combineFunctionHypertype: binaryCombineFunction[HyperTypeConclusion] = LookupCombineFunctionHypertype()
-
-  override val combineFunctionDelta: binaryCombineFunction[DeltaConclusion] = LookupCombineFunctionDeltatype()
 
 }

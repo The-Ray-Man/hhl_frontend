@@ -5,7 +5,7 @@ import viper.HHLVerifier.typing.rules.binaryCombineFunction
 import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.DeltaConclusion
 import viper.HHLVerifier.ast.HHLProgram
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.HyperTypeCollection
@@ -24,7 +24,7 @@ case class BinaryExpressionDerivationRule(
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case binaryExpr @ BinaryExpr(e1, op, e2) => {
         op match {

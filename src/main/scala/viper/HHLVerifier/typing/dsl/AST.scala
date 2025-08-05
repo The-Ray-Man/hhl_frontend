@@ -12,14 +12,80 @@ case class Specification(derivationRules: Seq[DerivationRule]) {
 
     val rules = derivationRules.map { rule =>
       rule match {
-        case rule: ExpressionDerivationRule =>
-          rule.toTypeSystem()
+        case rule @ ExpressionDerivationRule(op, _, _) =>
+          (op, rule.toTypeSystem())
         case _ =>
           throw new Exception("Unsupported derivation rule type")
       }
     }
-    println(rules)
-    null
+    val expressionDerivationRules = typing.rules.ExpressionTypeSystem(
+      identifierRule = rules
+        .find(_._1 == "var")
+        .getOrElse(
+          throw new Exception("Identifier rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.IdentifierDerivationRule],
+      constRule = rules
+        .find(_._1 == "n")
+        .getOrElse(
+          throw new Exception("Const rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.NumericalDerivationRule],
+      boolRule = rules
+        .find(_._1 == "b")
+        .getOrElse(
+          throw new Exception("Bool rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.BooleanDerivationRule],
+      binaryRule = typing.rules.expression.BinaryExpressionDerivationRule(
+        additionRule = rules
+          .find(_._1 == "+")
+          .getOrElse(
+            throw new Exception("Addition rule not found in derivation rules")
+          )
+          ._2
+          .asInstanceOf[typing.rules.expression.binaryOp.AdditionDerivationRule]
+      ),
+      unaryRule = typing.rules.expression.UnaryExpressionDerivationRule(
+        minusRule = rules
+          .find(_._1 == "-")
+          .getOrElse(
+            throw new Exception("Minus rule not found in derivation rules")
+          )
+          ._2
+          .asInstanceOf[typing.rules.expression.unaryOp.NegateDerivationRule]
+      ),
+      methodCallRule = rules
+        .find(_._1 == "methodCall")
+        .getOrElse(
+          throw new Exception("Method call rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.MethodDerivationRule],
+      lookupRule = rules
+        .find(_._1 == "lookup")
+        .getOrElse(
+          throw new Exception("Lookup rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.LookupDerivationRule],
+      lengthRule = rules
+        .find(_._1 == "length")
+        .getOrElse(
+          throw new Exception("Length rule not found in derivation rules")
+        )
+        ._2
+        .asInstanceOf[typing.rules.expression.LengthDerivationRule]
+    )
+    val statementTypeSystem = typing.rules.StatementTypeSystem()
+
+    TypeSystem(
+      statementTypeSystem = statementTypeSystem,
+      ExpressionTypeSystem = expressionDerivationRules
+    )
   }
 }
 
@@ -27,29 +93,166 @@ trait DerivationRule
 
 case class ExpressionDerivationRule(op: String, inputs: Seq[(HyperCollection, DeltaCollection)], rules: Seq[Rule]) extends DerivationRule {
   def toTypeSystem(): typing.rules.ExpressionDerivationRule = {
+    println("ToTypeSystem")
     val hyperTypeRules = Seq.empty[typing.rules.RuleWrapper[typing.rules.HyperTypeConclusion]]
     val deltaRules     = Seq.empty[typing.rules.RuleWrapper[typing.rules.DeltaConclusion]]
-    val res            = rules.map(rule => rule.toTypeSystem()).fold((hyperTypeRules, deltaRules))((acc, current) => (acc._1 ++ current._1, acc._2 ++ current._2))
+    val arity          = inputs.length
+    val res            = rules.map(rule => rule.toTypeSystem(arity)).fold((hyperTypeRules, deltaRules))((acc, current) => (acc._1 ++ current._1, acc._2 ++ current._2))
     op match {
       case "+" => {
         val hyperCombinationFunction = typing.rules.expression.binaryOp.AdditionCombineFunctionHypertype(res._1)
         val deltaCombinationFunction = typing.rules.expression.binaryOp.AdditionCombineFunctionDeltatype(res._2)
         typing.rules.expression.binaryOp.AdditionDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
       }
+      case "var" => {
+        val hyperCombinationFunction = typing.rules.expression.IdentifierCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.IdentifierCombineFunctionDeltatype(res._2)
+        typing.rules.expression.IdentifierDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "n" => {
+        val hyperCombinationFunction = typing.rules.expression.NumericalCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.NumericalCombineFunctionDeltatype(res._2)
+        typing.rules.expression.NumericalDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "b" => {
+        val hyperCombinationFunction = typing.rules.expression.BooleanCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.BooleanCombineFunctionDeltatype(res._2)
+        typing.rules.expression.BooleanDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "-" => {
+        val hyperCombinationFunction = typing.rules.expression.unaryOp.NegateCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.unaryOp.NegateCombineFunctionDeltatype(res._2)
+        typing.rules.expression.unaryOp.NegateDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "methodCall" => {
+        val hyperCombinationFunction = typing.rules.expression.MethodCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.MethodCombineFunctionDeltatype(res._2)
+        typing.rules.expression.MethodDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "lookup" => {
+        val hyperCombinationFunction = typing.rules.expression.LookupCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.LookupCombineFunctionDeltatype(res._2)
+        typing.rules.expression.LookupDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case "length" => {
+        val hyperCombinationFunction = typing.rules.expression.LengthCombineFunctionHypertype(res._1)
+        val deltaCombinationFunction = typing.rules.expression.LengthCombineFunctionDeltatype(res._2)
+        typing.rules.expression.LengthDerivationRule(hyperCombinationFunction, deltaCombinationFunction)
+      }
+      case _ => {
+        throw new Exception(s"Unsupported operator: $op")
+      }
     }
   }
 }
 
 case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) {
-  def toTypeSystem(): (Seq[typing.rules.RuleWrapper[typing.rules.HyperTypeConclusion]], Seq[typing.rules.RuleWrapper[typing.rules.DeltaConclusion]]) = {
-    val hyperTypeConclusions = conclusions.filter(conclusion => conclusion.isHyperTypeConclusion())
-    val deltaConclusions     = conclusions.filter(conclusion => !conclusion.isHyperTypeConclusion())
-    val variables            = conditions.flatMap(_.variables).toSet ++ conclusions.flatMap(_.variables).toSet
-    val variableMap          = variables.zipWithIndex.toMap
+  def toTypeSystem(arity: Int): (Seq[typing.rules.RuleWrapper[typing.rules.HyperTypeConclusion]], Seq[typing.rules.RuleWrapper[typing.rules.DeltaConclusion]]) = {
+    val variables   = conditions.flatMap(_.variables).toSet ++ conclusions.flatMap(_.variables).toSet
+    val variableMap = variables.zipWithIndex.toMap
 
-    println(variables)
+    val hyperTypeConclusions = conclusions.filter(conclusion => conclusion.isHyperTypeConclusion()).map(_.toTypingCondition(variableMap).map(_.asInstanceOf[typing.rules.HyperTypeConclusion]))
+    val deltaConclusions     = conclusions.filter(conclusion => !conclusion.isHyperTypeConclusion()).map(_.toTypingCondition(variableMap).map(_.asInstanceOf[typing.rules.DeltaConclusion]))
 
-    (null, null) // TODO: Implement conversion to TypeSystem rules
+    val typeingConditions = conditions.flatMap(cond => cond.toTypingCondition(variableMap))
+    val neededLength      = arity * 2 + 1
+    val aggregator        = Array.ofDim[Seq[typing.rules.Condition]](neededLength + 1)
+    for (i <- 0 to neededLength) {
+      aggregator(i) = Seq.empty[typing.rules.Condition]
+    }
+    val orderedConditions = typeingConditions.foldLeft(aggregator) { (acc, current) =>
+      val index        = current._1
+      val condition    = current._2
+      val existingList = acc(index)
+      if (existingList == null) {
+        acc(index) = Seq(condition)
+      } else {
+        acc(index) = existingList :+ condition
+      }
+      acc
+    }
+
+    val numVariables   = variableMap.size
+    val hyperTypeRules = hyperTypeConclusions.map { conclusion =>
+      {
+        val combiningFunction = arity match {
+          case 0 =>
+            typing.rules.nullaryFunctionImplication[typing.rules.HyperTypeConclusion](
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case 1 =>
+            typing.rules.unaryFunctionImplication[typing.rules.HyperTypeConclusion](
+              orderedConditions(1).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(2).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case 2 =>
+            typing.rules.binaryFunctionImplication[typing.rules.HyperTypeConclusion](
+              orderedConditions(1).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(2).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions(3).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(4).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case _ => throw new Exception(s"Unsupported arity: ${arity}. 0-2 are supported.")
+        }
+        if (numVariables == 0) {
+          typing.rules.EmptyWrapper(
+            combiningFunction
+          )
+        } else if (numVariables == 1) {
+          typing.rules.ForanyVariableWrapper(
+            combiningFunction
+          )
+        } else {
+          throw new Exception("Unsupported number of variables: " + numVariables)
+        }
+      }
+    }
+    val deltaTypeRules = deltaConclusions.map { conclusion =>
+      {
+        val combiningFunction = arity match {
+          case 0 =>
+            typing.rules.nullaryFunctionImplication[typing.rules.DeltaConclusion](
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case 1 =>
+            typing.rules.unaryFunctionImplication[typing.rules.DeltaConclusion](
+              orderedConditions(1).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(2).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case 2 =>
+            typing.rules.binaryFunctionImplication[typing.rules.DeltaConclusion](
+              orderedConditions(1).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(2).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions(3).map(_.asInstanceOf[typing.rules.HyperTypeCondition]),
+              orderedConditions(4).map(_.asInstanceOf[typing.rules.DeltaCondition]),
+              orderedConditions.head.map(_.asInstanceOf[typing.rules.SideCondition]),
+              conclusion
+            )
+          case _ => throw new Exception(s"Unsupported arity: ${arity}. 0-2 are supported.")
+        }
+        if (numVariables == 0) {
+          typing.rules.EmptyWrapper(
+            combiningFunction
+          )
+        } else if (numVariables == 1) {
+          typing.rules.ForanyVariableWrapper(
+            combiningFunction
+          )
+        } else {
+          throw new Exception("Unsupported number of variables: " + numVariables)
+        }
+      }
+    }
+
+    (hyperTypeRules, deltaTypeRules) // TODO: Implement conversion to TypeSystem rules
   }
 }
 
@@ -160,7 +363,7 @@ case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) exte
 trait Condition extends CollectVariables {
   // the list is formatted like this [SideConditions, ConditionHyperType0, ConditionDeltaType0, ConditionHyperType1, ConditionDeltaType1, ...]
   // We will store this such that we save (index, Condition)
-  def toTypeCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)]
+  def toTypingCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)]
 
 }
 
@@ -168,12 +371,31 @@ case class InSet(elem: Element, set: Set) extends Condition {
 
   override def variables: immutable.Set[Id] = elem.variables ++ set.variables
 
-  override def toTypeCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)] = {
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)] = {
     set match {
       case _ @HyperCollection(id) => {
         val hyperType = elem.toIndexed(variableMap).asInstanceOf[HyperType]
         val index     = id.intValue() * 2 + 1
         Seq((index, typing.rules.ElementOf(hyperType)))
+      }
+      case _ @HyperCollectionResult()    => throw new Exception("HyperCollectionResult cannot be used in InSet condition")
+      case _ @MappingAccess(mapping, id) => {
+        val hyperType = elem.asInstanceOf[HyperType]
+        mapping match {
+          case DeltaCollectionResult() => throw new Exception("DeltaCollectionResult cannot be used in InSet condition")
+          case DeltaCollection(setId)  => {
+            val index    = setId.intValue() * 2 + 1
+            val varIndex = variableMap.get(id).getOrElse(throw new Exception("Variable " + id.name + " not found in variable map"))
+            Seq((index, typing.rules.DeltaContains(varIndex, hyperType)))
+          }
+          case Delta() => {
+            val index    = 0
+            val varIndex = variableMap.get(id).getOrElse(throw new Exception("Variable " + id.name + " not found in variable map"))
+            Seq((index, typing.rules.DeltaContains(varIndex, hyperType)))
+          }
+          case Gamma() => throw new Exception("Not implemented yet")
+          case _       => throw new Exception("Unsupported mapping type for InSet condition")
+        }
       }
       case _ => throw new Exception("Unsupported set type for InSet condition")
     }
@@ -183,8 +405,29 @@ case class InSet(elem: Element, set: Set) extends Condition {
 
 trait Conclusion extends CollectVariables with ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
+  def toTypingCondition(variableMap: Map[Id, Int]): Seq[typing.rules.Conclusion]
 }
 case class AddToSet(elem: Element, set: Set) extends Conclusion {
+
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[typing.rules.Conclusion] = {
+    set match {
+      case HyperCollectionResult() => {
+        val hyperType = elem.toIndexed(variableMap).asInstanceOf[HyperType]
+        Seq(typing.rules.ContainsHyperType(hyperType))
+      }
+      case MappingAccess(mapping, id) => {
+        mapping match {
+          case Delta() => {
+            val hyperType = elem.toIndexed(variableMap).asInstanceOf[HyperType]
+            val varIndex  = variableMap.get(id).getOrElse(throw new Exception("Variable " + id.name + " not found in variable map"))
+            Seq(typing.rules.VarHasDeltaType(varIndex, hyperType))
+          }
+          case _ => throw new Exception("Unsupported mapping type for AddToSet conclusion")
+        }
+      }
+      case _ => throw new Exception("Unsupported Set type for AddToSet conclusion")
+    }
+  }
 
   override def variables: immutable.Set[Id] = elem.variables ++ set.variables
 
@@ -192,6 +435,16 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
 
 }
 case class SetEquals(set1: Set, set2: Set) extends Conclusion {
+
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[typing.rules.Conclusion] = {
+    (set1, set2) match {
+      case (MappingAccess(Gamma(), varId), HyperCollectionResult()) => {
+        val variableIndex = variableMap.get(varId).getOrElse(throw new Exception("Variable " + varId.name + " not found in variable map"))
+        Seq(typing.rules.LookupAndAddHyperType(variableIndex))
+      }
+      case _ => throw new Exception("Unsupported Set types for SetEquals conclusion")
+    }
+  }
 
   override def variables: immutable.Set[Id] = set1.variables ++ set2.variables
 

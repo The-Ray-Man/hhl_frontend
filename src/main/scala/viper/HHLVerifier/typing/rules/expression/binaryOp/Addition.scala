@@ -16,7 +16,7 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.typing.rules.RuleWrapper
 
@@ -70,7 +70,7 @@ case class AdditionDerivationRule(val combineFunctionHypertype: binaryCombineFun
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram] // Placeholder for soundness tests, if needed
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case binaryExpr @ BinaryExpr(e1, op, e2) => super.applyBinary(system, expression, e1, e2, mapping)
       case _                                   => throw new IllegalArgumentException(s"Wrong rule applied!")

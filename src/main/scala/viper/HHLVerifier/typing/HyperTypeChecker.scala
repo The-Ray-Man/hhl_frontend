@@ -25,7 +25,7 @@ import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.typing.rules.TypeSystem
 
 object HyperTypeChecker {
@@ -88,7 +88,7 @@ object HyperTypeChecker {
         return res
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
-        val (condType, _) = typeCheckExpression(system.expressionSystem, mapping, cond)
+        val (condType, _) = typeCheckExpression(system.ExpressionTypeSystem, mapping, cond)
         (mapping, delta)
       }
       case UnfoldStmt(t, id) => {
@@ -130,7 +130,7 @@ object HyperTypeChecker {
     }
   }
 
-  def typeCheckExpression(system: ExpressionSystem, mapping: HyperMapping, e: Expr): (HyperTypeCollection, DeltaCollection) = {
+  def typeCheckExpression(system: ExpressionTypeSystem, mapping: HyperMapping, e: Expr): (HyperTypeCollection, DeltaCollection) = {
     system.derive(e, mapping)
   }
 

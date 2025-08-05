@@ -9,7 +9,7 @@ import viper.HHLVerifier.typing.rules.ConstTrue
 import viper.HHLVerifier.typing.rules.ConstFalse
 import viper.HHLVerifier.typing.rules.EmptyWrapper
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.HyperTypeCollection
@@ -27,14 +27,10 @@ case class BooleanCombineFunctionHypertype(
 
 case class BooleanCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends nullaryCombineFunction[DeltaConclusion](rules) {}
 
-case class BooleanDerivationRule() extends ExpressionDerivationRule {
+case class BooleanDerivationRule(val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = BooleanCombineFunctionHypertype(), val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = BooleanCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
-  val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = BooleanCombineFunctionHypertype()
-
-  val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = BooleanCombineFunctionDeltatype()
-
-  def generateSoundnessTests: Seq[viper.HHLVerifier.ast.HHLProgram]                                                     = Seq()
-  def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  def generateSoundnessTests: Seq[viper.HHLVerifier.ast.HHLProgram]                                                         = Seq()
+  def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case BoolLit(value) => applyNullary(system, expression, mapping)
       case _              => throw new IllegalArgumentException(s"Wrong rule applied for expression: ${expression}")

@@ -18,7 +18,7 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.{DeltaCollection, HyperMapping, HyperTypeCollection}
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.typing.rules.RuleWrapper
 
@@ -26,18 +26,14 @@ case class MethodCombineFunctionHypertype(override val rules: Seq[RuleWrapper[Hy
 
 case class MethodCombineFunctionDeltatype(override val rules: Seq[RuleWrapper[DeltaConclusion]] = Seq()) extends nullaryCombineFunction[DeltaConclusion](rules) {}
 
-case class MethodDerivationRule() extends ExpressionDerivationRule {
+case class MethodDerivationRule(val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = MethodCombineFunctionHypertype(), val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = MethodCombineFunctionDeltatype()) extends ExpressionDerivationRule {
 
   override def generateSoundnessTests: Seq[HHLProgram] = Seq.empty[HHLProgram]
 
-  override def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  override def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     expression match {
       case _ => throw new IllegalArgumentException(s"Function Expressions are not implemented yet")
     }
   }
-
-  override val combineFunctionHypertype: nullaryCombineFunction[HyperTypeConclusion] = MethodCombineFunctionHypertype()
-
-  override val combineFunctionDelta: nullaryCombineFunction[DeltaConclusion] = MethodCombineFunctionDeltatype()
 
 }

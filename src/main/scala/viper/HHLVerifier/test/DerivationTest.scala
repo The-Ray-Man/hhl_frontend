@@ -7,13 +7,13 @@ import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.ast.Expr
-import viper.HHLVerifier.typing.rules.ExpressionSystem
+import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.typing.dsl.SimpleHyperType
 
 object DerivationTests {
 
   def main(args: Array[String]): Unit = {
-    val system           = ExpressionSystem()
+    val system           = ExpressionTypeSystem()
     var expression: Expr = null
     expression = BinaryExpr(Num(1), "+", Num(2))
     var mapping = HyperMapping(Map())
@@ -30,6 +30,14 @@ object DerivationTests {
     mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"), SimpleHyperType("ZERO"))))))
 
     res = system.derive(expression, mapping)
+    println(s"$expression :: {${res._1}}, {${res._2}}")
+
+    val path       = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(path)
+    expression = BinaryExpr(Id("x"), "+", Num(2))
+    mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
+
+    res = typeSystem.ExpressionTypeSystem.derive(expression, mapping)
     println(s"$expression :: {${res._1}}, {${res._2}}")
 
   }

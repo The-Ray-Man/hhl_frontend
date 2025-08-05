@@ -26,9 +26,9 @@ abstract class ExpressionDerivationRule {
   val combineFunctionDelta: CombineFunction[DeltaConclusion]
 
   def generateSoundnessTests: Seq[HHLProgram]
-  def derive(system: ExpressionSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection)
+  def derive(system: ExpressionTypeSystem, expression: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection)
 
-  def applyBinary(system: ExpressionSystem, e: Expr, e1: Expr, e2: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  def applyBinary(system: ExpressionTypeSystem, e: Expr, e1: Expr, e2: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     val (type1, delta1) = system.derive(e1, mapping)
     val (type2, delta2) = system.derive(e2, mapping)
 
@@ -49,7 +49,7 @@ abstract class ExpressionDerivationRule {
     (hyperTypeCollection, deltaTypeCollection)
   }
 
-  def applyUnary(system: ExpressionSystem, e: Expr, e1: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  def applyUnary(system: ExpressionTypeSystem, e: Expr, e1: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     val (type1, delta1) = system.derive(e1, mapping)
 
     val derivationContext         = ExpressionDerivationContext(e, mapping, Seq(ExpressionDerivationResult(type1, delta1)))
@@ -69,7 +69,7 @@ abstract class ExpressionDerivationRule {
     (hyperTypeCollection, deltaTypeCollection)
   }
 
-  def applyNullary(system: ExpressionSystem, e: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
+  def applyNullary(system: ExpressionTypeSystem, e: Expr, mapping: HyperMapping): (HyperTypeCollection, DeltaCollection) = {
     val derivationContext         = ExpressionDerivationContext(e, mapping, Seq())
     val applicableRulesHypertypes = combineFunctionHypertype.getActions(derivationContext)
     val applicableRulesDeltas     = combineFunctionDelta.getActions(derivationContext)

@@ -1,0 +1,21 @@
+|+|(Gamma, Delta, H0, D0, H1, D1) = [
+    LOW in H0 && LOW in H1 => LOW addTo H
+];
+
+|var|(Gamma, Delta) = [
+    => Gamma(var) = H
+];
+
+|n|(Gamma, Delta) = [
+    => LOW addTo H
+];
+
+|b|(Gamma, Delta) = [];
+
+|-|(Gamma, Delta, H0, D0) = [];
+
+|methodCall|(Gamma, Delta) = [];
+
+|lookup|(Gamma,Delta, H0, D0, H1, D1) = [];
+
+|length|(Gamma,Delta, H0, D0) = []
