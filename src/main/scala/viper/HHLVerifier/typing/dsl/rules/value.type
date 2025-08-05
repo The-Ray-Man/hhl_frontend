@@ -1,0 +1,147 @@
+
+/* BASIC OPERATIONS */
+
+|n|(Gamma, Delta) = [
+   n == 0 => ZERO addTo H,
+   n > 0 => POS addTo H,
+   n < 0 => NEG addTo H
+];
+
+|var|(Gamma, Delta) = [
+    => Gamma(var) = H
+];
+
+|b|(Gamma, Delta) = [
+   b => TRUE addTo H,
+   !(b) => FALSE addTo H
+];
+
+/* ARITHMETIC OPERATIONS */
+|+|(Gamma, Delta, H0, D0, H1, D1) = [
+    ZERO in H0 && ZERO in H1 => ZERO addTo H,
+    POS  in H0 && POS  in H1 => POS  addTo H,
+    POS  in H0 && ZERO in H1 => POS  addTo H,
+    POS  in H1 && POS  in H0 => POS  addTo H,
+    POS  in H1 && ZERO in H0 => POS  addTo H,
+    NEG  in H0 && NEG  in H1 => NEG  addTo H,
+    NEG  in H0 && ZERO in H1 => NEG  addTo H,
+    NEG  in H1 && NEG  in H0 => NEG  addTo H,
+    NEG  in H1 && ZERO in H0 => NEG  addTo H
+];
+|%|(Gamma, Delta, H0, D0, H1, D1) = [];
+|*|(Gamma, Delta, H0, D0, H1, D1) = [
+    ZERO in H0 => ZERO addTo H,
+    ZERO in H1 => ZERO addTo H,
+    POS in H0 && POS in H1 => POS addTo H,
+    NEG in H0 && NEG in H1 => POS addTo H,
+    POS in H0 && NEG in H1 => NEG addTo H,
+    NEG in H0 && POS in H1 => NEG addTo H
+];
+|/|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && POS in H1 => POS addTo H,
+    NEG in H0 && NEG in H1 => POS addTo H,
+    POS in H0 && NEG in H1 => NEG addTo H,
+    NEG in H0 && POS in H1 => NEG addTo H
+];
+|-|(Gamma, Delta, H0, D0, H1, D1) = [
+    ZERO in H0 && POS in H1 => NEG addTo H,
+    POS in H0 && NEG in H1 => NEG addTo H,
+    NEG in H0 && POS in H1 => NEG addTo H
+];
+|negate|(Gamma, Delta, H0, D0) = [
+    ZERO in H0 => ZERO addTo H,
+    POS in H0 => NEG addTo H,
+    NEG in H0 => NEG addTo H
+];
+
+
+/* BOOLEAN OPERATIONS */
+| || |(Gamma, Delta, H0, D0, H1, D1) = [
+    TRUE in H0 => TRUE addTo H,
+    TRUE in H1 => TRUE addTo H,
+    FALSE in H0 && FALSE in H1 => FALSE addTo H
+];
+|==|(Gamma, Delta, H0, D0, H1, D1) = [
+    ZERO in H0 && ZERO in H1 => TRUE addTo H,
+    POS in H0 && NEG in H1 => FALSE addTo H,
+    NEG in H0 && POS in H1 => FALSE addTo H
+];
+|!|(Gamma, Delta, H0, D0) = [
+    TRUE in H0 => FALSE addTo H,
+    FALSE in H0 => TRUE addTo H
+];
+|&&|(Gamma, Delta, H0, D0, H1, D1) = [
+    TRUE in H0 && TRUE in H1 => TRUE addTo H,
+    FALSE in H0 => FALSE addTo H,
+    FALSE in H1 => FALSE addTo H
+];
+|>|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && ZERO in H1 => TRUE addTo H,
+    POS in H0 && NEG in H1 => TRUE addTo H,
+    ZERO in H0 && NEG in H1 => TRUE addTo H,
+    ZERO in H0 && POS in H1 => FALSE addTo H,
+    NEG in H0 && POS in H1 => FALSE addTo H,
+    NEG in H0 && ZERO in H1 => FALSE addTo H,
+    ZERO in H0 && ZERO in H1 => FALSE addTo H
+];
+|>=|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && ZERO in H1 => TRUE addTo H,
+    POS in H0 && NEG in H1 => TRUE addTo H,
+    ZERO in H0 && NEG in H1 => TRUE addTo H,
+    ZERO in H0 && POS in H1 => FALSE addTo H,
+    NEG in H0 && POS in H1 => FALSE addTo H,
+    NEG in H0 && ZERO in H1 => FALSE addTo H
+];
+|<|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && ZERO in H1 => FALSE addTo H,
+    POS in H0 && NEG in H1 => FALSE addTo H,
+    ZERO in H0 && NEG in H1 => FALSE addTo H,
+    ZERO in H0 && POS in H1 => TRUE addTo H,
+    NEG in H0 && POS in H1 => TRUE addTo H,
+    NEG in H0 && ZERO in H1 => TRUE addTo H,
+    ZERO in H0 && ZERO in H1 => TRUE addTo H
+];
+|<=|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && ZERO in H1 => FALSE addTo H,
+    POS in H0 && NEG in H1 => FALSE addTo H,
+    ZERO in H0 && NEG in H1 => FALSE addTo H,
+    ZERO in H0 && POS in H1 => TRUE addTo H,
+    NEG in H0 && POS in H1 => TRUE addTo H,
+    NEG in H0 && ZERO in H1 => TRUE addTo H
+];
+|==>|(Gamma, Delta, H0, D0, H1, D1) = [
+    FALSE in H0 => TRUE addTo H,
+    TRUE in H0 && TRUE in H1 => TRUE addTo H,
+    FALSE in H1 && TRUE in H0 => FALSE addTo H
+
+];
+|!=|(Gamma, Delta, H0, D0, H1, D1) = [
+    POS in H0 && NEG in H1 => TRUE addTo H,
+    NEG in H0 && POS in H1 => TRUE addTo H,
+    POS in H0 && ZERO in H1 => TRUE addTo H,
+    ZERO in H0 && POS in H1 => TRUE addTo H,
+    NEG in H0 && ZERO in H1 => TRUE addTo H,
+    ZERO in H0 && NEG in H1 => TRUE addTo H,
+    ZERO in H0 && ZERO in H1 => FALSE addTo H
+];
+
+
+
+/* LIST/SET/MAP OPERATIONS */
+
+
+|lookup|(Gamma,Delta, H0, D0, H1, D1) = [];
+
+|length|(Gamma,Delta, H0, D0) = [];
+
+|++|(Gamma, Delta, H0, D0, H1, D1) = [];
+
+|in|(Gamma, Delta, H0, D0, H1, D1) = [];
+
+|setminus|(Gamma, Delta, H0, D0, H1, D1) = [];
+
+|union|(Gamma, Delta, H0, D0, H1, D1) = [];
+
+
+/* METHOD OPERATIONS */
+|methodCall|(Gamma, Delta) = []

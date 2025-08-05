@@ -6,7 +6,7 @@
 ];
 
 |var|(Gamma, Delta) = [
-    => LOW addTo H
+    => Gamma(var) = H
 ];
 
 |b|(Gamma, Delta) = [

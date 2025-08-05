@@ -131,7 +131,7 @@ object DSLTests {
   }
   def loadingTypeSystemTest(): Unit = {
     val path       = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(path)
+    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
 
   }
 
