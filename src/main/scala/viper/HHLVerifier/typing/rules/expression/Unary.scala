@@ -16,7 +16,7 @@ import viper.HHLVerifier.typing.rules.expression.unaryOp.NegateDerivationRule
 import viper.HHLVerifier.typing.rules.CombineFunction
 
 case class UnaryExpressionDerivationRule(
-    val minusRule: ExpressionDerivationRule = NegateDerivationRule(),
+    val negateRule: ExpressionDerivationRule = NegateDerivationRule(),
     val notRule : ExpressionDerivationRule = unaryOp.NotDerivationRule(),
 ) extends ExpressionDerivationRule {
 
@@ -30,7 +30,7 @@ case class UnaryExpressionDerivationRule(
     expression match {
       case unaryExpr @ UnaryExpr(_, _) => {
         unaryExpr.op match {
-          case "-" => minusRule.derive(system, expression, mapping)
+          case "-" => negateRule.derive(system, expression, mapping)
           case "!" => notRule.derive(system, expression, mapping)
           case _   => throw new Exception("Unsupported unary operator: " + unaryExpr.op)
         }
