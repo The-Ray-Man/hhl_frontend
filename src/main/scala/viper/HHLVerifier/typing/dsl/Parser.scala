@@ -50,7 +50,21 @@ object Parser {
 
   def set[$: P]: P[Set] = P(hyperCollection | mappingAccess | hyperCollectionResult)
 
-  def condition[$: P]: P[Condition] = P(inSet)
+  def condition[$: P]: P[Condition] = P(inSet | arithCondition | boolCondition | negatedCondition)
+
+  def arithCondition[$: P] : P[ArithCondition] = P(
+    "n" ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
+  ).map { case (comp, value) => ArithCondition(comp, value) }
+
+  def boolCondition[$: P]: P[BoolCondition] = P(
+    "b".!
+  ).map { _ => BoolCondition() }
+
+  def negatedCondition[$: P]: P[Condition] = P(
+    "!" ~ ws ~ "(" ~ condition ~ ")"
+  ).map { case cond => NotOperator(cond) }
+
+  def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "==" | "!=").!
 
   def inSet[$: P]: P[InSet]                     = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
   def element[$: P]: P[Element]                 = P(variable | hyperType)

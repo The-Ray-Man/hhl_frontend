@@ -5,8 +5,6 @@ import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.DeltaConclusion
 import viper.HHLVerifier.typing.rules.nullaryCombineFunction
 import viper.HHLVerifier.typing.rules.nullaryFunctionImplication
-import viper.HHLVerifier.typing.rules.ConstTrue
-import viper.HHLVerifier.typing.rules.ConstFalse
 import viper.HHLVerifier.typing.rules.EmptyWrapper
 import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.ExpressionTypeSystem

@@ -520,3 +520,39 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
   }
 
 }
+
+case class ArithCondition(op: String, right: Int) extends Condition {
+
+  override def variables: immutable.Set[Id] = Set.empty[Id]
+
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)] = {
+    Seq((0, typing.rules.ArithCondition(op, right)))
+  }
+}
+
+case class BoolCondition() extends Condition {
+
+  override def variables: immutable.Set[Id] = Set.empty[Id]
+
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)] = {
+    Seq((0, typing.rules.BoolCondition()))
+  }
+}
+
+
+case class NotOperator(condition: Condition) extends Condition {
+
+  override def variables: immutable.Set[Id] = condition.variables
+
+  override def toTypingCondition(variableMap: Map[Id, Int]): Seq[(Int, typing.rules.Condition)] = {
+    val subCondition = condition.toTypingCondition(variableMap)
+    subCondition.map { case (index, cond) =>
+      cond match {
+        case _: typing.rules.SideCondition => (index, typing.rules.NegateSideCondition(cond.asInstanceOf[typing.rules.SideCondition]))
+        case _: typing.rules.HyperTypeCondition => (index, typing.rules.NegateHyperCondition(cond.asInstanceOf[typing.rules.HyperTypeCondition]))
+        case _: typing.rules.DeltaCondition => (index, typing.rules.NegateDeltaCondition(cond.asInstanceOf[typing.rules.DeltaCondition]))
+        case _ => throw new Exception("Unsupported condition type for NotOperator")
+      }
+    }
+  }
+}

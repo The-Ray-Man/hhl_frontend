@@ -24,6 +24,12 @@ trait SideCondition extends Condition {
 case class ElementOf(val hyperType: HyperType) extends HyperTypeCondition {
   override def hyperApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, hyperTypeCollection: HyperTypeCollection): Boolean = hyperTypeCollection.hypertypes.contains(hyperType)
 }
+
+case class NegateHyperCondition(condition: HyperTypeCondition) extends HyperTypeCondition {
+  override def hyperApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, hyperTypeCollection: HyperTypeCollection): Boolean = !condition.hyperApplies(context, checkContext, hyperTypeCollection)
+}
+
+
 case class DeltaContains(val varId: Int, val hyperType: HyperType) extends DeltaCondition {
   override def deltaApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, deltaCollection: DeltaCollection): Boolean = {
     checkContext.variables.length > varId && deltaCollection.mapping.contains(checkContext.variables(varId).name) && deltaCollection.mapping(checkContext.variables(varId).name).hypertypes.contains(hyperType)
@@ -33,6 +39,10 @@ case class VarNotInDelta(val varId: Int) extends DeltaCondition {
   override def deltaApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, deltaCollection: DeltaCollection): Boolean = {
     checkContext.variables.length >= varId || !deltaCollection.mapping.contains(checkContext.variables(varId).name)
   }
+}
+
+case class NegateDeltaCondition(condition: DeltaCondition) extends DeltaCondition {
+  override def deltaApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, deltaCollection: DeltaCollection): Boolean = !condition.deltaApplies(context, checkContext, deltaCollection)
 }
 
 case class VarInHyperMapping(val varId: Int) extends SideCondition {
@@ -50,61 +60,24 @@ case class ExpressionIsVar(val varId: Int) extends SideCondition {
   }
 }
 
-case class ConstPositiveInt() extends SideCondition {
+case class ArithCondition(op: String, right: Int) extends SideCondition {
   override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
     context.expression match {
-      case i: Num => i.value > 0
+      case i: Num => op match {
+        case ">" => i.value > right
+        case "<" => i.value < right
+        case "==" => i.value == right
+        case "!=" => i.value != right
+        case ">=" => i.value >= right
+        case "<=" => i.value <= right
+        case _   => false
+      }
       case _      => false
     }
   }
 }
 
-case class ConstNegativeInt() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case i: Num => i.value < 0
-      case _      => false
-    }
-  }
-}
-
-case class ConstZeroInt() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case i: Num => i.value == 0
-      case _      => false
-    }
-  }
-}
-
-case class ConstAbsGtOne() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case i: Num => i.value.abs > 1
-      case _      => false
-    }
-  }
-}
-
-case class ConstAbsLtOne() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case i: Num => i.value.abs < 1
-      case _      => false
-    }
-  }
-}
-
-case class ConstAbsOne() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case i: Num => i.value.abs == 1
-      case _      => false
-    }
-  }
-}
-
-case class ConstTrue() extends SideCondition {
+case class BoolCondition() extends SideCondition {
   override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
     context.expression match {
       case b: BoolLit => b.value
@@ -113,11 +86,7 @@ case class ConstTrue() extends SideCondition {
   }
 }
 
-case class ConstFalse() extends SideCondition {
-  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
-    context.expression match {
-      case b: BoolLit => !b.value
-      case _          => false
-    }
-  }
+
+case class NegateSideCondition(subCondition: SideCondition) extends SideCondition {
+  override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = !subCondition.applies(context, checkContext)
 }
