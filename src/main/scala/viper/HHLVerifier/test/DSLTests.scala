@@ -129,15 +129,16 @@ object DSLTests {
     result("32", res32)
 
   }
-  def loadingTypeSystemTest(): Unit = {
-    val path       = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
-
+  def loadingTypeSystemTest(filename: String): Unit = {
+    println("testing:", filename)
+    val path       = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+    val _ = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
   }
 
   def main(args: Array[String]): Unit = {
     parsingTests()
-    loadingTypeSystemTest()
+    loadingTypeSystemTest("value.type")
+    loadingTypeSystemTest("infFlow.type")
 
   }
 }

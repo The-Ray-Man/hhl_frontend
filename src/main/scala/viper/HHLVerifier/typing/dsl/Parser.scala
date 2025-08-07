@@ -3,17 +3,25 @@ package viper.HHLVerifier.typing.dsl
 import fastparse._
 import fastparse.JavaWhitespace._
 import viper.HHLVerifier.typing.dsl.{Specification, DerivationRule}
-import viper.HHLVerifier.typing.dsl.Mappings._
 import viper.HHLVerifier.parsing.{Parser => HypraParser}
 import viper.HHLVerifier.ast.Id
+import viper.HHLVerifier.ast.Expr
 // import fastparse.MultiLineWhitespace
 
 object Parser {
   def specification[$: P]: P[Specification] =
-    P(Start ~ derivationRule.rep(sep = ";") ~ ws ~ End)
-      .map(rules => Specification(rules))
+    P(Start ~ hyperTypeDeclaration.rep() ~ ws ~ derivationRule.rep(sep = ";") ~ ws ~ End)
+      .map { case (declarations, rules) =>
+        Specification(declarations, rules.toSeq)
+      }
 
   def derivationRule[$: P]: P[DerivationRule] = P(expressionDerivationRule)
+
+  def hyperTypeDeclaration[$: P] : P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map {
+    case (variable, hyperType, expression) => HyperTypeDeclaration(variable, hyperType, expression)
+  }
+
+  def expression[$: P]: P[Expr] = HypraParser.expr
 
   def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
     functionPreamble ~ ws ~
@@ -74,7 +82,7 @@ object Parser {
   def hyperTypeWithSetArgs[$: P]                = P(simpleHyperType ~ "{" ~ element.rep(1, sep = ",") ~ "}").map { case (name, args) =>
     HyperTypeWithSetArgs(name, args.toSet)
   }
-  def hyperTypeWithListArgs[$: P] = P(simpleHyperType ~ "(" ~ element.rep(1, sep = ",") ~ ")").map { case (name, args) =>
+  def hyperTypeWithListArgs[$: P] = P(simpleHyperType ~ "[" ~ element.rep(1, sep = ",") ~ "]").map { case (name, args) =>
     HyperTypeWithListArgs(name, args.toSeq)
   }
 

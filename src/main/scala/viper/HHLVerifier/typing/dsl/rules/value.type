@@ -1,6 +1,9 @@
 
 /* BASIC OPERATIONS */
 
+exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
+
+
 |n|(Gamma, Delta) = [
    n == 0 => ZERO addTo H,
    n > 0 => POS addTo H,

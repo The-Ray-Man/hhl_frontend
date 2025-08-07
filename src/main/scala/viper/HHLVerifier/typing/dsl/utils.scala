@@ -23,7 +23,9 @@ object SpecificationUtil {
   def mergeSpecification(spec1: Specification, spec2: Specification): Specification = {
     val expressionDerivationByOp = (spec1.derivationRules ++ spec2.derivationRules).filter(_.isInstanceOf[ExpressionDerivationRule]).map(_.asInstanceOf[ExpressionDerivationRule]).groupBy(_.op).map(_._2).toSeq
     val combinedRules = expressionDerivationByOp.map(rules => rules.reduce((rule1, rule2) => combineExpressionDerivationRules(rule1, rule2)))
-    Specification(combinedRules)
+
+    val combinedHypertypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
+    Specification(combinedHypertypeDeclarations, combinedRules)
   }
 
   def combineExpressionDerivationRules(rule1 : ExpressionDerivationRule, rule2: ExpressionDerivationRule): ExpressionDerivationRule = {

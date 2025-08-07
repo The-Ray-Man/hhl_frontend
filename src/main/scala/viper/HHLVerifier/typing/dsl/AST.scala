@@ -9,7 +9,7 @@ import viper.HHLVerifier.typing.rules.expression._
 import viper.HHLVerifier.typing.rules.expression.binaryOp._
 import viper.HHLVerifier.typing.rules.expression.unaryOp._
 
-case class Specification(derivationRules: Seq[DerivationRule]) {
+case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration],derivationRules: Seq[DerivationRule]) {
 
   def toTypeSystem(): TypeSystem = {
     val rules = derivationRules.map { rule =>
@@ -61,6 +61,9 @@ case class Specification(derivationRules: Seq[DerivationRule]) {
     )
   }
 }
+
+
+case class HyperTypeDeclaration(variable: Id, hty: HyperType, definition: Expr) {}
 
 trait DerivationRule
 
