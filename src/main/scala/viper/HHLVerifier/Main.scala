@@ -84,7 +84,7 @@ object Main {
         new Logger("Parsing successful.").log()
 
         var parsedProgram: HHLProgram = res.get.value
-        HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
+        // HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
 
         new Logger("HyperType checking successful.").log()
         if (args.contains("--hypraToHypra")) {

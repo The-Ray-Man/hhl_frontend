@@ -5,8 +5,14 @@ import viper.HHLVerifier.typing.dsl.SpecificationUtil
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,
-    ExpressionTypeSystem: ExpressionTypeSystem = null
-) {}
+    expressionTypeSystem: ExpressionTypeSystem = null
+) {
+
+
+  def checkSoundness() : Boolean = {
+    false
+  }
+}
 
 case class StatementTypeSystem()
 

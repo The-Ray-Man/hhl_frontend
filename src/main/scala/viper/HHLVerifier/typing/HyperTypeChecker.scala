@@ -88,7 +88,7 @@ object HyperTypeChecker {
         return res
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
-        val (condType, _) = typeCheckExpression(system.ExpressionTypeSystem, mapping, cond)
+        val (condType, _) = typeCheckExpression(system.expressionTypeSystem, mapping, cond)
         (mapping, delta)
       }
       case UnfoldStmt(t, id) => {

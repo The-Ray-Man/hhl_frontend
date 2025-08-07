@@ -57,7 +57,7 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration],derivat
 
     TypeSystem(
       statementTypeSystem = statementTypeSystem,
-      ExpressionTypeSystem = expressionDerivationRules
+      expressionTypeSystem = expressionDerivationRules
     )
   }
 }
