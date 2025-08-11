@@ -2,10 +2,12 @@ package viper.HHLVerifier.typing.rules
 
 import viper.HHLVerifier.typing.rules.expression.IdentifierDerivationRule
 import viper.HHLVerifier.typing.dsl.SpecificationUtil
+import viper.HHLVerifier.typing.dsl.HyperTypeDeclaration
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,
-    expressionTypeSystem: ExpressionTypeSystem = null
+    expressionTypeSystem: ExpressionTypeSystem = null,
+    hyperTypeDeclaration : Seq[HyperTypeDeclaration] = Seq.empty[HyperTypeDeclaration]
 ) {
 
 
