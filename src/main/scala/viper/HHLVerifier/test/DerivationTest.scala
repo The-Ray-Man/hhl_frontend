@@ -17,11 +17,16 @@ object DerivationTests {
 
     val infFlowPath       = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
     var typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(infFlowPath))
-    println(typeSystem.expressionTypeSystem)
     var expression = BinaryExpr(Id("x"), "+", Num(2))
     var mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
     var res = typeSystem.deriveExpression(mapping, DeltaMapping(Map()), expression, Map())
-    println(s"$expression :: {${res._1}}, {${res._2}}")
+    println(s"$expression :: {${res.hyperTypeCollection}} {${res.deltaCollection}}")
+
+
+    mapping = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW")))), ("y", HyperTypeCollection(Set()))))
+    expression = BinaryExpr(Id("x"), "+", Id("y"))
+    res = typeSystem.deriveExpression(mapping, DeltaMapping(Map()), expression, Map())
+    println(s"$expression :: {${res.hyperTypeCollection}} {${res.deltaCollection}}")
 
 
     // val valuePath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
