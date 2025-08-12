@@ -10,7 +10,7 @@ import viper.HHLVerifier.typing.dsl.SimpleHyperType
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
-import viper.HHLVerifier.typing.rules.TypeSystem
+import viper.HHLVerifier.typing.dsl.TypeSystem
 
 object DerivationTests {
 
@@ -26,7 +26,7 @@ object DerivationTests {
 
   def valueTests(): Unit = {
     val valuePath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(valuePath))
+    val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath))
 
     val mapping      = HyperMapping(Map())
     val deltaMapping = DeltaMapping(Map())
@@ -62,7 +62,7 @@ object DerivationTests {
 
   def infFlowTests(): Unit = {
     val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val typeSystem  = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(infFlowPath))
+    val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath))
 
     val mappingXLow      = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
     val mappingXLowYLow  = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW")))), ("y", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))

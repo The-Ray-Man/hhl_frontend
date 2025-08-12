@@ -24,8 +24,8 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
-import viper.HHLVerifier.typing.rules.TypeSystem
-import viper.HHLVerifier.typing.rules.ExpressionDerivationResult
+import viper.HHLVerifier.typing.dsl.TypeSystem
+import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
 
 object HyperTypeChecker {
 

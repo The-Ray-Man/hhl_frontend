@@ -1,4 +1,4 @@
-package viper.HHLVerifier.typing.rules
+package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.typing.dsl.SpecificationUtil
 import viper.HHLVerifier.typing.dsl.HyperTypeDeclaration
@@ -9,6 +9,7 @@ import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.DeltaMapping
+import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,

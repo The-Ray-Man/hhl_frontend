@@ -117,7 +117,7 @@ object DSLTests {
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
     val path = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
-    val _    = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
+    val _    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path))
   }
 
   def main(args: Array[String]): Unit = {

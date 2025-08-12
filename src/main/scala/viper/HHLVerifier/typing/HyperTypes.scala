@@ -17,7 +17,7 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.ast.ImpliesExpr
 import viper.silicon.state.terms.Greater
-import viper.HHLVerifier.typing.rules.RuleCheckContext
+import viper.HHLVerifier.typing.dsl.RuleCheckContext
 import viper.HHLVerifier.typing.dsl.HyperType
 
 // sealed trait HyperType {

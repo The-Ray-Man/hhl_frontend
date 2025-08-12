@@ -10,6 +10,7 @@ import viper.silver.verifier.Success
 import viper.silver.verifier.Failure
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.typing
+import viper.HHLVerifier.typing.dsl.TypeSystem
 
 object RuleSoundnessTests {
 
@@ -18,7 +19,7 @@ object RuleSoundnessTests {
     TypeChecker.reset()
     Generator.reset()
 
-    val typeSystem = typing.rules.TypeSystem()
+    val typeSystem = TypeSystem()
 
     HyperTypeChecker.typeCheckProg(typeSystem, program)
     println("hypertypecheck done")

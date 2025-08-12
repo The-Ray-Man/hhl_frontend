@@ -70,9 +70,9 @@ object Main {
     new Logger(f"The input program is read from $programAbsPath.").log()
 
     val hyperTypeSystem = if (args.contains("--typeSystem")) {
-      typing.rules.TypeSystem.loadTypeSystem(Seq(args(args.indexOf("--typeSystem") + 1)))
+      typing.dsl.TypeSystem.loadTypeSystem(Seq(args(args.indexOf("--typeSystem") + 1)))
     } else {
-      typing.rules.TypeSystem()
+      typing.dsl.TypeSystem()
     }
 
     try {

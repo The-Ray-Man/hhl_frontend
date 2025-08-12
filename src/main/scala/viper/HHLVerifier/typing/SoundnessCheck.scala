@@ -1,14 +1,12 @@
 package viper.HHLVerifier.typing
 
-import viper.HHLVerifier.typing.rules.TypeSystem
-import viper.HHLVerifier.typing.rules.RuleWrapper
-import viper.HHLVerifier.typing.rules.HyperTypeConclusion
-import viper.HHLVerifier.typing.rules.EmptyWrapper
+import viper.HHLVerifier.typing.dsl.TypeSystem
+import viper.HHLVerifier.typing.dsl.RuleWrapper
+import viper.HHLVerifier.typing.dsl.EmptyWrapper
 import viper.HHLVerifier.ast.Method
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.CompositeStmt
-import viper.HHLVerifier.typing.rules.ForanyVariableWrapper
-import viper.HHLVerifier.typing.rules.HyperTypeCondition
+import viper.HHLVerifier.typing.dsl.ForanyVariableWrapper
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.dsl.SimpleHyperType

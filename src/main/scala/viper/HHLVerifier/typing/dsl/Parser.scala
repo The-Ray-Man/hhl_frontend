@@ -82,36 +82,6 @@ object Parser {
   def addToSet[$: P]: P[AddToSet]     = P(element ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => AddToSet(elem, set) }
   def setEquals[$: P]: P[SetEquals]   = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
 
-  def operator[$: P]: P[String] = P(
-    "negate" |
-      "var" |
-      "n" |
-      "b" |
-      "++" |
-      "+" |
-      "&&" |
-      "/" |
-      "==>" |
-      "==" |
-      ">=" |
-      ">" |
-      "in" |
-      "!=" |
-      "%" |
-      "*" |
-      "||" |
-      "setminus" |
-      "set" |
-      "<=" |
-      "<" |
-      "-" |
-      "union" |
-      "!" |
-      "methodCall" |
-      "lookup" |
-      "length"
-  ).!
-
   def ws[$: P]: P[Unit]               = P(CharsWhileIn(" \r\n\t").rep)
   def newlineSeparator[$: P]: P[Unit] = P(CharsWhileIn(" \t").? ~ ("\r\n" | "\n").rep(1))
 

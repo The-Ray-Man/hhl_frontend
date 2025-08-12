@@ -1,6 +1,5 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.typing.rules.TypeSystem
 import viper.HHLVerifier.typing
 import scala.collection.immutable
 import viper.HHLVerifier.ast.Id
@@ -34,7 +33,7 @@ trait DerivationRule
 
 case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends DerivationRule {
 
-  val wrappedRules: Seq[typing.rules.RuleWrapper] = rules.map(rule => wrapRule(rule))
+  val wrappedRules: Seq[RuleWrapper] = rules.map(rule => wrapRule(rule))
 
   def isApplicableTo(toCheckExpression: Expr): Option[Map[Id, Expr]] = {
     // Check if the expression matches the rule's expression
@@ -62,22 +61,22 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     }
   }
 
-  def wrapRule(rule: Rule): typing.rules.RuleWrapper = {
+  def wrapRule(rule: Rule): RuleWrapper = {
     val allVariables        = rule.conditions.flatMap(_.variables).toSet
     val capturedVariables   = typing.HyperTypeChecker.getVariables(expr).toSet
     val freeVariables       = allVariables -- capturedVariables
     val freeVariableMapping = freeVariables.zipWithIndex.toMap
     val indexedRule         = ToIndexed.toIndexedVariable(freeVariableMapping, rule)
     if (freeVariables.isEmpty) {
-      typing.rules.EmptyWrapper(indexedRule)
+      EmptyWrapper(indexedRule)
     } else {
-      typing.rules.ForanyVariableWrapper(freeVariables.size, indexedRule)
+      ForanyVariableWrapper(freeVariables.size, indexedRule)
     }
   }
 
-  def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): typing.rules.ExpressionDerivationResult = {
-    val context     = typing.rules.ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping)
-    val emptyResult = typing.rules.ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
+  def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
+    val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping)
+    val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
     wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
       rule.apply(context, acc)
     }
@@ -132,173 +131,4 @@ case class Delta() extends Mapping {
 
   override def isHyperTypeConclusion(): Boolean = false
 
-}
-
-trait Element extends CollectVariables {}
-
-abstract class HyperType extends Element {
-  override def equals(obj: Any): Boolean
-  def semantics(id: Id): Expr = throw new Exception("Semantics not defined for HyperType: " + this.getClass.getSimpleName)
-}
-
-case class SimpleHyperType(name: String) extends HyperType {
-
-  override def equals(obj: Any): Boolean = obj match {
-    case SimpleHyperType(otherName) => name == otherName
-    case _                          => false
-  }
-
-  override def variables: scala.collection.immutable.Set[Id] = scala.collection.immutable.Set.empty[Id]
-}
-case class HyperTypeWithSetArgs(name: SimpleHyperType, args: scala.collection.immutable.Set[Element]) extends HyperType {
-
-  override def equals(obj: Any): Boolean = obj match {
-    case HyperTypeWithSetArgs(otherName, otherArgs) => name == otherName && args == otherArgs
-    case _                                          => false
-  }
-
-  override def variables: scala.collection.immutable.Set[Id] = args.flatMap(_.variables)
-}
-case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) extends HyperType {
-
-  override def equals(obj: Any): Boolean = obj match {
-    case HyperTypeWithListArgs(otherName, otherArgs) => name == otherName && args == otherArgs
-    case _                                           => false
-  }
-
-  override def variables: scala.collection.immutable.Set[Id] = args.flatMap(_.variables).toSet
-}
-
-// Building Blocks for Conditions/Conclusion
-trait Condition extends CollectVariables {
-
-  def check(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext): Boolean
-}
-
-case class InSet(elem: Element, set: Set) extends Condition {
-
-  override def check(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext): Boolean = {
-    val indexedSet = set match {
-      case HyperTypeCheck(id, _, _) => {
-        val (gamma, delta) = (context.gamma, context.delta)
-        val subExpression  = context.varMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
-        context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).hyperTypeCollection
-      } // Todo gamma, delta collection should be infered.
-      case _: Set => throw new Exception("Not implemented yet")
-    }
-
-    val elementIndexed = applyIndexed.applyIndexed(ruleCheckContext.variables, elem)
-
-    indexedSet.hypertypes.contains(elementIndexed.asInstanceOf[HyperType])
-  }
-  override def variables: immutable.Set[Id] = elem.variables ++ set.variables
-
-}
-
-trait Conclusion extends CollectVariables with ConclusionInfo {
-  def isHyperTypeConclusion(): Boolean
-  def apply(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext, result: typing.rules.ExpressionDerivationResult): typing.rules.ExpressionDerivationResult
-}
-
-case class AddToSet(elem: Element, set: Set) extends Conclusion {
-
-  def apply(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext, result: typing.rules.ExpressionDerivationResult): typing.rules.ExpressionDerivationResult = {
-    set match {
-      case HyperCollectionResult() => {
-        val updatedElem = applyIndexed.applyIndexed(ruleCheckContext.variables, elem).asInstanceOf[HyperType]
-        typing.rules.ExpressionDerivationResult(
-          hyperTypeCollection = result.hyperTypeCollection.add(updatedElem),
-          deltaCollection = result.deltaCollection
-        )
-      }
-      case _: Set => throw new Exception("Not implemented yet")
-    }
-  }
-  override def variables: immutable.Set[Id] = elem.variables ++ set.variables
-
-  override def isHyperTypeConclusion(): Boolean = set.isHyperTypeConclusion()
-
-}
-
-case class SetEquals(set1: Set, set2: Set) extends Conclusion {
-
-  def hyperTypeResultToGammaLookup(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext, result: typing.rules.ExpressionDerivationResult, index: Id): typing.rules.ExpressionDerivationResult = {
-    context.varMapping.getOrElse(index, throw new Exception(s"Variable $index not found in variable mapping")) match {
-      case Id(name) => {
-        val hyperTypes = context.gamma.getUnsafe(name)
-        typing.rules.ExpressionDerivationResult(
-          hyperTypeCollection = hyperTypes,
-          deltaCollection = result.deltaCollection
-        )
-      }
-      case _ => throw new Exception("Expected Id for index in MappingAccess")
-    }
-  }
-
-  override def apply(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext, result: typing.rules.ExpressionDerivationResult): typing.rules.ExpressionDerivationResult = {
-    (set1, set2) match {
-      case (HyperCollectionResult(), MappingAccess(Gamma(), index)) => hyperTypeResultToGammaLookup(context, ruleCheckContext, result, index)
-      case (MappingAccess(Gamma(), index), HyperCollectionResult()) => hyperTypeResultToGammaLookup(context, ruleCheckContext, result, index)
-      case _                                                        => throw new Exception("Not yet implemented")
-    }
-  }
-
-  override def variables: immutable.Set[Id] = set1.variables ++ set2.variables
-
-  override def isHyperTypeConclusion(): Boolean = {
-    val res1 = set1.isHyperTypeConclusion()
-    val res2 = set2.isHyperTypeConclusion()
-    if (res1 != res2) {
-      throw new Exception("SetEquals conclusion must have both sets of the same type")
-    }
-    res1
-  }
-
-}
-
-case class ArithCondition(variable: Id, op: String, right: Int) extends Condition {
-
-  def check(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext): Boolean = {
-    val expression = context.varMapping.get(variable).getOrElse(throw new Exception("Variable " + variable.name + " not found in mapping"))
-    expression match {
-      case Num(value) => {
-        op match {
-          case ">"  => value > right
-          case "<"  => value < right
-          case ">=" => value >= right
-          case "<=" => value <= right
-          case "==" => value == right
-          case "!=" => value != right
-          case _    => throw new Exception("Unsupported comparator: " + op)
-        }
-      }
-      case _ => throw new Exception("ArithCondition can only be checked against Num expressions")
-    }
-  }
-
-  override def variables: immutable.Set[Id] = Set(variable)
-
-}
-
-case class BoolCondition(variable: Id) extends Condition {
-
-  def check(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext): Boolean = {
-    val expression = context.varMapping.get(variable).getOrElse(throw new Exception("Variable " + variable.name + " not found in mapping"))
-    expression match {
-      case BoolLit(value) => value
-      case _              => throw new Exception("BoolCondition can only be checked against BoolLit expressions")
-    }
-  }
-
-  override def variables: immutable.Set[Id] = Set(variable)
-
-}
-
-case class NotOperator(condition: Condition) extends Condition {
-
-  def check(context: typing.rules.ExpressionDerivationContext, ruleCheckContext: typing.rules.RuleCheckContext): Boolean = {
-    !condition.check(context, ruleCheckContext)
-  }
-
-  override def variables: immutable.Set[Id] = condition.variables
 }

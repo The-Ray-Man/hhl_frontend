@@ -15,7 +15,7 @@ import viper.HHLVerifier.typing.TypeChecker
 import viper.silicon.rules.evaluator.eval
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
 import viper.HHLVerifier.typing.HyperTranslate
-import viper.HHLVerifier.typing.rules.TypeSystem
+import viper.HHLVerifier.typing.dsl.TypeSystem
 
 trait VerificationResult {}
 case class VerificationSuccess() extends VerificationResult

@@ -1,4 +1,4 @@
-package viper.HHLVerifier.typing.rules
+package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.Expr
@@ -19,6 +19,7 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.dsl
 import java.beans.Expression
+import viper.HHLVerifier.typing.dsl.TypeSystem
 
 case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection)                                                 {}
 case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr]) {}
