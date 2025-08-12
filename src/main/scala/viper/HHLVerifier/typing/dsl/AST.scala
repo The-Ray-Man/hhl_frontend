@@ -62,7 +62,7 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   }
 
   def wrapRule(rule: Rule): RuleWrapper = {
-    val allVariables        = rule.conditions.flatMap(_.variables).toSet
+    val allVariables        = rule.conditions.flatMap(_.variables).toSet ++ rule.conclusions.flatMap(_.variables).toSet
     val capturedVariables   = typing.HyperTypeChecker.getVariables(expr).toSet
     val freeVariables       = allVariables -- capturedVariables
     val freeVariableMapping = freeVariables.zipWithIndex.toMap

@@ -10,6 +10,8 @@ import viper.HHLVerifier.ast.ImpliesExpr
 import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.typing.dsl.HyperType
+import viper.silver.parser.PKw.Spec
+import viper.HHLVerifier.typing.dsl.Parser.hyperType
 
 object SpecificationUtil {
 
@@ -22,19 +24,58 @@ object SpecificationUtil {
   }
 
   def mergeSpecification(spec1: Specification, spec2: Specification): Specification = {
-    throw new Exception("Not yet implemented: 1. Match the expression, 2. replace the expression in all the rules. 3. Combine rules")
-    // val expressionDerivationByOp = (spec1.derivationRules ++ spec2.derivationRules).filter(_.isInstanceOf[ExpressionDerivationRule]).map(_.asInstanceOf[ExpressionDerivationRule]).groupBy(_.op).map(_._2).toSeq
-    // val combinedRules = expressionDerivationByOp.map(rules => rules.reduce((rule1, rule2) => combineExpressionDerivationRules(rule1, rule2)))
+    val hyperTypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
 
-    // val combinedHypertypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
-    // Specification(combinedHypertypeDeclarations, combinedRules)
+    val derivationRules = spec1.derivationRules ++ spec2.derivationRules
+    val reducedRules    = combineDerivationRules(derivationRules)
+
+    Specification(
+      hyperTypeDeclarations,
+      reducedRules
+    )
   }
 
-  def combineExpressionDerivationRules(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): ExpressionDerivationRule = {
-    throw new Exception("Not yet implemented: 1. Match the expression, 2. replace the expression in all the rules. 3. Combine rules")
-    // assert(samePlaceholderExpression(rule1.expr, rule2.expr), "Cannot combine rules with different expressions")
-    // val rules = rule1.rules ++ rule2.rules
-    // ExpressionDerivationRule(rule1.expr, rules)
+  def combineDerivationRules(rules: Seq[DerivationRule]): Seq[DerivationRule] = {
+    var expressionRules = Set[ExpressionDerivationRule]()
+    for (rule <- rules) {
+      if (rule.isInstanceOf[ExpressionDerivationRule]) {
+        val dupplicatedRule = expressionRules.find(r => canBeCombined(r, rule.asInstanceOf[ExpressionDerivationRule]).isDefined)
+        dupplicatedRule match {
+          case None        => expressionRules += rule.asInstanceOf[ExpressionDerivationRule]
+          case Some(value) => {
+            val combinedRule = combineExpressionDerivationRules(value, rule.asInstanceOf[ExpressionDerivationRule]).getOrElse(throw new Exception("123"))
+            expressionRules -= value
+            expressionRules += combinedRule
+          }
+        }
+      } else {
+        throw new Exception("Statement derivation rules are not yet supported")
+      }
+    }
+    expressionRules.toSeq
+  }
+
+  def combineExpressionDerivationRules(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[ExpressionDerivationRule] = {
+    canBeCombined(rule1, rule2) match {
+      case None                => None
+      case Some(mappingIdtoId) => {
+        val adaptedRules = rule2.rules.map(rule => applyIndexed.applyIndexed(mappingIdtoId, rule))
+        val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
+        Some(ExpressionDerivationRule(rule1.expr, allRules))
+      }
+    }
+  }
+
+  def canBeCombined(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[Map[Id, Id]] = {
+    (rule1.expr, rule2.expr) match {
+      case (Id(name1), Id(name2)) if name1 == name2                                                                               => Some(Map(Id(name1) -> Id(name2)))
+      case (BinaryExpr(idLeft1 @ Id(_), op1, idRight1 @ Id(_)), BinaryExpr(idLeft2 @ Id(_), op2, idRight2 @ Id(_))) if op1 == op2 => Some(Map(idLeft1 -> idLeft2, idRight1 -> idRight2))
+      case (UnaryExpr(op1, idInner1 @ Id(_)), UnaryExpr(op2, idInner2 @ Id(_))) if op1 == op2                                     => Some(Map(idInner1 -> idInner2))
+      case (ImpliesExpr(idLeft1 @ Id(_), idRight1 @ Id(_)), ImpliesExpr(idLeft2 @ Id(_), idRight2 @ Id(_)))                       => Some(Map(idLeft1 -> idLeft2, idRight1 -> idRight2))
+      case (LengthExpr(id1 @ Id(_)), LengthExpr(id2 @ Id(_))) if id1 == id2                                                       => Some(Map(id1 -> id2))
+      case (LookupExpr(dataStructure1 @ Id(_), index1 @ Id(_)), LookupExpr(dataStructure2 @ Id(_), index2 @ Id(_)))               => Some(Map(dataStructure1 -> dataStructure2, index1 -> index2))
+      case _                                                                                                                      => None
+    }
   }
 
 }
@@ -137,6 +178,51 @@ object ToIndexed {
 }
 
 object applyIndexed {
+
+  def applyIndexed(mapping: Map[Id, Id], wrapper: Rule): Rule = {
+    Rule(
+      conditions = wrapper.conditions.map(cond => applyIndexed(mapping, cond)),
+      conclusions = wrapper.conclusions.map(concl => applyIndexed(mapping, concl))
+    )
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], cond: Condition): Condition = {
+    cond match {
+      case arithCond: ArithCondition => ArithCondition(applyIndexed(mapping, arithCond.variable), arithCond.op, arithCond.right)
+      case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
+      case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
+      case notOperator: NotOperator  => NotOperator(applyIndexed(mapping, notOperator.condition))
+    }
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], conclusion: Conclusion): Conclusion = {
+    conclusion match {
+      case AddToSet(elem, set)   => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
+      case SetEquals(set1, set2) => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
+    }
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], variable: Id): Id = {
+    mapping.getOrElse(variable, variable)
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], set: Set): Set = {
+    set match {
+      case HyperCollectionResult()            => HyperCollectionResult()
+      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
+    }
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], map: Mapping): Mapping = {
+    map match {
+      case Gamma()                 => Gamma()
+      case Delta()                 => Delta()
+      case DeltaCollectionResult() => DeltaCollectionResult()
+      case _: Mapping              => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+    }
+  }
+
   def applyIndexed(mapping: Map[Id, Id], elem: Element): Element = {
     elem match {
       case id @ Id(name)  => mapping.getOrElse(id, throw new Exception(s"Variable $id not found in mapping"))
