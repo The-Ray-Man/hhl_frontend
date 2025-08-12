@@ -25,6 +25,7 @@ import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.rules.TypeSystem
+import viper.HHLVerifier.typing.rules.ExpressionDerivationResult
 
 object HyperTypeChecker {
 
@@ -128,7 +129,7 @@ object HyperTypeChecker {
     }
   }
 
-  def typeCheckExpression(system: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, e: Expr): (HyperTypeCollection, DeltaCollection) = {
+  def typeCheckExpression(system: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, e: Expr): ExpressionDerivationResult = {
     system.deriveExpression(gamma, delta, e, Map())
   }
 

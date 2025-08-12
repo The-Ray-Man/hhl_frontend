@@ -30,33 +30,33 @@ trait HyperTypeConclusion extends Conclusion {}
 
 trait DeltaConclusion extends Conclusion {}
 
-case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {
+// case class ContainsHyperType(val hyperType: HyperType) extends HyperTypeConclusion {
 
-  override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
-    Seq(AddHyperType(hyperType))
-  }
-}
+//   override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
+//     Seq(AddHyperType(hyperType))
+//   }
+// }
 
-case class VarHasDeltaType(val varId: Int, val hyperType: HyperType) extends DeltaConclusion {
+// case class VarHasDeltaType(val varId: Int, val hyperType: HyperType) extends DeltaConclusion {
 
-  override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
-    if (ruleCheckContext.variables.length <= varId) {
-      throw new Exception("Variable index out of bounds: " + varId + " for variables: " + ruleCheckContext.variables)
-    }
+//   override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
+//     if (ruleCheckContext.variables.length <= varId) {
+//       throw new Exception("Variable index out of bounds: " + varId + " for variables: " + ruleCheckContext.variables)
+//     }
 
-    val variable = ruleCheckContext.variables(varId)
-    Seq(ExtendDeltaMapping(variable, hyperType))
-  }
-}
+//     val variable = ruleCheckContext.variables(varId)
+//     Seq(ExtendDeltaMapping(variable, hyperType))
+//   }
+// }
 
-case class LookupAndAddHyperType(val varId: Int) extends HyperTypeConclusion {
+// case class LookupAndAddHyperType(val varId: Int) extends HyperTypeConclusion {
 
-  override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
-    val hyperTypes = context.mapping.getUnsafe(ruleCheckContext.variables(varId).name)
-    val result     = hyperTypes.hypertypes.map(ht => AddHyperType(ht)).toSeq
+//   override def toActions(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = {
+//     val hyperTypes = context.mapping.getUnsafe(ruleCheckContext.variables(varId).name)
+//     val result     = hyperTypes.hypertypes.map(ht => AddHyperType(ht)).toSeq
 
-    result
+//     result
 
-  }
+//   }
 
-}
+// }

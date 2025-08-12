@@ -49,86 +49,86 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
     POS in H[e1](Gamma,Delta) && NEG in H[e2](Gamma, Delta) => NEG addTo H,
     NEG in H[e1](Gamma,Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H
 ];
-|-|(Gamma, Delta, H0, D0, H1, D1) = [
-    ZERO in H0 && POS in H1 => NEG addTo H,
-    POS in H0 && NEG in H1 => NEG addTo H,
-    NEG in H0 && POS in H1 => NEG addTo H
+(Gamma, Delta) |- e1 - e2 :: [
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => NEG addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H
 ];
-|negate|(Gamma, Delta, H0, D0) = [
-    ZERO in H0 => ZERO addTo H,
-    POS in H0 => NEG addTo H,
-    NEG in H0 => NEG addTo H
+(Gamma, Delta) |- -e1 :: [
+    ZERO in H[e1](Gamma, Delta) => ZERO addTo H,
+    POS in H[e1](Gamma, Delta) => NEG addTo H,
+    NEG in H[e1](Gamma, Delta) => NEG addTo H
 ];
 
 
 /* BOOLEAN OPERATIONS */
-| || |(Gamma, Delta, H0, D0, H1, D1) = [
-    TRUE in H0 => TRUE addTo H,
-    TRUE in H1 => TRUE addTo H,
-    FALSE in H0 && FALSE in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 || e2 :: [
+    TRUE in H[e1](Gamma, Delta) => TRUE addTo H,
+    TRUE in H[e2](Gamma, Delta) => TRUE addTo H,
+    FALSE in H[e1](Gamma, Delta) && FALSE in H[e2](Gamma, Delta) => FALSE addTo H
 ];
-|==|(Gamma, Delta, H0, D0, H1, D1) = [
-    ZERO in H0 && ZERO in H1 => TRUE addTo H,
-    POS in H0 && NEG in H1 => FALSE addTo H,
-    NEG in H0 && POS in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 == e2 :: [
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => FALSE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => FALSE addTo H
 ];
-|!|(Gamma, Delta, H0, D0) = [
-    TRUE in H0 => FALSE addTo H,
-    FALSE in H0 => TRUE addTo H
+(Gamma, Delta) |- !e1  :: [
+    TRUE in H[e1](Gamma, Delta) => FALSE addTo H,
+    FALSE in H[e1](Gamma, Delta) => TRUE addTo H
 ];
-|&&|(Gamma, Delta, H0, D0, H1, D1) = [
-    TRUE in H0 && TRUE in H1 => TRUE addTo H,
-    FALSE in H0 => FALSE addTo H,
-    FALSE in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 && e2 :: [
+    TRUE in H[e1](Gamma, Delta) && TRUE in H[e2](Gamma, Delta) => TRUE addTo H,
+    FALSE in H[e1](Gamma, Delta) => FALSE addTo H,
+    FALSE in H[e2](Gamma, Delta) => FALSE addTo H
 ];
-|>|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && ZERO in H1 => TRUE addTo H,
-    POS in H0 && NEG in H1 => TRUE addTo H,
-    ZERO in H0 && NEG in H1 => TRUE addTo H,
-    ZERO in H0 && POS in H1 => FALSE addTo H,
-    NEG in H0 && POS in H1 => FALSE addTo H,
-    NEG in H0 && ZERO in H1 => FALSE addTo H,
-    ZERO in H0 && ZERO in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 > e2 :: [
+    POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => FALSE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => FALSE addTo H,
+    NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H,
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H
 ];
-|>=|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && ZERO in H1 => TRUE addTo H,
-    POS in H0 && NEG in H1 => TRUE addTo H,
-    ZERO in H0 && NEG in H1 => TRUE addTo H,
-    ZERO in H0 && POS in H1 => FALSE addTo H,
-    NEG in H0 && POS in H1 => FALSE addTo H,
-    NEG in H0 && ZERO in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 >= e2 :: [
+    POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => FALSE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => FALSE addTo H,
+    NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H
 ];
-|<|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && ZERO in H1 => FALSE addTo H,
-    POS in H0 && NEG in H1 => FALSE addTo H,
-    ZERO in H0 && NEG in H1 => FALSE addTo H,
-    ZERO in H0 && POS in H1 => TRUE addTo H,
-    NEG in H0 && POS in H1 => TRUE addTo H,
-    NEG in H0 && ZERO in H1 => TRUE addTo H,
-    ZERO in H0 && ZERO in H1 => TRUE addTo H
+(Gamma, Delta) |- e1 < e2 :: [
+    POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => FALSE addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => FALSE addTo H,
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H
 ];
-|<=|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && ZERO in H1 => FALSE addTo H,
-    POS in H0 && NEG in H1 => FALSE addTo H,
-    ZERO in H0 && NEG in H1 => FALSE addTo H,
-    ZERO in H0 && POS in H1 => TRUE addTo H,
-    NEG in H0 && POS in H1 => TRUE addTo H,
-    NEG in H0 && ZERO in H1 => TRUE addTo H
+(Gamma, Delta) |- e1 <= e2 :: [
+    POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => FALSE addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => FALSE addTo H,
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H
 ];
-|==>|(Gamma, Delta, H0, D0, H1, D1) = [
-    FALSE in H0 => TRUE addTo H,
-    TRUE in H0 && TRUE in H1 => TRUE addTo H,
-    FALSE in H1 && TRUE in H0 => FALSE addTo H
+(Gamma, Delta) |- e1 ==> e2 :: [
+    FALSE in H[e1](Gamma, Delta) => TRUE addTo H,
+    TRUE in H[e1](Gamma, Delta) && TRUE in H[e2](Gamma, Delta) => TRUE addTo H,
+    FALSE in H[e2](Gamma, Delta) && TRUE in H[e1](Gamma, Delta) => FALSE addTo H
 
 ];
-|!=|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && NEG in H1 => TRUE addTo H,
-    NEG in H0 && POS in H1 => TRUE addTo H,
-    POS in H0 && ZERO in H1 => TRUE addTo H,
-    ZERO in H0 && POS in H1 => TRUE addTo H,
-    NEG in H0 && ZERO in H1 => TRUE addTo H,
-    ZERO in H0 && NEG in H1 => TRUE addTo H,
-    ZERO in H0 && ZERO in H1 => FALSE addTo H
+(Gamma, Delta) |- e1 != e2 :: [
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
+    NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => TRUE addTo H,
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H
 ];
 
 
@@ -136,18 +136,17 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 /* LIST/SET/MAP OPERATIONS */
 
 
-|lookup|(Gamma,Delta, H0, D0, H1, D1) = [];
+(Gamma, Delta) |- e1[e2] :: [];
 
-|length|(Gamma,Delta, H0, D0) = [];
+(Gamma, Delta) |- |e1| :: [];
 
-|++|(Gamma, Delta, H0, D0, H1, D1) = [];
+(Gamma, Delta) |- e1 ++ e2 :: [];
 
-|in|(Gamma, Delta, H0, D0, H1, D1) = [];
+(Gamma, Delta) |- e1 in e2 :: [];
 
-|setminus|(Gamma, Delta, H0, D0, H1, D1) = [];
+(Gamma, Delta) |- e1 setminus e2 :: [];
 
-|union|(Gamma, Delta, H0, D0, H1, D1) = [];
+(Gamma, Delta) |- e1 union e2 :: []
 
 
 /* METHOD OPERATIONS */
-|methodCall|(Gamma, Delta) = []

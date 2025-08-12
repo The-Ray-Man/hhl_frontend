@@ -18,42 +18,59 @@ import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.dsl
+import java.beans.Expression
 
 
 case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection)               {}
-case class ExpressionDerivationContext(val expression: Expr, val mapping: HyperMapping, val premisses: Seq[ExpressionDerivationResult]) {}
+case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr]) {}
 
 
-case class RuleCheckContext(variables: Seq[Id]) {}
+case class RuleCheckContext(variables: Map[Id, Id]) {}
 
 abstract class RuleWrapper(rule: dsl.Rule) {
-  def getActions(context: ExpressionDerivationContext): Seq[Action]
-  def checkRules(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action]
+  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult
+  def checkAndApply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult= {
+    val conditionHolds = rule.conditions.forall(condition => condition.check(context, ruleCheckContext))
+
+    if (conditionHolds) {
+      rule.conclusions.foldLeft(result){case (acc, conclusion) => conclusion.apply(context, ruleCheckContext, acc)}
+    } else {
+      result
+    }
+  }
 }
 
 case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
 
-  override def checkRules(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = ???
 
-  def getActions(context: ExpressionDerivationContext): Seq[Action] = {
-    val variablesInExpression   = getVariables(context.expression)
-    val variablesInHyperMapping = context.mapping.mapping.keySet.map(Id(_))
-    val allVariables            = variablesInExpression ++ variablesInHyperMapping
-    allVariables
-      .map(id => {
-        val ruleCheckContext = RuleCheckContext(Seq(id))
-        checkRules(context, ruleCheckContext)
-      })
+  def orderedSubsets[A](set: Seq[A], n: Int): Seq[Seq[A]] = {
+    set.permutations
+      .flatMap(_.sliding(n, 1)) // take consecutive chunks of length n
+      .filter(_.length == n)
       .toSeq
-      .flatten
+      .distinct // remove duplicates if input has duplicates
+  }
+
+  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+    val variablesInExpression   = getVariables(context.expression)
+    val variablesInHyperMapping = context.gamma.mapping.keySet.map(Id(_))
+    val variablesInDeltaMapping = context.delta.collection.keySet.map(Id(_))
+    val allVariables            = variablesInExpression ++ variablesInHyperMapping ++ variablesInDeltaMapping
+    val allRuleContext = orderedSubsets(allVariables.toSeq, numVars).map { subset =>
+      val mapping = (subset.zipWithIndex.map { case (id, index) => Id(s"<$index>") -> id }.toMap)
+      RuleCheckContext(mapping)
+    }
+
+    val newResult = allRuleContext.foldLeft(result){case (agg, capturedRuleContext) => 
+      checkAndApply(context, capturedRuleContext, agg)
+    }
+    newResult
   }
 }
 case class EmptyWrapper(rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
 
-  override def checkRules(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Seq[Action] = ???
-
-  def getActions(context: ExpressionDerivationContext): Seq[Action] = {
-    val ruleCheckContext = RuleCheckContext(Seq())
-    checkRules(context, ruleCheckContext)
+  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+    val ruleCheckContext = RuleCheckContext(Map())
+    checkAndApply(context, ruleCheckContext, result)
   }
 }

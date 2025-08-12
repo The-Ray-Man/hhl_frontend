@@ -21,15 +21,13 @@ case class TypeSystem(
     false
   }
 
-  def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): (HyperTypeCollection, DeltaCollection) = {
+  def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
     val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule =>(rule._1, rule._2.get))
     if (applicableRules.isEmpty || applicableRules.length > 1) {
       throw new Exception(s"There are ${applicableRules.length} applicable rules for expression $expr")
     }
     val rule = applicableRules.head
-    // val (newGamma, newDelta) = rule._1.derive(this, gamma, delta, expr, rule._2)
-    // (newGamma, newDelta)
-    (null, null)
+    rule._1.derive(this, gamma, delta, expr, rule._2)
   }
 }
 

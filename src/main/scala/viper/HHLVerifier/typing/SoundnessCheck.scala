@@ -9,7 +9,6 @@ import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.CompositeStmt
 import viper.HHLVerifier.typing.rules.ForanyVariableWrapper
 import viper.HHLVerifier.typing.rules.HyperTypeCondition
-import viper.HHLVerifier.typing.rules.ElementOf
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.dsl.SimpleHyperType
@@ -39,12 +38,6 @@ import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.HintDecl
 import viper.HHLVerifier.ast.LoopIndex
 import upack.Binary
-import viper.HHLVerifier.typing.rules.SideCondition
-import viper.HHLVerifier.typing.rules.ArithCondition
-import viper.HHLVerifier.typing.rules.BoolCondition
-import viper.HHLVerifier.typing.rules.Conclusion
-import viper.HHLVerifier.typing.rules.ContainsHyperType
-import viper.HHLVerifier.typing.dsl.ExpressionDerivationRule
 
 
 

@@ -137,3 +137,20 @@ object ToIndexed {
     )
   }
 }
+
+
+object applyIndexed {
+  def applyIndexed(mapping: Map[Id, Id], elem: Element) : Element = {
+    elem match {
+      case id@Id(name) => mapping.getOrElse(id, throw new Exception(s"Variable $id not found in mapping"))
+      case hty: HyperType => applyIndexed(mapping, hty) 
+    }
+  }
+  def applyIndexed(mapping: Map[Id, Id], hty: HyperType) : HyperType = {
+    hty match {
+      case SimpleHyperType(name) => hty
+      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => applyIndexed(mapping, arg)))
+      case HyperTypeWithSetArgs(name, args) => HyperTypeWithSetArgs(name, args.map(arg => applyIndexed(mapping, arg)))
+    }
+  }
+}
