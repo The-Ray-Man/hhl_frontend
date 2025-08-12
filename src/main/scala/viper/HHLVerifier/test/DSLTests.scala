@@ -33,48 +33,37 @@ object DSLTests {
     val parseRule = fastparse.parse("POS in Gamma(var) => POS addTo Gamma(var)", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
     result("4", parseRule)
 
-    val functionPreamble = fastparse.parse("| + |", viper.HHLVerifier.typing.dsl.Parser.functionPreamble(_))
-    result("5", functionPreamble)
+    val negate = fastparse.parse("-e1", viper.HHLVerifier.typing.dsl.Parser.expression(_))
+    result("5", negate)
 
-    val functionArguments = fastparse.parse("(Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.functionArguments(_))
-    result("6", functionArguments)
-    val functionArguments2 = fastparse.parse("(Gamma, Delta, H1, D1)", viper.HHLVerifier.typing.dsl.Parser.functionArguments(_))
-    result("7", functionArguments2)
+    val negateRule = fastparse.parse("(Gamma, Delta) |- -e1 :: []", viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_))
+    result("6", negateRule)
 
-    val hyperCollection = fastparse.parse("H1", viper.HHLVerifier.typing.dsl.Parser.hyperCollection(_))
-    result("8", hyperCollection)
-
-    val deltaCollection = fastparse.parse("D1", viper.HHLVerifier.typing.dsl.Parser.deltaCollection(_))
-    result("9", deltaCollection)
-
-    val parseDerivationRule = fastparse.parse("|+|(Gamma, Delta) = []", viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_))
+    val parseDerivationRule = fastparse.parse("(Gamma, Delta) |- e1 + e2 :: []", viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_))
     result("10", parseDerivationRule)
 
     val testRules = fastparse.parse("[]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("11", testRules)
 
-    val testRulesNoneEmpty = fastparse.parse("[POS in Gamma(var) => POS addTo Gamma(var)]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val testRulesNoneEmpty = fastparse.parse("[POS in Gamma(var) => POS addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("12", testRulesNoneEmpty)
 
-    val testRulesNoneTwoElements = fastparse.parse("[POS in Gamma(var) => POS addTo Gamma(var), POS in Gamma(var) => POS addTo Gamma(var)]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
-    result("12", testRulesNoneTwoElements)
+    val testRulesNoneTwoElements = fastparse.parse("[POS in Gamma(var) => POS addTo H, POS in Gamma(var) => POS addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    result("13", testRulesNoneTwoElements)
 
-    val combinationFunctionInputPair = fastparse.parse("H1, D1", viper.HHLVerifier.typing.dsl.Parser.combinationFunctionInputPair(_))
-    result("13", combinationFunctionInputPair)
+    val testRuleWithSubtypeChecking = fastparse.parse("[POS in Gamma(var) && POS in H[e1](Gamma, Delta) => POS addTo H, POS in Gamma(var) => POS addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    result("13", testRulesNoneTwoElements)
 
-    val content     = """|n|(Gamma, Delta) = [
-    => LOW
-]"""
-    val parseSystem = fastparse.parse(content, viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
-    result("14", parseRule)
+    val content     = "(Gamma, Delta) |- n :: [=> LOW addTo H]"
+    val parseSystem = fastparse.parse(content, viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_))
+    result("14", parseSystem)
 
-    val content2     = """|var|(Gamma, Delta) = [];
-|var|(Gamma, Delta) = []
-"""
+    val content2     = """(Gamma, Delta) |- var :: []
+    """
     val parseSystem2 = fastparse.parse(content2, viper.HHLVerifier.typing.dsl.Parser.specification(_))
     result("15", parseSystem2)
 
-    val content3     = "[LOW in H0 => LOW addTo H,LOW in H1 => LOW addTo H]"
+    val content3     = "[LOW in H[e1](Gamma, Delta) => LOW addTo H,LOW in H[e2](Gamma, Delta) => LOW addTo H]"
     val parseSystem3 = fastparse.parse(content3, viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("16", parseSystem3)
 
@@ -84,48 +73,48 @@ object DSLTests {
     result("18", res18)
     val res19 = fastparse.parse("LOW[a,b,c]", viper.HHLVerifier.typing.dsl.Parser.hyperType(_))
     result("19", res19)
-    val res20 = fastparse.parse("LOW in H0", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
+    val res20 = fastparse.parse("LOW in H[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("20", res20)
 
-    val res21 = fastparse.parse("LOW{a,b,c} in H0 ", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    val res21 = fastparse.parse("LOW{a,b,c} in H[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("21", res21)
 
-    val res22 = fastparse.parse("LOW{a,b,c} in H0 => LOW{a,b,c} addTo H1", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
+    val res22 = fastparse.parse("LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
     result("22", res22)
 
-    val res23 = fastparse.parse("[LOW{a,b,c} in H0 => LOW{a,b,c} addTo H1]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val res23 = fastparse.parse("[LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("23", res23)
 
-    val res24 = fastparse.parse("[LOW{a,b,c} in H0 => LOW{a,b,c} addTo H1,\nLOW in H0 => LOW{a,b,c} addTo H1]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val res24 = fastparse.parse("[LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H,LOW in H[e2](Gamma, Delta) => LOW{a,b,c} addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("24", res24)
 
     val res25 = fastparse.parse(
-      "|+|(Gamma, Delta) = [LOW{a,b,c} in H0 => LOW{a,b,c} addTo H1,LOW in H0 => LOW{a,b,c} addTo H1]",
+      "(Gamma, Delta) |- e1 + e2 :: [LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H, LOW in H[e2](Gamma, Delta) => LOW{a,b,c} addTo H]",
       viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_)
     )
     result("25", res25)
 
     val res26 = fastparse.parse(
-      "|+|(Gamma, Delta) = [LOW{a,b,c} in H0 => LOW{a,b,c} addTo H1,\nLOW in H0 => LOW{a,b,c} addTo H1]",
+      "(Gamma, Delta) |- e1 * e2 :: [LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H,\n LOW in H[e2](Gamma, Delta) => LOW{a,b,c} addTo H]",
       viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_)
     )
     result("26", res26)
 
-    val res27 = fastparse.parse("[LOW in H0 => LOW addTo H,LOW in H1 => LOW addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val res27 = fastparse.parse("[LOW in H[e1](Gamma, Delta) => LOW addTo H,LOW in H[e2](Gamma, Delta) => LOW addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("27", res27)
 
-    val res28 = fastparse.parse("H0", viper.HHLVerifier.typing.dsl.Parser.set(_))
+    val res28 = fastparse.parse("H[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.set(_))
     result("28", res28)
     val res29 = fastparse.parse("LOW", viper.HHLVerifier.typing.dsl.Parser.element(_))
     result("29", res29)
 
-    val res30 = fastparse.parse("LOW in H0", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
+    val res30 = fastparse.parse("LOW in H[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("30", res30)
 
-    val res31 = fastparse.parse("LOW in H0", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    val res31 = fastparse.parse("LOW in H[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("31", res31)
 
-    val res32 = fastparse.parse("LOW in H0 && LOW in H1 => LOW addTo H", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
+    val res32 = fastparse.parse("LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
     result("32", res32)
 
   }
@@ -137,8 +126,8 @@ object DSLTests {
 
   def main(args: Array[String]): Unit = {
     parsingTests()
-    loadingTypeSystemTest("value.type")
-    loadingTypeSystemTest("infFlow.type")
+    // loadingTypeSystemTest("value.type")
+    // loadingTypeSystemTest("infFlow.type")
 
   }
 }

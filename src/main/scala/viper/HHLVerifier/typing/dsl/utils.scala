@@ -1,6 +1,12 @@
 package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.typing.rules.{ExpressionDerivationRule => RuleExpressionDerivationRule}
+import viper.HHLVerifier.ast.Expr
+import viper.HHLVerifier.ast.Id
+import viper.silicon.state.terms.BinaryOp
+import viper.HHLVerifier.ast.BinaryExpr
+import viper.HHLVerifier.ast.UnaryExpr
+import viper.silicon.state.terms.UnaryOp
 
 
 object SpecificationUtil {
@@ -21,17 +27,19 @@ object SpecificationUtil {
   }
 
   def mergeSpecification(spec1: Specification, spec2: Specification): Specification = {
-    val expressionDerivationByOp = (spec1.derivationRules ++ spec2.derivationRules).filter(_.isInstanceOf[ExpressionDerivationRule]).map(_.asInstanceOf[ExpressionDerivationRule]).groupBy(_.op).map(_._2).toSeq
-    val combinedRules = expressionDerivationByOp.map(rules => rules.reduce((rule1, rule2) => combineExpressionDerivationRules(rule1, rule2)))
+    throw new Exception("Not yet implemented: 1. Match the expression, 2. replace the expression in all the rules. 3. Combine rules")
+    // val expressionDerivationByOp = (spec1.derivationRules ++ spec2.derivationRules).filter(_.isInstanceOf[ExpressionDerivationRule]).map(_.asInstanceOf[ExpressionDerivationRule]).groupBy(_.op).map(_._2).toSeq
+    // val combinedRules = expressionDerivationByOp.map(rules => rules.reduce((rule1, rule2) => combineExpressionDerivationRules(rule1, rule2)))
 
-    val combinedHypertypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
-    Specification(combinedHypertypeDeclarations, combinedRules)
+    // val combinedHypertypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
+    // Specification(combinedHypertypeDeclarations, combinedRules)
   }
 
   def combineExpressionDerivationRules(rule1 : ExpressionDerivationRule, rule2: ExpressionDerivationRule): ExpressionDerivationRule = {
-    assert(rule1.op == rule2.op, "Cannot combine rules with different operators")
-    assert(rule1.inputs == rule2.inputs, "Cannot combine rules with different inputs")
-    val rules = rule1.rules ++ rule2.rules
-    ExpressionDerivationRule(rule1.op, rule1.inputs, rules)
+    throw new Exception("Not yet implemented: 1. Match the expression, 2. replace the expression in all the rules. 3. Combine rules")
+    // assert(samePlaceholderExpression(rule1.expr, rule2.expr), "Cannot combine rules with different expressions")
+    // val rules = rule1.rules ++ rule2.rules
+    // ExpressionDerivationRule(rule1.expr, rules)
   }
+
 }

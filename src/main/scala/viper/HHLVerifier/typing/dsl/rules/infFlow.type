@@ -1,69 +1,69 @@
 
 /* BASIC OPERATIONS */
 
-|n|(Gamma, Delta) = [
+(Gamma, Delta) |- n :: [
     => LOW addTo H
 ];
 
-|var|(Gamma, Delta) = [
+(Gamma, Delta) |- var :: [
     => Gamma(var) = H
 ];
 
-|b|(Gamma, Delta) = [
+(Gamma, Delta) |- b :: [
     => LOW addTo H
 ];
 
 /* ARITHMETIC OPERATIONS */
-|+|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 + e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|%|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 % e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|*|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 * e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|/|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 / e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|-|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
-];
-|negate|(Gamma, Delta, H0, D0) = [
-    LOW in H0 => LOW addTo H
+(Gamma, Delta) |- e1 - e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
 
+(Gamma, Delta) |- -e1 :: [
+    LOW in H[e1](Gamma, Delta) => LOW addTo H
+];
 
 /* BOOLEAN OPERATIONS */
-| || |(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 || e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|==|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 == e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|!|(Gamma, Delta, H0, D0) = [
-    LOW in H0 => LOW addTo H
+(Gamma, Delta) |- !e1 :: [
+    LOW in H[e1](Gamma, Delta) => LOW addTo H
 ];
-|&&|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 && e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|>|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 > e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|>=|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 >= e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|<|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 < e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|<=|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 <= e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|==>|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 ==> e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|!=|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 != e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
 
 
@@ -71,25 +71,22 @@
 /* LIST/SET/MAP OPERATIONS */
 
 
-|lookup|(Gamma,Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1[e2] :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|length|(Gamma,Delta, H0, D0) = [
-    LOW in H0  => LOW addTo H
+(Gamma, Delta) |- |e1|:: [
+    LOW in H[e1](Gamma, Delta)  => LOW addTo H
 ];
-|++|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 ++ e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|in|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 in e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|setminus|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
+(Gamma, Delta) |- e1 setminus e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
-|union|(Gamma, Delta, H0, D0, H1, D1) = [
-    LOW in H0 && LOW in H1 => LOW addTo H
-];
+(Gamma, Delta) |- e1 union e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+]
 
-
-/* METHOD OPERATIONS */
-|methodCall|(Gamma, Delta) = []

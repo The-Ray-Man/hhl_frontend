@@ -6,6 +6,7 @@ import viper.HHLVerifier.typing.dsl.{Specification, DerivationRule}
 import viper.HHLVerifier.parsing.{Parser => HypraParser}
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.Expr
+import viper.HHLVerifier.ast.UnaryExpr
 // import fastparse.MultiLineWhitespace
 
 object Parser {
@@ -21,52 +22,43 @@ object Parser {
     case (variable, hyperType, expression) => HyperTypeDeclaration(variable, hyperType, expression)
   }
 
-  def expression[$: P]: P[Expr] = HypraParser.expr
-
-  def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
-    functionPreamble ~ ws ~
-      functionArguments ~ ws ~
-      "=" ~ ws ~
-      expressionRules
-  ).map {
-    case (op, inputs, rules) => {
-      ExpressionDerivationRule(op, inputs, rules)
-    }
+  def expression[$: P]: P[Expr] = (HypraParser.expr | ("-".! ~/ variable)).map {
+    case (_, varName: Id) => UnaryExpr("-", varName)
+    case (expr: Expr) => expr
   }
+
+def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
+  "(Gamma, Delta)" ~/ ws ~/ "|-" ~/ ws ~ expression ~ ws ~ "::" ~/ ws ~ expressionRules
+).map { case (expr, rules) => ExpressionDerivationRule(expr, rules) }
 
   def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
 
-  def functionPreamble[$: P]: P[String]                                   = P("|" ~ ws ~ operator ~ ws ~ "|")
-  def functionArguments[$: P]: P[Seq[(HyperCollection, DeltaCollection)]] = P("(" ~ ws ~ gamma ~ ws ~ "," ~ ws ~ delta ~ ws ~ ("," ~ ws ~ combinationFunctionInputPair).rep ~ ws ~ ")")
-    .map { case (_, _, combinationPairs) => combinationPairs }
-
-  def combinationFunctionInputPair[$: P]: P[(HyperCollection, DeltaCollection)] = P(hyperCollection ~ ws ~ "," ~ ws ~ deltaCollection)
   def expressionRule[$: P]: P[Rule]                                             = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
     Rule(conds, conclusion) // Placeholder, replace with actual rule creation logic
   }
 
-  def hyperCollection[$: P]: P[HyperCollection]             = P("H" ~ CharIn("0-9").rep(1).!.map(_.toInt)).map(id => HyperCollection(id))
-  def deltaCollection[$: P]: P[DeltaCollection]             = P("D" ~ CharIn("0-9").rep(1).!.map(_.toInt)).map(id => DeltaCollection(id))
   def hyperCollectionResult[$: P]: P[HyperCollectionResult] = P("H").map(_ => HyperCollectionResult())
   def deltaCollectionResult[$: P]: P[DeltaCollectionResult] = P("D").map(_ => DeltaCollectionResult())
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
 
-  def mapping[$: P]: P[Mapping] = P(deltaCollection | gamma | delta | deltaCollectionResult)
+  def mapping[$: P]: P[Mapping] = P( gamma | delta | deltaCollectionResult)
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
-  def set[$: P]: P[Set] = P(hyperCollection | mappingAccess | hyperCollectionResult)
+  def set[$: P]: P[Set] = P(hyperTypeCheck | mappingAccess | hyperCollectionResult)
+
+  def hyperTypeCheck[$: P]: P[HyperTypeCheck] = P("H" ~ "["~ HypraParser.progVar ~"](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
 
   def condition[$: P]: P[Condition] = P(inSet | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P] : P[ArithCondition] = P(
-    "n" ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
-  ).map { case (comp, value) => ArithCondition(comp, value) }
+    variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
+  ).map { case (variable, comp, value) => ArithCondition(variable, comp, value) }
 
   def boolCondition[$: P]: P[BoolCondition] = P(
-    "b".!
-  ).map { _ => BoolCondition() }
+    variable
+  ).map { variable => BoolCondition(variable) }
 
   def negatedCondition[$: P]: P[Condition] = P(
     "!" ~ ws ~ "(" ~ condition ~ ")"
@@ -76,7 +68,7 @@ object Parser {
 
   def inSet[$: P]: P[InSet]                     = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
   def element[$: P]: P[Element]                 = P(variable | hyperType)
-  def variable[$: P]: P[Id]                     = P(CharIn("a-z").rep(1).!.map(Id))
+  def variable[$: P]: P[Id]                     = P(CharIn("a-z").! ~ CharIn("a-zA-Z0-9").rep.!).map { case (first, rest) => Id(first + rest.mkString("")) }
   def hyperType[$: P]: P[HyperType]             = P(hyperTypeWithSetArgs | hyperTypeWithListArgs | simpleHyperType)
   def simpleHyperType[$: P]: P[SimpleHyperType] = P(CharIn("A-Z").rep(1).!.map(SimpleHyperType))
   def hyperTypeWithSetArgs[$: P]                = P(simpleHyperType ~ "{" ~ element.rep(1, sep = ",") ~ "}").map { case (name, args) =>
