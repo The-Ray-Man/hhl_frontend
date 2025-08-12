@@ -41,7 +41,10 @@ object DSLTests {
     val testRulesNoneTwoElements = fastparse.parse("[POS in Gamma(var) => POS addTo H, POS in Gamma(var) => POS addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("13", testRulesNoneTwoElements)
 
-    val testRuleWithSubtypeChecking = fastparse.parse("[POS in Gamma(var) && POS in H[e1](Gamma, Delta) => POS addTo H, POS in Gamma(var) => POS addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val testRuleWithSubtypeChecking = fastparse.parse(
+      "[POS in Gamma(var) && POS in H[e1](Gamma, Delta) => POS addTo H, POS in Gamma(var) => POS addTo H]",
+      viper.HHLVerifier.typing.dsl.Parser.expressionRules(_)
+    )
     result("13", testRulesNoneTwoElements)
 
     val content     = "(Gamma, Delta) |- n :: [=> LOW addTo H]"
@@ -75,7 +78,10 @@ object DSLTests {
     val res23 = fastparse.parse("[LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
     result("23", res23)
 
-    val res24 = fastparse.parse("[LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H,LOW in H[e2](Gamma, Delta) => LOW{a,b,c} addTo H]", viper.HHLVerifier.typing.dsl.Parser.expressionRules(_))
+    val res24 = fastparse.parse(
+      "[LOW{a,b,c} in H[e1](Gamma, Delta) => LOW{a,b,c} addTo H,LOW in H[e2](Gamma, Delta) => LOW{a,b,c} addTo H]",
+      viper.HHLVerifier.typing.dsl.Parser.expressionRules(_)
+    )
     result("24", res24)
 
     val res25 = fastparse.parse(
@@ -110,8 +116,8 @@ object DSLTests {
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
-    val path       = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
-    val _ = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
+    val path = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+    val _    = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(path))
   }
 
   def main(args: Array[String]): Unit = {

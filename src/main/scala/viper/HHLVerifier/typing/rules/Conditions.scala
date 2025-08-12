@@ -29,7 +29,6 @@ trait SideCondition extends Condition {
 //   override def hyperApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, hyperTypeCollection: HyperTypeCollection): Boolean = !condition.hyperApplies(context, checkContext, hyperTypeCollection)
 // }
 
-
 // case class DeltaContains(val varId: Int, val hyperType: HyperType) extends DeltaCondition {
 //   override def deltaApplies(context: ExpressionDerivationContext, checkContext: RuleCheckContext, deltaCollection: DeltaCollection): Boolean = {
 //     checkContext.variables.length > varId && deltaCollection.mapping.contains(checkContext.variables(varId).name) && deltaCollection.mapping(checkContext.variables(varId).name).hypertypes.contains(hyperType)
@@ -63,16 +62,17 @@ trait SideCondition extends Condition {
 case class ArithCondition(op: String, right: Int) extends SideCondition {
   override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = {
     context.expression match {
-      case i: Num => op match {
-        case ">" => i.value > right
-        case "<" => i.value < right
-        case "==" => i.value == right
-        case "!=" => i.value != right
-        case ">=" => i.value >= right
-        case "<=" => i.value <= right
-        case _   => false
-      }
-      case _      => false
+      case i: Num =>
+        op match {
+          case ">"  => i.value > right
+          case "<"  => i.value < right
+          case "==" => i.value == right
+          case "!=" => i.value != right
+          case ">=" => i.value >= right
+          case "<=" => i.value <= right
+          case _    => false
+        }
+      case _ => false
     }
   }
 }
@@ -85,7 +85,6 @@ case class BoolCondition() extends SideCondition {
     }
   }
 }
-
 
 case class NegateSideCondition(subCondition: SideCondition) extends SideCondition {
   override def applies(context: ExpressionDerivationContext, checkContext: RuleCheckContext): Boolean = !subCondition.applies(context, checkContext)

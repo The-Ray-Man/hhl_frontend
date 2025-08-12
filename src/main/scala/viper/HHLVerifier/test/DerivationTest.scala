@@ -14,7 +14,7 @@ import viper.HHLVerifier.typing.rules.TypeSystem
 
 object DerivationTests {
 
-  def runTest(typeSystem: TypeSystem, expression: Expr, gamma: HyperMapping, delta: DeltaMapping, expectedHT : Option[HyperTypeCollection], expectedHTDT: Option[DeltaCollection]) = {
+  def runTest(typeSystem: TypeSystem, expression: Expr, gamma: HyperMapping, delta: DeltaMapping, expectedHT: Option[HyperTypeCollection], expectedHTDT: Option[DeltaCollection]) = {
     val result = typeSystem.deriveExpression(gamma, delta, expression, Map())
     if (expectedHT.isDefined) {
       assert(result.hyperTypeCollection == expectedHT.get, s"Expected hyper type collection ${expectedHT.get} but got ${result.hyperTypeCollection}")
@@ -25,16 +25,16 @@ object DerivationTests {
   }
 
   def valueTests(): Unit = {
-    val valuePath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val valuePath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
     val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(valuePath))
 
-    val mapping = HyperMapping(Map())
+    val mapping      = HyperMapping(Map())
     val deltaMapping = DeltaMapping(Map())
 
-    val pos =Some(HyperTypeCollection(Set(SimpleHyperType("POS"))))
-    val zero = Some(HyperTypeCollection(Set(SimpleHyperType("ZERO"))))
-    val neg = Some(HyperTypeCollection(Set(SimpleHyperType("NEG"))))
-    val trueLit = Some(HyperTypeCollection(Set(SimpleHyperType("TRUE"))))
+    val pos      = Some(HyperTypeCollection(Set(SimpleHyperType("POS"))))
+    val zero     = Some(HyperTypeCollection(Set(SimpleHyperType("ZERO"))))
+    val neg      = Some(HyperTypeCollection(Set(SimpleHyperType("NEG"))))
+    val trueLit  = Some(HyperTypeCollection(Set(SimpleHyperType("TRUE"))))
     val falseLit = Some(HyperTypeCollection(Set(SimpleHyperType("FALSE"))))
 
     val expression1 = Num(3)
@@ -60,21 +60,19 @@ object DerivationTests {
 
   }
 
+  def infFlowTests(): Unit = {
+    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val typeSystem  = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(infFlowPath))
 
-  def infFlowTests() : Unit = {
-    val infFlowPath       = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val typeSystem = viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem(Seq(infFlowPath))
-
-
-    val mappingXLow = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
-    val mappingXLowYLow = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW")))), ("y", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
+    val mappingXLow      = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
+    val mappingXLowYLow  = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW")))), ("y", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
     val mappingXLowYHigh = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW")))), ("y", HyperTypeCollection(Set()))))
 
     val expression1 = BinaryExpr(Id("x"), "+", Num(2))
     val expression2 = BinaryExpr(Id("x"), "/", Id("y"))
     val expression3 = BinaryExpr(Id("x"), "-", Id("y"))
 
-    val expectedHTLow = Some(HyperTypeCollection(Set(SimpleHyperType("LOW"))))
+    val expectedHTLow  = Some(HyperTypeCollection(Set(SimpleHyperType("LOW"))))
     val expectedHTHigh = Some(HyperTypeCollection(Set()))
 
     runTest(typeSystem, expression1, mappingXLow, DeltaMapping(Map()), expectedHTLow, None)

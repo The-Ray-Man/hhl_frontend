@@ -13,16 +13,15 @@ import viper.HHLVerifier.typing.DeltaMapping
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,
     expressionTypeSystem: Seq[dsl.ExpressionDerivationRule] = null,
-    hyperTypeDeclaration : Seq[HyperTypeDeclaration] = Seq.empty[HyperTypeDeclaration]
+    hyperTypeDeclaration: Seq[HyperTypeDeclaration] = Seq.empty[HyperTypeDeclaration]
 ) {
 
-
-  def checkSoundness() : Boolean = {
+  def checkSoundness(): Boolean = {
     false
   }
 
   def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
-    val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule =>(rule._1, rule._2.get))
+    val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule => (rule._1, rule._2.get))
     if (applicableRules.isEmpty || applicableRules.length > 1) {
       throw new Exception(s"There are ${applicableRules.length} applicable rules for expression $expr")
     }
@@ -36,12 +35,12 @@ case class StatementTypeSystem()
 object TypeSystem {
   def loadTypeSystem(paths: Seq[String]): TypeSystem = {
     val specifications = paths.map(path => {
-        val fileContent   = scala.io.Source.fromFile(path).getLines().mkString("\n")
-        val res           = fastparse.parse(fileContent, viper.HHLVerifier.typing.dsl.Parser.specification(_))
-        res match {
-          case fastparse.Parsed.Success(value, _) => value
-          case failure: fastparse.Parsed.Failure  => throw new Exception(s"Failed to parse type system: ${failure.msg}")
-        }
+      val fileContent = scala.io.Source.fromFile(path).getLines().mkString("\n")
+      val res         = fastparse.parse(fileContent, viper.HHLVerifier.typing.dsl.Parser.specification(_))
+      res match {
+        case fastparse.Parsed.Success(value, _) => value
+        case failure: fastparse.Parsed.Failure  => throw new Exception(s"Failed to parse type system: ${failure.msg}")
+      }
     })
 
     SpecificationUtil.combineSpecifications(specifications).toTypeSystem()

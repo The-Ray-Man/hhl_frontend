@@ -18,22 +18,22 @@ object Parser {
 
   def derivationRule[$: P]: P[DerivationRule] = P(expressionDerivationRule)
 
-  def hyperTypeDeclaration[$: P] : P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map {
-    case (variable, hyperType, expression) => HyperTypeDeclaration(variable, hyperType, expression)
+  def hyperTypeDeclaration[$: P]: P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map { case (variable, hyperType, expression) =>
+    HyperTypeDeclaration(variable, hyperType, expression)
   }
 
   def expression[$: P]: P[Expr] = (HypraParser.expr | ("-".! ~/ variable)).map {
     case (_, varName: Id) => UnaryExpr("-", varName)
-    case (expr: Expr) => expr
+    case (expr: Expr)     => expr
   }
 
-def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
-  "(Gamma, Delta)" ~/ ws ~/ "|-" ~/ ws ~ expression ~ ws ~ "::" ~/ ws ~ expressionRules
-).map { case (expr, rules) => ExpressionDerivationRule(expr, rules) }
+  def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
+    "(Gamma, Delta)" ~/ ws ~/ "|-" ~/ ws ~ expression ~ ws ~ "::" ~/ ws ~ expressionRules
+  ).map { case (expr, rules) => ExpressionDerivationRule(expr, rules) }
 
   def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
 
-  def expressionRule[$: P]: P[Rule]                                             = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
+  def expressionRule[$: P]: P[Rule] = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
     Rule(conds, conclusion) // Placeholder, replace with actual rule creation logic
   }
 
@@ -42,17 +42,17 @@ def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
 
-  def mapping[$: P]: P[Mapping] = P( gamma | delta | deltaCollectionResult)
+  def mapping[$: P]: P[Mapping] = P(gamma | delta | deltaCollectionResult)
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
   def set[$: P]: P[Set] = P(hyperTypeCheck | mappingAccess | hyperCollectionResult)
 
-  def hyperTypeCheck[$: P]: P[HyperTypeCheck] = P("H" ~ "["~ HypraParser.progVar ~"](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
+  def hyperTypeCheck[$: P]: P[HyperTypeCheck] = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
 
   def condition[$: P]: P[Condition] = P(inSet | arithCondition | boolCondition | negatedCondition)
 
-  def arithCondition[$: P] : P[ArithCondition] = P(
+  def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
   ).map { case (variable, comp, value) => ArithCondition(variable, comp, value) }
 

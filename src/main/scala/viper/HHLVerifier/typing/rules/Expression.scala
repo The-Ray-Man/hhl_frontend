@@ -20,20 +20,18 @@ import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.dsl
 import java.beans.Expression
 
-
-case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection)               {}
+case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection)                                                 {}
 case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr]) {}
-
 
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
 abstract class RuleWrapper(rule: dsl.Rule) {
   def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult
-  def checkAndApply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult= {
+  def checkAndApply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
     val conditionHolds = rule.conditions.forall(condition => condition.check(context, ruleCheckContext))
 
     if (conditionHolds) {
-      rule.conclusions.foldLeft(result){case (acc, conclusion) => conclusion.apply(context, ruleCheckContext, acc)}
+      rule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, ruleCheckContext, acc) }
     } else {
       result
     }
@@ -41,7 +39,6 @@ abstract class RuleWrapper(rule: dsl.Rule) {
 }
 
 case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
-
 
   def orderedSubsets[A](set: Seq[A], n: Int): Seq[Seq[A]] = {
     set.permutations
@@ -56,12 +53,12 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
     val variablesInHyperMapping = context.gamma.mapping.keySet.map(Id(_))
     val variablesInDeltaMapping = context.delta.collection.keySet.map(Id(_))
     val allVariables            = variablesInExpression ++ variablesInHyperMapping ++ variablesInDeltaMapping
-    val allRuleContext = orderedSubsets(allVariables.toSeq, numVars).map { subset =>
+    val allRuleContext          = orderedSubsets(allVariables.toSeq, numVars).map { subset =>
       val mapping = (subset.zipWithIndex.map { case (id, index) => Id(s"<$index>") -> id }.toMap)
       RuleCheckContext(mapping)
     }
 
-    val newResult = allRuleContext.foldLeft(result){case (agg, capturedRuleContext) => 
+    val newResult = allRuleContext.foldLeft(result) { case (agg, capturedRuleContext) =>
       checkAndApply(context, capturedRuleContext, agg)
     }
     newResult
