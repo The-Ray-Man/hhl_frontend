@@ -4,47 +4,50 @@
 exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 
 
-|n|(Gamma, Delta) = [
+(Gamma, Delta) |- n :: [
    n == 0 => ZERO addTo H,
    n > 0 => POS addTo H,
    n < 0 => NEG addTo H
 ];
 
-|var|(Gamma, Delta) = [
+(Gamma, Delta) |- var ::  [
     => Gamma(var) = H
 ];
 
-|b|(Gamma, Delta) = [
+(Gamma, Delta) |- b :: [
    b => TRUE addTo H,
    !(b) => FALSE addTo H
 ];
 
 /* ARITHMETIC OPERATIONS */
-|+|(Gamma, Delta, H0, D0, H1, D1) = [
-    ZERO in H0 && ZERO in H1 => ZERO addTo H,
-    POS  in H0 && POS  in H1 => POS  addTo H,
-    POS  in H0 && ZERO in H1 => POS  addTo H,
-    POS  in H1 && POS  in H0 => POS  addTo H,
-    POS  in H1 && ZERO in H0 => POS  addTo H,
-    NEG  in H0 && NEG  in H1 => NEG  addTo H,
-    NEG  in H0 && ZERO in H1 => NEG  addTo H,
-    NEG  in H1 && NEG  in H0 => NEG  addTo H,
-    NEG  in H1 && ZERO in H0 => NEG  addTo H
+(Gamma, Delta) |- e1 + e2 :: [
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => ZERO addTo H,
+    POS  in H[e1](Gamma, Delta) && POS  in H[e2](Gamma, Delta) => POS  addTo H,
+    POS  in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => POS  addTo H,
+    POS  in H[e2](Gamma, Delta) && POS  in H[e1](Gamma, Delta) => POS  addTo H,
+    POS  in H[e2](Gamma, Delta) && ZERO in H[e1](Gamma, Delta) => POS  addTo H,
+    NEG  in H[e1](Gamma, Delta) && NEG  in H[e2](Gamma, Delta) => NEG  addTo H,
+    NEG  in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => NEG  addTo H,
+    NEG  in H[e2](Gamma, Delta) && NEG  in H[e1](Gamma, Delta) => NEG  addTo H,
+    NEG  in H[e2](Gamma, Delta) && ZERO in H[e1](Gamma, Delta) => NEG  addTo H
 ];
-|%|(Gamma, Delta, H0, D0, H1, D1) = [];
-|*|(Gamma, Delta, H0, D0, H1, D1) = [
-    ZERO in H0 => ZERO addTo H,
-    ZERO in H1 => ZERO addTo H,
-    POS in H0 && POS in H1 => POS addTo H,
-    NEG in H0 && NEG in H1 => POS addTo H,
-    POS in H0 && NEG in H1 => NEG addTo H,
-    NEG in H0 && POS in H1 => NEG addTo H
+
+(Gamma, Delta) |- e1 % e2 :: [];
+
+(Gamma, Delta) |- e1 * e2 :: [
+    ZERO in H[e2](Gamma, Delta) => ZERO addTo H,
+    ZERO in H[e1](Gamma, Delta) => ZERO addTo H,
+    POS in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => POS addTo H,
+    NEG in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => POS addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => NEG addTo H,
+    NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H
 ];
-|/|(Gamma, Delta, H0, D0, H1, D1) = [
-    POS in H0 && POS in H1 => POS addTo H,
-    NEG in H0 && NEG in H1 => POS addTo H,
-    POS in H0 && NEG in H1 => NEG addTo H,
-    NEG in H0 && POS in H1 => NEG addTo H
+
+(Gamma, Delta) |- e1 / e2 :: [
+    POS in H[e1](Gamma,Delta) && POS in H[e2](Gamma, Delta) => POS addTo H,
+    NEG in H[e1](Gamma,Delta) && NEG in H[e2](Gamma, Delta) => POS addTo H,
+    POS in H[e1](Gamma,Delta) && NEG in H[e2](Gamma, Delta) => NEG addTo H,
+    NEG in H[e1](Gamma,Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H
 ];
 |-|(Gamma, Delta, H0, D0, H1, D1) = [
     ZERO in H0 && POS in H1 => NEG addTo H,

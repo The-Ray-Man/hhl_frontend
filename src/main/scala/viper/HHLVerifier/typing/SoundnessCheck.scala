@@ -1,17 +1,13 @@
 package viper.HHLVerifier.typing
 
 import viper.HHLVerifier.typing.rules.TypeSystem
-import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
 import viper.HHLVerifier.typing.rules.RuleWrapper
 import viper.HHLVerifier.typing.rules.HyperTypeConclusion
 import viper.HHLVerifier.typing.rules.EmptyWrapper
-import viper.HHLVerifier.typing.rules.expression.BinaryExpressionDerivationRule
 import viper.HHLVerifier.ast.Method
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.ast.CompositeStmt
 import viper.HHLVerifier.typing.rules.ForanyVariableWrapper
-import viper.HHLVerifier.typing.rules.binaryCombineFunction
-import viper.HHLVerifier.typing.rules.binaryFunctionImplication
 import viper.HHLVerifier.typing.rules.HyperTypeCondition
 import viper.HHLVerifier.typing.rules.ElementOf
 import viper.HHLVerifier.ast.Expr
@@ -48,109 +44,110 @@ import viper.HHLVerifier.typing.rules.ArithCondition
 import viper.HHLVerifier.typing.rules.BoolCondition
 import viper.HHLVerifier.typing.rules.Conclusion
 import viper.HHLVerifier.typing.rules.ContainsHyperType
+import viper.HHLVerifier.typing.dsl.ExpressionDerivationRule
 
 
 
 object SoundnessCheck {
 
 
-    def checkTypeSystem(system: TypeSystem) : Unit = {
+    // def checkTypeSystem(system: TypeSystem) : Unit = {
         
-    }
+    // }
 
-    def checkExpressionDerivationRule(system: TypeSystem, derivationRule: ExpressionDerivationRule ) : Unit = {
-        derivationRule match {
-            case binaryRule: BinaryExpressionDerivationRule => checkBinaryRule(system, binaryRule)
-            case _ => throw new Exception(s"Unsupported rule type: ${derivationRule.getClass.getName}")
-        }
-    }
+    // def checkExpressionDerivationRule(system: TypeSystem, derivationRule: ExpressionDerivationRule ) : Unit = {
+    //     derivationRule match {
+    //         case binaryRule: BinaryExpressionDerivationRule => checkBinaryRule(system, binaryRule)
+    //         case _ => throw new Exception(s"Unsupported rule type: ${derivationRule.getClass.getName}")
+    //     }
+    // }
 
-    def checkBinaryRule(system: TypeSystem, derivationRule: BinaryExpressionDerivationRule) : Unit = {
-        checkBinaryRule(system, derivationRule.additionRule, "+")
-    }
+    // def checkBinaryRule(system: TypeSystem, derivationRule: BinaryExpressionDerivationRule) : Unit = {
+    //     checkBinaryRule(system, derivationRule.additionRule, "+")
+    // }
 
 
-    def checkBinaryRule(system: TypeSystem, derivationRule: ExpressionDerivationRule, op: String) : Unit = {
+    // def checkBinaryRule(system: TypeSystem, derivationRule: ExpressionDerivationRule, op: String) : Unit = {
         
-        val (lhs_type, rhs_type) = op match {
-            case "+" | "-" | "*" | "/" | "%" => (IntType(), IntType())
+    //     val (lhs_type, rhs_type) = op match {
+    //         case "+" | "-" | "*" | "/" | "%" => (IntType(), IntType())
 
-        }
+    //     }
 
-        var lhs = Id("lhs")
-        lhs.typ = lhs_type
-        var rhs = Id("rhs")
-        rhs.typ = rhs_type
+    //     var lhs = Id("lhs")
+    //     lhs.typ = lhs_type
+    //     var rhs = Id("rhs")
+    //     rhs.typ = rhs_type
 
 
-        val rules = derivationRule.combineFunctionHypertype
+    //     // val rules = derivationRule.combineFunctionHypertype
 
-        val testPrograms = rules.rules.map(combFunction => {
-            combFunction match {
-                case EmptyWrapper(binaryFunctionImplication(lhsHTCondition, lhsDTCondition, rhsHTCondition, rhsDTCondition, sideCondition, conclusion)) => {
-                    val lhsExpr = lhsHTCondition.map(cond => transformHyperTypeCondition(system, lhs, cond, Map()))
-                    val rhsExpr = rhsHTCondition.map(cond => transformHyperTypeCondition(system, rhs, cond, Map()))
-                    if (!sideCondition.isEmpty) throw new Exception("Side condition are not yet checked")
-                    // val conclusionExpr = conclusion.map(cond => transformHyperTypeCondition(system, ))
-                    // val sideConditionExpr = sideCondition.map(cond => transformSideCondition(system, lhs, cond, Map()))
-                    null
-                }
-                case ForanyVariableWrapper(rule) => throw new Exception("Forany variable mapper not yet supported")
-            }
+    //     // val testPrograms = rules.rules.map(combFunction => {
+    //     //     combFunction match {
+    //     //         case EmptyWrapper(binaryFunctionImplication(lhsHTCondition, lhsDTCondition, rhsHTCondition, rhsDTCondition, sideCondition, conclusion)) => {
+    //     //             val lhsExpr = lhsHTCondition.map(cond => transformHyperTypeCondition(system, lhs, cond, Map()))
+    //     //             val rhsExpr = rhsHTCondition.map(cond => transformHyperTypeCondition(system, rhs, cond, Map()))
+    //     //             if (!sideCondition.isEmpty) throw new Exception("Side condition are not yet checked")
+    //     //             // val conclusionExpr = conclusion.map(cond => transformHyperTypeCondition(system, ))
+    //     //             // val sideConditionExpr = sideCondition.map(cond => transformSideCondition(system, lhs, cond, Map()))
+    //     //             null
+    //     //         }
+    //     //         case ForanyVariableWrapper(rule) => throw new Exception("Forany variable mapper not yet supported")
+    //     //     }
             
 
-        val method1 = Method("test", Seq(lhs, rhs), Seq(), Seq(
+    //     // val method1 = Method("test", Seq(lhs, rhs), Seq(), Seq(
 
-        ),
-        Seq(
+    //     // ),
+    //     // Seq(
 
-        ),
-        CompositeStmt(Seq()))
-        })
-    }
+    //     // ),
+    //     // CompositeStmt(Seq()))
+    //     // })
+    // }
 
-    def transformSideCondition(system: TypeSystem, id: Id, condition: SideCondition, mappingPlaceholderToConcrete: Map[Int, Int]) : Expr = {
-        condition match {
-            case _ => throw new Exception(s"Unsupported side condition: ${condition.getClass.getName}")
-        }
-    }
+    // def transformSideCondition(system: TypeSystem, id: Id, condition: SideCondition, mappingPlaceholderToConcrete: Map[Int, Int]) : Expr = {
+    //     condition match {
+    //         case _ => throw new Exception(s"Unsupported side condition: ${condition.getClass.getName}")
+    //     }
+    // }
 
-    def transformHyperTypeConclusion(system: TypeSystem, id: Id, conclusion: HyperTypeConclusion, mappingPlaceholderToConcrete: Map[Int, Int]) : Expr = {
-        conclusion match {
-            case ContainsHyperType(hty) => {
-                hty match {
-                    case simpleHyperType@SimpleHyperType(name) => {
-                        val hyperTypeDeclaration = system.hyperTypeDeclaration.find(decl => decl.hty == simpleHyperType).getOrElse(
-                            throw new Exception(s"Hyper type $name not found in the system")
-                        )
-                        val mapping = Map(hyperTypeDeclaration.variable -> id)
-                        getExpression(hyperTypeDeclaration.definition, mapping)
-                    }
-                }
-            }
-        }
-    }
+    // def transformHyperTypeConclusion(system: TypeSystem, id: Id, conclusion: HyperTypeConclusion, mappingPlaceholderToConcrete: Map[Int, Int]) : Expr = {
+    //     conclusion match {
+    //         case ContainsHyperType(hty) => {
+    //             hty match {
+    //                 case simpleHyperType@SimpleHyperType(name) => {
+    //                     val hyperTypeDeclaration = system.hyperTypeDeclaration.find(decl => decl.hty == simpleHyperType).getOrElse(
+    //                         throw new Exception(s"Hyper type $name not found in the system")
+    //                     )
+    //                     val mapping = Map(hyperTypeDeclaration.variable -> id)
+    //                     getExpression(hyperTypeDeclaration.definition, mapping)
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
 
 
-    def transformHyperTypeCondition(system: TypeSystem, id: Id, condition: HyperTypeCondition, mappingPlaceholderToConcrete: Map[Id, Id]) : Expr = {
-        condition match {
-            case ElementOf(hty) => {
-                hty match {
-                    case simpHyperType@SimpleHyperType(name) => {
-                        val hyperTypeDeclaration = system.hyperTypeDeclaration.find(decl => decl.hty == simpHyperType).getOrElse(
-                            throw new Exception(s"Hyper type $name not found in the system")
-                        )
-                        val mapping = Map(hyperTypeDeclaration.variable -> id)
-                        getExpression(hyperTypeDeclaration.definition, mapping)
-                    }
-                    case _ => throw new Exception(s"Unsupported hyper type: ${hty.getClass.getName}")
-                }
+    // def transformHyperTypeCondition(system: TypeSystem, id: Id, condition: HyperTypeCondition, mappingPlaceholderToConcrete: Map[Id, Id]) : Expr = {
+    //     condition match {
+    //         case ElementOf(hty) => {
+    //             hty match {
+    //                 case simpHyperType@SimpleHyperType(name) => {
+    //                     val hyperTypeDeclaration = system.hyperTypeDeclaration.find(decl => decl.hty == simpHyperType).getOrElse(
+    //                         throw new Exception(s"Hyper type $name not found in the system")
+    //                     )
+    //                     val mapping = Map(hyperTypeDeclaration.variable -> id)
+    //                     getExpression(hyperTypeDeclaration.definition, mapping)
+    //                 }
+    //                 case _ => throw new Exception(s"Unsupported hyper type: ${hty.getClass.getName}")
+    //             }
 
-            }
-            case _ => throw new Exception(s"Unsupported hyper type condition: ${condition.getClass.getName}")
-        }
-    }
+    //         }
+    //         case _ => throw new Exception(s"Unsupported hyper type condition: ${condition.getClass.getName}")
+    //     }
+    // }
 
 
     def getExpression(htypeDecl: Expr, mappingPlaceholderToConcrete: Map[Id, Id]): Expr = {

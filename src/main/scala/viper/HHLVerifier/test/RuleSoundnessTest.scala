@@ -43,30 +43,30 @@ object RuleSoundnessTests {
     }
   }
 
-  def testExpressionRule(rule: typing.rules.ExpressionDerivationRule) = {
-    val tests        = rule.generateSoundnessTests
-    var successTests = Seq.empty[String]
-    var failureTests = Seq.empty[String]
-    for ((test, id) <- tests.zipWithIndex) {
-      println(s"Running test $id for rule ${rule.getClass().getName()}")
-      try {
-        runTest(test)
-        successTests :+= s"Test $id for rule ${rule.getClass().getName()} passed."
-      } catch {
-        case e: Exception =>
-          println(s"Test $id for rule ${rule.getClass().getName()} failed with exception: ${e.getMessage}")
-          failureTests :+= s"Test $id for rule ${rule.getClass().getName()} failed."
-      }
-    }
+  // def testExpressionRule(rule: typing.rules.ExpressionDerivationRule) = {
+  //   val tests        = rule.generateSoundnessTests
+  //   var successTests = Seq.empty[String]
+  //   var failureTests = Seq.empty[String]
+  //   for ((test, id) <- tests.zipWithIndex) {
+  //     println(s"Running test $id for rule ${rule.getClass().getName()}")
+  //     try {
+  //       runTest(test)
+  //       successTests :+= s"Test $id for rule ${rule.getClass().getName()} passed."
+  //     } catch {
+  //       case e: Exception =>
+  //         println(s"Test $id for rule ${rule.getClass().getName()} failed with exception: ${e.getMessage}")
+  //         failureTests :+= s"Test $id for rule ${rule.getClass().getName()} failed."
+  //     }
+  //   }
 
-    println(s"Total tests ${tests.size} for rule ${rule}.")
-    println(s"Successful tests: ${successTests.size}")
-    println(s"Failed tests: ${failureTests.size}")
-    if (failureTests.nonEmpty) {
-      println("Failed tests:")
-      failureTests.foreach(println)
-    }
-  }
+  //   println(s"Total tests ${tests.size} for rule ${rule}.")
+  //   println(s"Successful tests: ${successTests.size}")
+  //   println(s"Failed tests: ${failureTests.size}")
+  //   if (failureTests.nonEmpty) {
+  //     println("Failed tests:")
+  //     failureTests.foreach(println)
+  //   }
+  // }
 
   def main(): Unit = {}
 }

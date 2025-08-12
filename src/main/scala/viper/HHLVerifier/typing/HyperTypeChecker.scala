@@ -24,8 +24,6 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
-import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
-import viper.HHLVerifier.typing.rules.ExpressionTypeSystem
 import viper.HHLVerifier.typing.rules.TypeSystem
 
 object HyperTypeChecker {
@@ -130,8 +128,8 @@ object HyperTypeChecker {
     }
   }
 
-  def typeCheckExpression(system: ExpressionTypeSystem, mapping: HyperMapping, e: Expr): (HyperTypeCollection, DeltaCollection) = {
-    system.derive(e, mapping)
+  def typeCheckExpression(system: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, e: Expr): (HyperTypeCollection, DeltaCollection) = {
+    system.deriveExpression(gamma, delta, e, Map())
   }
 
   def getVariables(expr: Expr): Set[Id] = {

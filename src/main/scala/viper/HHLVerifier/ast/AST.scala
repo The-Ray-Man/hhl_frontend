@@ -2,8 +2,7 @@ package viper.HHLVerifier.ast
 
 import viper.HHLVerifier.management.PrettyPrinter
 import viper.HHLVerifier.typing._
-import viper.HHLVerifier.typing.dsl.Identifier
-import viper.HHLVerifier.typing.dsl.IndexedVariable
+import viper.HHLVerifier.typing.dsl.Element
 
 /** Trait for adding data used in generating error messages */
 trait ErrorData {
@@ -65,14 +64,9 @@ class SpecialId(name: String) extends Expr {
   * @param name
   *   name of the identifier, has to be unique
   */
-case class Id(name: String) extends Expr with Identifier {
+case class Id(name: String) extends Expr with Element {
 
   override def variables: Set[Id] = Set(this)
-
-  override def toIndexedIdentifier(variableMap: Map[Id, Int]): IndexedVariable = {
-    val index = variableMap.get(this).getOrElse(throw new Exception("Variable " + this.name + " not found in variable map"))
-    IndexedVariable(index)
-  }
 
 }
 

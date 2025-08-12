@@ -1,15 +1,5 @@
 package viper.HHLVerifier.test
 
-import viper.HHLVerifier.ast.BinaryExpr
-import viper.HHLVerifier.ast.Num
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.rules.ExpressionDerivationRule
-import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.ast.Expr
-import viper.HHLVerifier.typing.dsl.MappingAccess
-import viper.HHLVerifier.typing.rules.TypeSystem.loadTypeSystem
-
 object DSLTests {
 
   def result(testName: String, res: fastparse.Parsed[Any]): Unit = {

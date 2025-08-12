@@ -1,6 +1,5 @@
 package viper.HHLVerifier.typing.rules
 
-import viper.HHLVerifier.typing.rules.expression.IdentifierDerivationRule
 import viper.HHLVerifier.typing.dsl.SpecificationUtil
 import viper.HHLVerifier.typing.dsl.HyperTypeDeclaration
 import viper.HHLVerifier.typing.dsl
@@ -28,8 +27,9 @@ case class TypeSystem(
       throw new Exception(s"There are ${applicableRules.length} applicable rules for expression $expr")
     }
     val rule = applicableRules.head
-    val (newGamma, newDelta) = rule._1.derive(this, gamma, delta, expr, rule._2)
-    (newGamma, newDelta)
+    // val (newGamma, newDelta) = rule._1.derive(this, gamma, delta, expr, rule._2)
+    // (newGamma, newDelta)
+    (null, null)
   }
 }
 
