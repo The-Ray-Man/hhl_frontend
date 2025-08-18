@@ -78,7 +78,6 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping)
     val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
     wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
-      println(acc)
       rule.apply(context, acc)
     }
 
@@ -129,7 +128,6 @@ case class DeltaCollectionResult() extends Mapping {
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
-
   override def isHyperTypeConclusion(): Boolean = false
 
 }
@@ -137,14 +135,12 @@ case class Gamma() extends Mapping {
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
-
   override def isHyperTypeConclusion(): Boolean = true
 
 }
 case class Delta() extends Mapping {
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
 
   override def isHyperTypeConclusion(): Boolean = false
 

@@ -6,26 +6,24 @@ import scala.collection.immutable.{Set => ScalaSet}
 
 trait Conclusion extends CollectVariables with ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
-  def apply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult
+  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult
 }
 
 case class AddToSet(elem: Element, set: Set) extends Conclusion {
 
-  def apply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
     set match {
       case HyperCollectionResult() => {
-        val updatedElem = applyIndexed.applyIndexed(ruleCheckContext.variables, elem).asInstanceOf[HyperType]
         ExpressionDerivationResult(
-          hyperTypeCollection = result.hyperTypeCollection.add(updatedElem),
+          hyperTypeCollection = result.hyperTypeCollection.add(elem.asInstanceOf[HyperType]),
           deltaCollection = result.deltaCollection
         )
       }
       case MappingAccess(DeltaCollectionResult(), variable) => {
-        val updatedElem = applyIndexed.applyIndexed(ruleCheckContext.variables, elem).asInstanceOf[HyperType]
-        val updatedVarName = context.varMapping.getOrElse(variable, throw new Exception(s"Variable $variable not found in variable mapping"))
+        val variableLookup = context.varMapping.getOrElse(variable, variable).asInstanceOf[Id]
         ExpressionDerivationResult(
           hyperTypeCollection = result.hyperTypeCollection,
-          deltaCollection = result.deltaCollection.add(updatedVarName.asInstanceOf[Id].name, updatedElem)
+          deltaCollection = result.deltaCollection.add(variableLookup.name, elem.asInstanceOf[HyperType])
         )
       }
       case _: Set => throw new Exception("Not implemented yet")
@@ -39,7 +37,7 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
 
 case class SetEquals(set1: Set, set2: Set) extends Conclusion {
 
-  def hyperTypeResultToGammaLookup(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult, index: Id): ExpressionDerivationResult = {
+  def hyperTypeResultToGammaLookup(context: ExpressionDerivationContext, result: ExpressionDerivationResult, index: Id): ExpressionDerivationResult = {
     context.varMapping.getOrElse(index, throw new Exception(s"Variable $index not found in variable mapping")) match {
       case Id(name) => {
         val hyperTypes = context.gamma.getUnsafe(name)
@@ -52,10 +50,10 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
     }
   }
 
-  override def apply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+  override def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
     (set1, set2) match {
-      case (HyperCollectionResult(), MappingAccess(Gamma(), index)) => hyperTypeResultToGammaLookup(context, ruleCheckContext, result, index)
-      case (MappingAccess(Gamma(), index), HyperCollectionResult()) => hyperTypeResultToGammaLookup(context, ruleCheckContext, result, index)
+      case (HyperCollectionResult(), MappingAccess(Gamma(), index)) => hyperTypeResultToGammaLookup(context, result, index)
+      case (MappingAccess(Gamma(), index), HyperCollectionResult()) => hyperTypeResultToGammaLookup(context, result, index)
       case _                                                        => throw new Exception("Not yet implemented")
     }
   }

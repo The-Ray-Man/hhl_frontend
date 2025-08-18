@@ -149,7 +149,7 @@ object ToIndexed {
     BoolCondition(toIndexedVariable(mapping, boolCond.variable))
   }
 
-  def toIndexedVariable(mapping: Map[Id, Int], inMapping: InMapping) : InMapping = {
+  def toIndexedVariable(mapping: Map[Id, Int], inMapping: InMapping): InMapping = {
     InMapping(toIndexedVariable(mapping, inMapping.elem), toIndexedVariable(mapping, inMapping.mapping))
   }
 
@@ -167,11 +167,11 @@ object ToIndexed {
 
   def toIndexedVariable(mapping: Map[Id, Int], map: Mapping): Mapping = {
     map match {
-      case Gamma()                 => Gamma()
-      case Delta()                 => Delta()
-      case DeltaCollectionResult() => DeltaCollectionResult()
+      case Gamma()                            => Gamma()
+      case Delta()                            => Delta()
+      case DeltaCollectionResult()            => DeltaCollectionResult()
       case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
-      case _: Mapping              => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -198,6 +198,7 @@ object applyIndexed {
       case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
       case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
       case notOperator: NotOperator  => NotOperator(applyIndexed(mapping, notOperator.condition))
+      case inMappingCond: InMapping  => InMapping(applyIndexed(mapping, inMappingCond.elem), applyIndexed(mapping, inMappingCond.mapping))
     }
   }
 
@@ -222,10 +223,11 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], map: Mapping): Mapping = {
     map match {
-      case Gamma()                 => Gamma()
-      case Delta()                 => Delta()
-      case DeltaCollectionResult() => DeltaCollectionResult()
-      case _: Mapping              => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case Gamma()                            => Gamma()
+      case Delta()                            => Delta()
+      case DeltaCollectionResult()            => DeltaCollectionResult()
+      case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
