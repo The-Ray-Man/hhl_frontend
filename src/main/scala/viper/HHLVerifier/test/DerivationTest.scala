@@ -11,6 +11,8 @@ import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.TypeSystem
+import viper.silver.ast.MagicWandOp.typ
+import viper.HHLVerifier.typing.dsl.HyperType
 
 object DerivationTests {
 
@@ -98,10 +100,29 @@ object DerivationTests {
     runTest(typeSystem, expression2, mapping, DeltaMapping(Map()), expected2, None)
   }
 
+  def deltaTests() : Unit = {
+    val deltaPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val infFlowPath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val valuePath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(deltaPath, infFlowPath, valuePath))
+
+    val gamma1 = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
+    val expression1 = Id("x")
+    val expectedHT = Some(HyperTypeCollection(Set(SimpleHyperType("LOW"))))
+    val expectedDT = Some(DeltaCollection(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("ZERO"), SimpleHyperType("LOW"))))))
+    // runTest(typeSystem, expression1, gamma1, DeltaMapping(Map()), expectedHT, expectedDT)
+
+    val expression2 = BinaryExpr(Id("x"), "+", Num(2))
+    val expectedHT2 = Some(HyperTypeCollection(Set(SimpleHyperType("LOW"))))
+    val expectedDT2 = Some(DeltaCollection(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("POS"), SimpleHyperType("LOW"))))))
+    runTest(typeSystem, expression2, gamma1, DeltaMapping(Map()), expectedHT2, expectedDT2)
+  }
+
   def main(args: Array[String]): Unit = {
-    infFlowTests()
-    valueTests()
-    valueInfFlowTests()
+    deltaTests()
+    // infFlowTests()
+    // valueTests()
+    // valueInfFlowTests()
     println("all tests passed")
   }
 }

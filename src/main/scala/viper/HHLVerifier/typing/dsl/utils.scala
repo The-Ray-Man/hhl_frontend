@@ -136,6 +136,7 @@ object ToIndexed {
       case arithCond: ArithCondition => toIndexedVariable(mapping, arithCond)
       case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
       case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
+      case inMapping: InMapping      => toIndexedVariable(mapping, inMapping)
       case notOperator: NotOperator  => NotOperator(toIndexedVariable(mapping, notOperator.condition))
     }
   }
@@ -146,6 +147,10 @@ object ToIndexed {
 
   def toIndexedVariable(mapping: Map[Id, Int], boolCond: BoolCondition): BoolCondition = {
     BoolCondition(toIndexedVariable(mapping, boolCond.variable))
+  }
+
+  def toIndexedVariable(mapping: Map[Id, Int], inMapping: InMapping) : InMapping = {
+    InMapping(toIndexedVariable(mapping, inMapping.elem), toIndexedVariable(mapping, inMapping.mapping))
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], inSet: InSet): InSet = {
@@ -165,6 +170,7 @@ object ToIndexed {
       case Gamma()                 => Gamma()
       case Delta()                 => Delta()
       case DeltaCollectionResult() => DeltaCollectionResult()
+      case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
       case _: Mapping              => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }

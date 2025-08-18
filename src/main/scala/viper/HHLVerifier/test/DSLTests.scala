@@ -1,5 +1,7 @@
 package viper.HHLVerifier.test
 
+import viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem
+
 object DSLTests {
 
   def result(testName: String, res: fastparse.Parsed[Any]): Unit = {
@@ -45,7 +47,7 @@ object DSLTests {
       "[POS in Gamma(var) && POS in H[e1](Gamma, Delta) => POS addTo H, POS in Gamma(var) => POS addTo H]",
       viper.HHLVerifier.typing.dsl.Parser.expressionRules(_)
     )
-    result("13", testRulesNoneTwoElements)
+    result("13", testRuleWithSubtypeChecking)
 
     val content     = "(Gamma, Delta) |- n :: [=> LOW addTo H]"
     val parseSystem = fastparse.parse(content, viper.HHLVerifier.typing.dsl.Parser.expressionDerivationRule(_))
@@ -113,6 +115,21 @@ object DSLTests {
     val res32 = fastparse.parse("LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
     result("32", res32)
 
+    val res33 = fastparse.parse("x", viper.HHLVerifier.typing.dsl.Parser.variable(_))
+    result("33", res33)
+
+    val res34 = fastparse.parse("Gamma", viper.HHLVerifier.typing.dsl.Parser.mapping(_))
+    result("34", res34)
+
+    val res35 = fastparse.parse("x in Gamma", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    result("35", res35)
+
+    val res36 = fastparse.parse("LOW in D[e1](Gamma,Delta)(x)", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    result("36", res36)
+
+    val res37 = fastparse.parse("x in D[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    result("37", res37)
+
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
@@ -124,6 +141,7 @@ object DSLTests {
     parsingTests()
     // loadingTypeSystemTest("value.type")
     // loadingTypeSystemTest("infFlow.type")
+    loadingTypeSystemTest("deltaOnValue.type")
 
   }
 }

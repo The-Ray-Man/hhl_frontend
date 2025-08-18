@@ -29,7 +29,13 @@ case class RuleCheckContext(variables: Map[Id, Id]) {}
 abstract class RuleWrapper(rule: dsl.Rule) {
   def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult
   def checkAndApply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
-    val conditionHolds = rule.conditions.forall(condition => condition.check(context, ruleCheckContext))
+    // val conditionHolds = rule.conditions.forall(condition => condition.check(context, ruleCheckContext))
+    var conditionHolds = true
+    for (condition <- rule.conditions) {
+      if (!condition.check(context, ruleCheckContext)) {
+        conditionHolds = false
+      }
+    }
 
     if (conditionHolds) {
       rule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, ruleCheckContext, acc) }

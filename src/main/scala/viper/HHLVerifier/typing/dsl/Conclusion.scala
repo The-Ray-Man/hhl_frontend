@@ -20,6 +20,14 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
           deltaCollection = result.deltaCollection
         )
       }
+      case MappingAccess(DeltaCollectionResult(), variable) => {
+        val updatedElem = applyIndexed.applyIndexed(ruleCheckContext.variables, elem).asInstanceOf[HyperType]
+        val updatedVarName = context.varMapping.getOrElse(variable, throw new Exception(s"Variable $variable not found in variable mapping"))
+        ExpressionDerivationResult(
+          hyperTypeCollection = result.hyperTypeCollection,
+          deltaCollection = result.deltaCollection.add(updatedVarName.asInstanceOf[Id].name, updatedElem)
+        )
+      }
       case _: Set => throw new Exception("Not implemented yet")
     }
   }

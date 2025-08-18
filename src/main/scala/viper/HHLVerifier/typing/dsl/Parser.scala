@@ -42,15 +42,15 @@ object Parser {
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
 
-  def mapping[$: P]: P[Mapping] = P(gamma | delta | deltaCollectionResult)
+  def mapping[$: P]: P[Mapping] = P(deltaTypeCheck | gamma | delta | deltaCollectionResult)
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
   def set[$: P]: P[Set] = P(hyperTypeCheck | mappingAccess | hyperCollectionResult)
 
   def hyperTypeCheck[$: P]: P[HyperTypeCheck] = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
-
-  def condition[$: P]: P[Condition] = P(inSet | arithCondition | boolCondition | negatedCondition)
+  def deltaTypeCheck[$: P]: P[DeltaTypeCheck] = P("D" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => DeltaTypeCheck(id, gamma, delta) }
+  def condition[$: P]: P[Condition] = P(inSet | inMapping | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
@@ -67,8 +67,14 @@ object Parser {
   def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "==" | "!=").!
 
   def inSet[$: P]: P[InSet]                     = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
+  def inMapping[$: P]: P[InMapping]             = P(element ~ ws ~ "in" ~ ws ~ mapping).map { case (elem, mapping) => InMapping(elem, mapping) }
   def element[$: P]: P[Element]                 = P(variable | hyperType)
-  def variable[$: P]: P[Id]                     = P(CharIn("a-z").! ~ CharIn("a-zA-Z0-9").rep.!).map { case (first, rest) => Id(first + rest.mkString("")) }
+
+  def variable[_: P]: P[Id] = {
+    import fastparse.NoWhitespace._
+    P( CharIn("a-z").! ~ CharIn("a-zA-Z0-9").rep.! ).map{case (first, rest) => {val string = first + rest; Id(string)}}
+  }
+  
   def hyperType[$: P]: P[HyperType]             = P(hyperTypeWithSetArgs | hyperTypeWithListArgs | simpleHyperType)
   def simpleHyperType[$: P]: P[SimpleHyperType] = P(CharIn("A-Z").rep(1).!.map(SimpleHyperType))
   def hyperTypeWithSetArgs[$: P]                = P(simpleHyperType ~ "{" ~ element.rep(1, sep = ",") ~ "}").map { case (name, args) =>

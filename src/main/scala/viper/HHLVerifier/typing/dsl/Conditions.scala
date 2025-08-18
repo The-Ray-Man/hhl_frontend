@@ -29,6 +29,25 @@ case class InSet(elem: Element, set: Set) extends Condition {
 
 }
 
+case class InMapping(elem: Element, mapping: Mapping) extends Condition {
+
+  override def check(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Boolean = {
+    (elem, mapping) match {
+      case (Id(name), Delta()) => context.delta.collection.contains(name)
+      case (Id(name), Gamma()) => context.gamma.mapping.contains(name)
+      case (Id(name), DeltaTypeCheck(sub, _, _)) => {
+        val subExpression = context.varMapping.getOrElse(sub, throw new Exception(s"Variable $sub not found in variable mapping"))
+        context.typeSystem.deriveExpression(context.gamma, context.delta, subExpression, Map()).deltaCollection.mapping.contains(name)
+      }
+      case (_, _) => throw new Exception("Unsupported mapping type for InMapping condition")
+      
+    }
+  }
+
+  override def variables: ScalaSet[Id] = elem.variables ++ mapping.variables
+
+}
+
 case class ArithCondition(variable: Id, op: String, right: Int) extends Condition {
 
   def check(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext): Boolean = {
