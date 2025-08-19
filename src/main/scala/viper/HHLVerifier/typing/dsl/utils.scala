@@ -37,6 +37,7 @@ object SpecificationUtil {
 
   def combineDerivationRules(rules: Seq[DerivationRule]): Seq[DerivationRule] = {
     var expressionRules = Set[ExpressionDerivationRule]()
+    var statementRules  = Set[StatementDerivationRule]()
     for (rule <- rules) {
       if (rule.isInstanceOf[ExpressionDerivationRule]) {
         val dupplicatedRule = expressionRules.find(r => canBeCombined(r, rule.asInstanceOf[ExpressionDerivationRule]).isDefined)
@@ -49,10 +50,18 @@ object SpecificationUtil {
           }
         }
       } else {
-        throw new Exception("Statement derivation rules are not yet supported")
+        val dupplicatedRule = statementRules.find(r => canBeCombined(r, rule.asInstanceOf[StatementDerivationRule]).isDefined)
+        dupplicatedRule match {
+          case None        => statementRules += rule.asInstanceOf[StatementDerivationRule]
+          case Some(value) => {
+            val combinedRule = combineStatementDerivationRules(value, rule.asInstanceOf[StatementDerivationRule]).getOrElse(throw new Exception("123"))
+            statementRules -= value
+            statementRules += combinedRule
+          }
+        }
       }
     }
-    expressionRules.toSeq
+    expressionRules.toSeq ++ statementRules.toSeq
   }
 
   def combineExpressionDerivationRules(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[ExpressionDerivationRule] = {
@@ -66,6 +75,17 @@ object SpecificationUtil {
     }
   }
 
+  def combineStatementDerivationRules(rule1: StatementDerivationRule, rule2: StatementDerivationRule): Option[StatementDerivationRule] = {
+    canBeCombined(rule1, rule2) match {
+      case None                => None
+      case Some(mappingIdtoId) => {
+        val adaptedRules = rule2.rules.map(rule => applyIndexed.applyIndexed(mappingIdtoId, rule))
+        val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
+        Some(StatementDerivationRule(rule1.statement, allRules))
+      }
+    }
+  }
+
   def canBeCombined(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[Map[Id, Id]] = {
     (rule1.expr, rule2.expr) match {
       case (Id(name1), Id(name2)) if name1 == name2                                                                               => Some(Map(Id(name1) -> Id(name2)))
@@ -75,6 +95,17 @@ object SpecificationUtil {
       case (LengthExpr(id1 @ Id(_)), LengthExpr(id2 @ Id(_))) if id1 == id2                                                       => Some(Map(id1 -> id2))
       case (LookupExpr(dataStructure1 @ Id(_), index1 @ Id(_)), LookupExpr(dataStructure2 @ Id(_), index2 @ Id(_)))               => Some(Map(dataStructure1 -> dataStructure2, index1 -> index2))
       case _                                                                                                                      => None
+    }
+  }
+
+  def canBeCombined(rule1: StatementDerivationRule, rule2: StatementDerivationRule): Option[Map[Id, Id]] = {
+    (rule1.statement, rule2.statement) match {
+      case (AssignStmt(var1, value1), AssignStmt(var2, value2))                               => Some(Map(var1 -> var2, value1 -> value2))
+      case (IfStmt(cond1, thenBranch1, elseBranch1), IfStmt(cond2, thenBranch2, elseBranch2)) =>
+        Some(Map(cond1 -> cond2, thenBranch1 -> thenBranch2, elseBranch1 -> elseBranch2))
+      case (CompStmt(firstStmt1, secondStmt1), CompStmt(firstStmt2, secondStmt2)) =>
+        Some(Map(firstStmt1 -> firstStmt2, secondStmt1 -> secondStmt2))
+      case _ => None
     }
   }
 

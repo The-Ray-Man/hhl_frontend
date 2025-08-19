@@ -1,37 +1,20 @@
 package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.ast.Expr
-import viper.HHLVerifier.ast.BinaryExpr
-import viper.HHLVerifier.ast.HHLProgram
-import viper.HHLVerifier.typing.IntType
-import viper.HHLVerifier.typing.dsl.HyperType
-import viper.HHLVerifier.ast.Method
-import viper.HHLVerifier.ast.CompositeStmt
-import viper.HHLVerifier.ast.AssignStmt
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.DeltaCollection
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.ast.Num
-import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
-import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.typing.dsl
 import java.beans.Expression
 import viper.HHLVerifier.typing.dsl.TypeSystem
-
-case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection)                                                 {}
-case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr]) {}
+import viper.HHLVerifier.ast.Stmt
 
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
 abstract class RuleWrapper(rule: dsl.Rule) {
-  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult
-  def checkAndApply(context: ExpressionDerivationContext, ruleCheckContext: RuleCheckContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+  def apply(context: Context, result: DerivationResult): DerivationResult
+  def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult): DerivationResult = {
 
     val appliedIndexedRule = applyIndexed.applyIndexed(ruleCheckContext.variables, rule)
-    val conditionHolds     = appliedIndexedRule.conditions.forall(condition => condition.check(context))
+    val conditionHolds     = appliedIndexedRule.conditions.forall(condition => condition.check(context, true))
 
     if (conditionHolds) {
       appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, acc) }
@@ -51,8 +34,8 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
       .distinct // remove duplicates if input has duplicates
   }
 
-  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
-    val variablesInExpression   = getVariables(context.expression)
+  def apply(context: Context, result: DerivationResult): DerivationResult = {
+    val variablesInExpression   = getVariables(context.expr)
     val variablesInHyperMapping = context.gamma.mapping.keySet.map(Id(_))
     val variablesInDeltaMapping = context.delta.collection.keySet.map(Id(_))
     val allVariables            = variablesInExpression ++ variablesInHyperMapping ++ variablesInDeltaMapping
@@ -69,7 +52,7 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
 }
 case class EmptyWrapper(rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
 
-  def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+  def apply(context: Context, result: DerivationResult): DerivationResult = {
     val ruleCheckContext = RuleCheckContext(Map())
     checkAndApply(context, ruleCheckContext, result)
   }

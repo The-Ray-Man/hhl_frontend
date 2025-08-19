@@ -146,7 +146,12 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 
 (Gamma, Delta) |- e1 setminus e2 :: [];
 
-(Gamma, Delta) |- e1 union e2 :: []
+(Gamma, Delta) |- e1 union e2 :: [];
 
 
-/* METHOD OPERATIONS */
+/* STMT OPERATIONS */
+(Gamma, Delta, Context) |- var := e :: [];
+
+(Gamma, Delta, Context) |- s1;s2 :: [];
+
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: []

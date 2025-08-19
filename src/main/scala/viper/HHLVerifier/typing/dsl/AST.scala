@@ -13,14 +13,20 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.ast.Stmt
+import java.awt.Composite
+import viper.HHLVerifier.ast
 
 case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], derivationRules: Seq[DerivationRule]) {
 
   def toTypeSystem(): TypeSystem = {
     val expressionRules = derivationRules.filter(_.isInstanceOf[ExpressionDerivationRule]).map(_.asInstanceOf[ExpressionDerivationRule])
-
-    val typeSystem = TypeSystem(
-      statementTypeSystem = null,
+    val statementRules  = derivationRules.filter(_.isInstanceOf[StatementDerivationRule]).map(_.asInstanceOf[StatementDerivationRule])
+    val typeSystem      = TypeSystem(
+      statementTypeSystem = StatementTypeSystem(
+        assignRule = statementRules.find(rule => rule.statement.isInstanceOf[AssignStmt]).getOrElse(throw new Exception("No assign rule found")),
+        branchRule = statementRules.find(rule => rule.statement.isInstanceOf[IfStmt]).getOrElse(throw new Exception("No branch rule found")),
+        compositionRule = statementRules.find(rule => rule.statement.isInstanceOf[CompStmt]).getOrElse(throw new Exception("No composition rule found"))
+      ),
       expressionTypeSystem = expressionRules,
       hyperTypeDeclaration = hypertypeDeclaration
     )
@@ -78,14 +84,42 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
     val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping)
     val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
-    wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
-      rule.apply(context, acc)
-    }
+    wrappedRules
+      .foldLeft(emptyResult) { (acc, rule) =>
+        rule.apply(context, acc).getExpressionResult
+      }
+      .getExpressionResult
 
   }
 }
 
-case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) extends DerivationRule
+case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) extends DerivationRule {
+
+  val wrappedRules: Seq[RuleWrapper] = rules.map(rule => wrapRule(rule))
+
+  def wrapRule(rule: Rule): RuleWrapper = {
+    // val allVariables        = rule.conditions.flatMap(_.variables).toSet ++ rule.conclusions.flatMap(_.variables).toSet
+    // val capturedVariables   = typing.HyperTypeChecker.getVariables(statement).toSet
+    // val freeVariables       = allVariables -- capturedVariables
+    // val freeVariableMapping = freeVariables.zipWithIndex.toMap
+    // val indexedRule         = ToIndexed.toIndexedVariable(freeVariableMapping, rule)
+    // if (freeVariables.isEmpty) {
+    //   EmptyWrapper(indexedRule)
+    // } else {
+    //   ForanyVariableWrapper(freeVariables.size, indexedRule)
+    // }
+    null
+  }
+
+  def derive(context: StatementDerivationContext): StatementDerivationResult = {
+    //   val emptyResult = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
+    //   wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
+    //     rule.apply(context, acc)
+    //   }
+    // }
+    null
+  }
+}
 
 case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) {}
 
@@ -198,6 +232,6 @@ case class DeltaResult() extends Mapping {
 
 trait StmtPattern {}
 
-case class CompositeStmt(first: Id, second: Id)                  extends StmtPattern
+case class CompStmt(first: Id, second: Id)                       extends StmtPattern
 case class AssignStmt(variable: Id, value: Id)                   extends StmtPattern
 case class IfStmt(condition: Id, thenBranch: Id, elseBranch: Id) extends StmtPattern

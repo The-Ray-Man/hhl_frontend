@@ -69,4 +69,3 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 (Gamma, Delta, C) |- if b then s1 else s2 :: [
     LOW in C && LOW in H[b](Gamma, Delta) => combine(C, Gamma[s1](Gamma, Delta, C),  Gamma[s2](Gamma, Delta,C))
 ]
-

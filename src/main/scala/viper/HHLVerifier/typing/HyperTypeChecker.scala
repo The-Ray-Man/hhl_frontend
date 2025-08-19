@@ -26,6 +26,8 @@ import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
+import viper.HHLVerifier.typing.dsl.StmtPattern
+import viper.HHLVerifier.typing.dsl.CompStmt
 
 object HyperTypeChecker {
 
@@ -53,14 +55,8 @@ object HyperTypeChecker {
       .toMap
     val hyperMapping = new HyperMapping(mapping)
 
-    println("mapping at method start\n", hyperMapping)
-
     val (finalMapping, deltaMapping) = typeCheckStmt(system, hyperMapping, DeltaMapping(Map()), m.body, pc)
-    println("final mapping", finalMapping.mapping)
-    println("delta mapping")
-    deltaMapping.collection.foreach { case (key, value) =>
-      println(s"$key: ${value.mapping}")
-    }
+
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
       val retType         = finalMapping.getUnsafe(r.name)
@@ -141,6 +137,13 @@ object HyperTypeChecker {
       case LookupExpr(id, index) => getVariables(id) ++ getVariables(index)
       case LengthExpr(id)        => getVariables(id)
       case _                     => { Set.empty[Id] }
+    }
+  }
+  def getVariables(stmt: StmtPattern): Set[Id] = {
+    stmt match {
+      case CompStmt(s1, s2)                         => Set(s1, s2)
+      case dsl.AssignStmt(left, right)              => Set(left, right)
+      case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
     }
   }
 }
