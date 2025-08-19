@@ -11,8 +11,6 @@ import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.TypeSystem
-import viper.silver.ast.MagicWandOp.typ
-import viper.HHLVerifier.typing.dsl.HyperType
 
 object DerivationTests {
 

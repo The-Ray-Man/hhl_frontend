@@ -3,6 +3,7 @@ package viper.HHLVerifier.ast
 import viper.HHLVerifier.management.PrettyPrinter
 import viper.HHLVerifier.typing._
 import viper.HHLVerifier.typing.dsl.Element
+import viper.HHLVerifier.typing.dsl.StmtPattern
 
 /** Trait for adding data used in generating error messages */
 trait ErrorData {

@@ -88,5 +88,5 @@
 ];
 (Gamma, Delta) |- e1 union e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-]
+];
 

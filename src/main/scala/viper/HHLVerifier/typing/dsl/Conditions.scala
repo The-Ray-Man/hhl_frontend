@@ -9,6 +9,31 @@ trait Condition extends CollectVariables {
   def check(context: ExpressionDerivationContext): Boolean
 }
 
+case class Equal(lhs: Element, rhs: Element) extends Condition {
+
+  override def variables: ScalaSet[Id] = lhs.variables ++ rhs.variables
+
+  override def check(context: ExpressionDerivationContext): Boolean = {
+    (lhs, rhs) match {
+      case (SimpleHyperType(lhsName), SimpleHyperType(rhsName))                               => lhsName == rhsName
+      case (HyperTypeWithListArgs(lhsName, lhsArgs), HyperTypeWithListArgs(rhsName, rhsArgs)) => lhsName == rhsName && lhsArgs == rhsArgs
+      case (HyperTypeWithSetArgs(lhsName, lhsArgs), HyperTypeWithSetArgs(rhsName, rhsArgs))   => lhsName == rhsName && lhsArgs == rhsArgs
+      case (lhs @ Id(_), rhs @ Id(_))                                                         => {
+        val lhsIndexed = context.varMapping.getOrElse(lhs, lhs)
+        val rhsIndexed = context.varMapping.getOrElse(rhs, rhs)
+        lhsIndexed == rhsIndexed
+      }
+      case (a, b) => {
+        if (a.getClass() != b.getClass()) {
+          false
+        } else {
+          throw new Exception("This comparison is not implemented")
+        }
+      }
+    }
+  }
+}
+
 case class InSet(elem: Element, set: Set) extends Condition {
 
   override def check(context: ExpressionDerivationContext): Boolean = {

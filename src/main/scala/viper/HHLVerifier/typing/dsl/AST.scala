@@ -12,6 +12,7 @@ import viper.HHLVerifier.ast.ImpliesExpr
 import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
+import viper.HHLVerifier.ast.Stmt
 
 case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], derivationRules: Seq[DerivationRule]) {
 
@@ -84,6 +85,8 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   }
 }
 
+case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) extends DerivationRule
+
 case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) {}
 
 trait ConclusionInfo {
@@ -98,11 +101,41 @@ trait CollectVariables {
 trait Mapping extends ConclusionInfo with CollectVariables
 trait Set     extends ConclusionInfo with CollectVariables
 
+case class WithoutElement(set: Set, elem: Element) extends Set {
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = set.variables ++ elem.variables
+}
+
+case class ProgramContext() extends Set {
+
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+
+}
+
 case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set {
 
   override def isHyperTypeConclusion(): Boolean = false
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+
+}
+
+case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping {
+
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
+
+}
+
+case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping {
+
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
 
 }
 
@@ -138,6 +171,7 @@ case class Gamma() extends Mapping {
   override def isHyperTypeConclusion(): Boolean = true
 
 }
+
 case class Delta() extends Mapping {
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
@@ -145,3 +179,25 @@ case class Delta() extends Mapping {
   override def isHyperTypeConclusion(): Boolean = false
 
 }
+
+case class GammaResult() extends Mapping {
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+
+  override def isHyperTypeConclusion(): Boolean = true
+
+}
+
+case class DeltaResult() extends Mapping {
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+
+  override def isHyperTypeConclusion(): Boolean = false
+
+}
+
+trait StmtPattern {}
+
+case class CompositeStmt(first: Id, second: Id)                  extends StmtPattern
+case class AssignStmt(variable: Id, value: Id)                   extends StmtPattern
+case class IfStmt(condition: Id, thenBranch: Id, elseBranch: Id) extends StmtPattern

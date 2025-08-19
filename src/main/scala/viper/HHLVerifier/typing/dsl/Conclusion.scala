@@ -70,3 +70,15 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
   }
 
 }
+
+case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
+
+  override def apply(context: ExpressionDerivationContext, result: ExpressionDerivationResult): ExpressionDerivationResult = {
+    throw new Exception("MapEquals conclusion is not implemented yet")
+  }
+
+  override def variables: ScalaSet[Id] = mapping1.variables ++ mapping2.variables
+
+  override def isHyperTypeConclusion(): Boolean = mapping1.isHyperTypeConclusion() && mapping2.isHyperTypeConclusion()
+
+}
