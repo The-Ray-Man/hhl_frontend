@@ -1,0 +1,13 @@
+method infFlow2(s1: Int[LOW], s2:Int) returns (o : Int[LOW])
+{
+
+    var s1tmp : Int
+    var s2tmp : Int
+    s1tmp := s1
+    s2tmp := s2
+    while (s1tmp > 0) {
+        s2tmp := s2tmp + s1tmp
+        s1tmp := s1tmp - 1
+        o := s1tmp
+    }
+}

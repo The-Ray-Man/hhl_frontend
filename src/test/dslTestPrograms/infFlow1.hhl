@@ -1,0 +1,4 @@
+method infFlow1(s1: Int[LOW], s2 : Int) returns (o : Int)
+{
+    o := s1 + s1
+}
