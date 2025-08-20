@@ -88,8 +88,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
   def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
     val subStatement = context.varStmtMapping.getOrElse(deriveHyperType.expr, throw new Exception(s"Variable ${deriveHyperType.expr} not found in variable mapping"))
     
-    val gamma = ConclusionUtils.getGamma(context, deriveHyperType.gamma)
-    val delta = ConclusionUtils.getDelta(context, deriveHyperType.delta)
+    val gamma = DeriveArgsUtils.getGamma(context, deriveHyperType.gamma)
+    val delta = DeriveArgsUtils.getDelta(context, deriveHyperType.delta)
     
     val derivedHyperMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).hyperTypeMapping
     StatementDerivationResult(
@@ -100,8 +100,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
   def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
     val subStatement = context.varStmtMapping.getOrElse(deriveDeltaType.expr, throw new Exception(s"Variable ${deriveDeltaType.expr} not found in variable mapping"))
-    val gamma = ConclusionUtils.getGamma(context, deriveDeltaType.gamma)
-    val delta = ConclusionUtils.getDelta(context, deriveDeltaType.delta)
+    val gamma = DeriveArgsUtils.getGamma(context, deriveDeltaType.gamma)
+    val delta = DeriveArgsUtils.getDelta(context, deriveDeltaType.delta)
     
     val derivedDeltaMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
     StatementDerivationResult(
@@ -126,34 +126,3 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 }
 
 
-object ConclusionUtils {
-
-  def getGamma(context: Context, gamma: Mapping) : HyperMapping = {
-
-    gamma match {
-      case DeriveHyperType(id, gammaArg, deltaArg, contextArg) => {
-        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
-        val newGamma = getGamma(context, gammaArg)
-        val newDelta = getDelta(context, deltaArg)
-        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
-      }
-      case Gamma() => context.gamma
-      case _ => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
-    }
-
-  }
-
-
-  def getDelta(context: Context, delta: Mapping) : DeltaMapping = {
-    delta match {
-      case DeriveDeltaType(id, gammaArg, deltaArg, contextArg) => {
-        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
-        val newGamma = getGamma(context, gammaArg)
-        val newDelta = getDelta(context, deltaArg)
-        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
-      }
-      case Delta() => context.delta
-      case _ => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
-    }
-  }
-}

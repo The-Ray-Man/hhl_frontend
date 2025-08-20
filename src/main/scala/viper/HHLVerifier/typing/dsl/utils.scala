@@ -12,6 +12,8 @@ import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.silver.parser.PKw.Spec
 import viper.HHLVerifier.typing.dsl.Parser.hyperType
+import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.DeltaMapping
 
 object SpecificationUtil {
 
@@ -293,6 +295,38 @@ object applyIndexed {
       case SimpleHyperType(name)             => hty
       case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => applyIndexed(mapping, arg)))
       case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => applyIndexed(mapping, arg)))
+    }
+  }
+}
+
+object DeriveArgsUtils {
+
+  def getGamma(context: Context, gamma: Mapping) : HyperMapping = {
+
+    gamma match {
+      case DeriveHyperType(id, gammaArg, deltaArg, contextArg) => {
+        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val newGamma = getGamma(context, gammaArg)
+        val newDelta = getDelta(context, deltaArg)
+        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
+      }
+      case Gamma() => context.gamma
+      case _ => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
+    }
+
+  }
+
+
+  def getDelta(context: Context, delta: Mapping) : DeltaMapping = {
+    delta match {
+      case DeriveDeltaType(id, gammaArg, deltaArg, contextArg) => {
+        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val newGamma = getGamma(context, gammaArg)
+        val newDelta = getDelta(context, deltaArg)
+        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
+      }
+      case Delta() => context.delta
+      case _ => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
     }
   }
 }
