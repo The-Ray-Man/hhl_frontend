@@ -1,0 +1,8 @@
+method value2(s1: Int[POS], s2 : Int[NEG], s3: Int) returns (o : Int[POS])
+{
+    if (s3 < 0) {
+        o := s1
+    } else {
+        o := 0 - s2
+    }
+}

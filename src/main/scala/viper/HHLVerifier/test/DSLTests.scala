@@ -175,6 +175,12 @@ object DSLTests {
     val res52 = fastparse.parse("POS in DH[s1](Gamma, Delta, (Context \\ LOW))(x)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("52", res52)
 
+    val res53 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x)", viper.HHLVerifier.typing.dsl.Parser.setEquals(_))
+    result("53", res53)
+
+    val res54 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    result("54", res54) 
+
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
@@ -184,10 +190,9 @@ object DSLTests {
 
   def main(args: Array[String]): Unit = {
     parsingTests()
-    // loadingTypeSystemTest("value.type")
-    // loadingTypeSystemTest("infFlow.type")
+    loadingTypeSystemTest("value.type")
+    loadingTypeSystemTest("infFlow.type")
     loadingTypeSystemTest("deltaOnValue.type")
-    loadingTypeSystemTest("infFlowStmt.type")
 
   }
 }

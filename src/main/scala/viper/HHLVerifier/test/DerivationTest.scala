@@ -22,6 +22,7 @@ import viper.HHLVerifier.generation.Generator
 
 object DerivationTests {
 
+
   def runTest(typeSystem: TypeSystem, expression: Expr, gamma: HyperMapping, delta: DeltaMapping, expectedHT: Option[HyperTypeCollection], expectedHTDT: Option[DeltaCollection]) = {
     val result = typeSystem.deriveExpression(gamma, delta, expression, Map())
     println(s"$expression |- {${result.hyperTypeCollection}} {${result.deltaCollection}}")
@@ -166,6 +167,7 @@ object DerivationTests {
   }
 
   def statementTests(): Unit = {
+    Generator.autoSelectRules = true
     val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath))
 
@@ -218,21 +220,28 @@ object DerivationTests {
       Some(HyperMapping(Map())),
       None
     )
-    println(typeSystem.hashCode())
+
     val program1 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow1.hhl")
     runTest(typeSystem, program1, false)
-    println(typeSystem.hashCode())
 
     val program2 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow2.hhl")
     runTest(typeSystem, program2, false)
 
+    val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val typeSystem2 = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath))
+
+    val program3 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/value1.hhl")
+    runTest(typeSystem2, program3, false)
+    val program4 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/value2.hhl")
+    runTest(typeSystem2, program4, false)
+
   }
 
   def main(args: Array[String]): Unit = {
-    // deltaTests()
-    // infFlowTests()
-    // valueTests()
-    // valueInfFlowTests()
+    deltaTests()
+    infFlowTests()
+    valueTests()
+    valueInfFlowTests()
     statementTests()
     println("all tests passed")
   }

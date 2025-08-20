@@ -1,0 +1,4 @@
+method value(s1: Int[POS], s2 : Int[NEG]) returns (o : Int[POS])
+{
+    o := s1 + s1
+}
