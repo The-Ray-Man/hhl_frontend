@@ -49,7 +49,8 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 ];
 (Gamma, Delta) |- e1 - e2 :: [
     ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H,
-    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => NEG addTo H,
+    ZERO in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => POS addTo H,
+    POS in H[e1](Gamma, Delta) && NEG in H[e2](Gamma, Delta) => POS addTo H,
     NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => NEG addTo H
 ];
 (Gamma, Delta) |- -e1 :: [
@@ -153,6 +154,13 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
     !(x == var) => Gamma'(x) = Gamma(x)
 ];
 
-(Gamma, Delta, Context) |- s1;s2 :: [];
+(Gamma, Delta, Context) |- s1;s2 :: [
+    => Gamma' = DH[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context),
+    => Delta' = DD[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context)
+];
 
-(Gamma, Delta, Context) |- if b then s1 else s2 end :: []
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: [
+    TRUE in H[b](Gamma, Delta) => Gamma' = DH[s1](Gamma, Delta, Context) && Delta' = DD[s1](Gamma, Delta, Context),
+    FALSE in H[b](Gamma, Delta) => Gamma' = DH[s2](Gamma, Delta, Context) && Delta' = DD[s2](Gamma, Delta, Context),
+    DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x) => Gamma'(x) = DH[s1](Gamma, Delta, Context)(x)
+]
