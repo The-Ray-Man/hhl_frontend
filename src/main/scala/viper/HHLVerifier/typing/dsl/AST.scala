@@ -83,7 +83,7 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   }
 
   def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
-    val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping)
+    val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping, new Cache())
     val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
     wrappedRules
       .foldLeft(emptyResult) { (acc, rule) =>
@@ -119,19 +119,10 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
   }
 }
 
-case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) extends DerivationInfo {
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = conditions.flatMap(_.getNecessaryDerivations).toSet ++ conclusions.flatMap(_.getNecessaryDerivations).toSet
-
-
-}
+case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) {}
 
 trait ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
-}
-
-trait DerivationInfo {
-  def getNecessaryDerivations: ScalaSet[Derivation]
 }
 
 trait CollectVariables {
@@ -140,12 +131,10 @@ trait CollectVariables {
 
 // Building Blocks for Condition and Conclusion
 trait Derivation
-trait Mapping extends ConclusionInfo with CollectVariables with DerivationInfo
-trait Set     extends ConclusionInfo with CollectVariables with DerivationInfo
+trait Mapping extends ConclusionInfo with CollectVariables
+trait Set     extends ConclusionInfo with CollectVariables
 
 case class WithoutElement(set: Set, elem: Element) extends Set {
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = set.getNecessaryDerivations
 
   override def isHyperTypeConclusion(): Boolean = false
 
@@ -153,9 +142,6 @@ case class WithoutElement(set: Set, elem: Element) extends Set {
 }
 
 case class ProgramContext() extends Set {
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
 
   override def isHyperTypeConclusion(): Boolean = false
 
@@ -165,9 +151,6 @@ case class ProgramContext() extends Set {
 
 case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set with Derivation {
 
-  override def getNecessaryDerivations: ScalaSet[Derivation] = Set(this)
-
-
   override def isHyperTypeConclusion(): Boolean = false
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
@@ -175,8 +158,6 @@ case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set 
 }
 
 case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping with Derivation {
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = Set(this)
 
   override def isHyperTypeConclusion(): Boolean = false
 
@@ -186,17 +167,13 @@ case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping, context: Se
 
 case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping with Derivation {
 
-  override def getNecessaryDerivations: ScalaSet[Derivation] = Set(this)
-
   override def isHyperTypeConclusion(): Boolean = false
 
   override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
 
 }
 
-case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation{
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = Set(this)
+case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false
 
@@ -205,17 +182,10 @@ case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapp
 
 case class HyperCollectionResult() extends Set {
 
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
   override def isHyperTypeConclusion(): Boolean = true
   override def variables: immutable.Set[Id]     = immutable.Set.empty[Id]
 }
 case class MappingAccess(mapping: Mapping, id: Id) extends Set with Mapping {
-
-  override def getNecessaryDerivations: ScalaSet[Derivation] = mapping.getNecessaryDerivations 
-
-
-  
 
   override def isHyperTypeConclusion(): Boolean = mapping.isHyperTypeConclusion()
   override def variables: immutable.Set[Id]     = scala.collection.immutable.Set(id)
@@ -223,16 +193,12 @@ case class MappingAccess(mapping: Mapping, id: Id) extends Set with Mapping {
 
 case class DeltaCollectionResult() extends Mapping {
 
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
   override def isHyperTypeConclusion(): Boolean = false
 
 }
 case class Gamma() extends Mapping {
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
@@ -241,8 +207,6 @@ case class Gamma() extends Mapping {
 }
 
 case class Delta() extends Mapping {
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
@@ -251,8 +215,6 @@ case class Delta() extends Mapping {
 }
 
 case class GammaResult() extends Mapping {
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 
@@ -261,8 +223,6 @@ case class GammaResult() extends Mapping {
 }
 
 case class DeltaResult() extends Mapping {
-  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
-
 
   override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
 

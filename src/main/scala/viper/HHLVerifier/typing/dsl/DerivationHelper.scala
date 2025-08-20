@@ -9,6 +9,7 @@ import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 
 abstract class Context {
+  var cache: Cache
   def typeSystem: TypeSystem
   def gamma: HyperMapping
   def delta: DeltaMapping
@@ -20,9 +21,12 @@ abstract class Context {
   def statement: Stmt
   def pc: HyperTypeCollection
   def variables: ScalaSet[Id]
+  def addToExpressionCache(result: ExpressionDerivationResult): Unit = {
+    cache.add(gamma, delta, expr, result)
+  }
 }
 
-case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr]) extends Context {
+case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expression: Expr, val gamma: HyperMapping, val delta: DeltaMapping, val varMapping: Map[Id, Expr], var cache: Cache) extends Context {
 
   override def varExprMapping: Map[Id, Expr] = varMapping
 
@@ -37,7 +41,7 @@ case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expressio
   override def variables: ScalaSet[Id] = getVariables(expression)
 
 }
-case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt, val gamma: HyperMapping, val delta: DeltaMapping, val pc: HyperTypeCollection, val varStmtMapping: Map[Id, Stmt], val varExprMapping: Map[Id, Expr]) extends Context {
+case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt, val gamma: HyperMapping, val delta: DeltaMapping, val pc: HyperTypeCollection, val varStmtMapping: Map[Id, Stmt], val varExprMapping: Map[Id, Expr], var cache: Cache) extends Context {
 
   override def expr: Expr = throw new Exception("StatementDerivationContext does not have an expression")
 

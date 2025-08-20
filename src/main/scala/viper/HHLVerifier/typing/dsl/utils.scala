@@ -17,6 +17,9 @@ import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.Parser.setEquals
+import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.ast.Stmt
+import scala.collection.View.Empty
 
 object SpecificationUtil {
 
@@ -175,8 +178,8 @@ object ToIndexed {
       case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
       case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
       case inMapping: InMapping      => toIndexedVariable(mapping, inMapping)
-      case mapEquals: MapEquals => toIndexedVariable(mapping, mapEquals)
-      case setEquals: SetEquals => toIndexedVariable(mapping, setEquals)
+      case mapEquals: MapEquals      => toIndexedVariable(mapping, mapEquals)
+      case setEquals: SetEquals      => toIndexedVariable(mapping, setEquals)
       case notOperator: NotOperator  => NotOperator(toIndexedVariable(mapping, notOperator.condition))
     }
   }
@@ -314,7 +317,7 @@ object applyIndexed {
   }
 }
 
-case class DeriveArgsUtils(context: Context) {
+case class DeriveArgsUtils(var context: Context) {
 
   def getArgs(gamma: Mapping, delta: Mapping): (HyperMapping, DeltaMapping) = {
     val newGamma = getHyperMapping(gamma)
@@ -327,7 +330,14 @@ case class DeriveArgsUtils(context: Context) {
       case HyperTypeCheck(expr, gammaArg, deltaArg) => {
         val subExpression  = context.varExprMapping.getOrElse(expr, throw new Exception(s"Variable $expr not found in variable mapping"))
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
-        context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).hyperTypeCollection
+        context.cache.get(gamma, delta, subExpression) match {
+          case Some(result) => result.hyperTypeCollection
+          case None         => {
+            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression, Map())
+            context.cache.add(gamma, delta, subExpression, res)
+            res.hyperTypeCollection
+          }
+        }
       }
       case MappingAccess(mapping, id) => {
         val idIndexed    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
@@ -343,7 +353,15 @@ case class DeriveArgsUtils(context: Context) {
       case DeltaTypeCheck(id, gammaArg, deltaArg) => {
         val subExpression  = context.varExprMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
-        context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).deltaCollection
+        context.cache.get(gamma, delta, subExpression) match {
+          case Some(result) => result.deltaCollection
+          case None         => {
+            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression, Map())
+            context.cache.add(gamma, delta, subExpression, res)
+            res.deltaCollection
+
+          }
+        }
       }
       case MappingAccess(DeriveDeltaType(id, gammaArg, deltaArg, contextArg), indexId) => {
         val subStatement   = context.getStmtById(id)
@@ -362,7 +380,14 @@ case class DeriveArgsUtils(context: Context) {
         val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val newGamma = getHyperMapping(gammaArg)
         val newDelta = getDeltaMapping(deltaArg)
-        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
+        context.cache.get(newGamma, newDelta, stmt) match {
+          case Some(result) => result.hyperTypeMapping
+          case None         => {
+            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc)
+            context.cache.add(newGamma, newDelta, stmt, res)
+            res.hyperTypeMapping
+          }
+        }
       }
       case Gamma() => context.gamma
       case _       => throw new Exception("Unsupported mapping type for Gamma condition" + mapping.getClass.getSimpleName)
@@ -376,10 +401,37 @@ case class DeriveArgsUtils(context: Context) {
         val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val newGamma = getHyperMapping(gammaArg)
         val newDelta = getDeltaMapping(deltaArg)
-        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
+        context.cache.get(newGamma, newDelta, stmt) match {
+          case Some(result) => result.deltaMapping
+          case None         => {
+            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc)
+            context.cache.add(newGamma, newDelta, stmt, res)
+            res.deltaMapping
+          }
+        }
       }
       case Delta() => context.delta
       case _       => throw new Exception("Unsupported mapping type for Delta condition" + mapping.getClass.getSimpleName)
     }
+  }
+}
+
+class Cache() {
+  var expressionCache: Map[(Expr, HyperMapping, DeltaMapping), ExpressionDerivationResult] = Map()
+  var statementCache: Map[(Stmt, HyperMapping, DeltaMapping), StatementDerivationResult]   = Map()
+
+  def add(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, result: ExpressionDerivationResult): Unit = {
+    expressionCache += ((expr, gamma, delta) -> result)
+  }
+  def add(gamma: HyperMapping, delta: DeltaMapping, stmt: Stmt, result: StatementDerivationResult): Unit = {
+    statementCache += ((stmt, gamma, delta) -> result)
+  }
+
+  def get(gamma: HyperMapping, delta: DeltaMapping, expr: Expr): Option[ExpressionDerivationResult] = {
+    expressionCache.get((expr, gamma, delta))
+  }
+
+  def get(gamma: HyperMapping, delta: DeltaMapping, stmt: Stmt): Option[StatementDerivationResult] = {
+    statementCache.get((stmt, gamma, delta))
   }
 }
