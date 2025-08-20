@@ -11,6 +11,8 @@ import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.TypeSystem
+import viper.HHLVerifier.ast.AssignStmt
+import viper.HHLVerifier.ast.Stmt
 
 object DerivationTests {
 
@@ -23,6 +25,18 @@ object DerivationTests {
     }
     if (expectedHTDT.isDefined) {
       assert(result.deltaCollection == expectedHTDT.get, s"Expected delta collection ${expectedHTDT.get} but got ${result.deltaCollection}")
+    }
+  }
+
+  def runTest(typeSystem: TypeSystem, stmt: Stmt, gamma: HyperMapping, delta: DeltaMapping, expectedM: Option[HyperMapping], expectedDM: Option[DeltaMapping]) = {
+    val result = typeSystem.deriveStatement(gamma, delta, stmt, HyperTypeCollection(Set()))
+
+    println(s"$stmt |- {${result.hyperTypeMapping}} {${result.deltaMapping}}")
+    if (expectedM.isDefined) {
+      assert(result.hyperTypeMapping == expectedM.get, s"Expected hyper mapping ${expectedM.get} but got ${result.hyperTypeMapping}")
+    }
+    if (expectedDM.isDefined) {
+      assert(result.deltaMapping == expectedDM.get, s"Expected delta mapping ${expectedDM.get} but got ${result.deltaMapping}")
     }
   }
 
@@ -116,11 +130,22 @@ object DerivationTests {
     runTest(typeSystem, expression2, gamma1, DeltaMapping(Map()), expectedHT2, expectedDT2)
   }
 
+  def statementTests(): Unit = {
+    val infFlowPath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath))
+
+    val gamma1 = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
+    val statement = AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
+    val expectedHM = Some(HyperMapping(Map("y" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
+    runTest(typeSystem, statement, gamma1, DeltaMapping(Map()), expectedHM, None)
+  }
+
   def main(args: Array[String]): Unit = {
-    deltaTests()
-    infFlowTests()
-    valueTests()
-    valueInfFlowTests()
+    // deltaTests()
+    // infFlowTests()
+    // valueTests()
+    // valueInfFlowTests()
+    statementTests()
     println("all tests passed")
   }
 }

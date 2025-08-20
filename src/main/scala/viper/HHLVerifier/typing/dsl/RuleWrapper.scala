@@ -10,11 +10,11 @@ import viper.HHLVerifier.ast.Stmt
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
 abstract class RuleWrapper(rule: dsl.Rule) {
-  def apply(context: Context, result: DerivationResult): DerivationResult
-  def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult): DerivationResult = {
+  def apply(context: Context, result: DerivationResult, expression : Boolean): DerivationResult
+  def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression : Boolean): DerivationResult = {
 
     val appliedIndexedRule = applyIndexed.applyIndexed(ruleCheckContext.variables, rule)
-    val conditionHolds     = appliedIndexedRule.conditions.forall(condition => condition.check(context, true))
+    val conditionHolds     = appliedIndexedRule.conditions.forall(condition => condition.check(context, expression))
 
     if (conditionHolds) {
       appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, acc) }
@@ -34,8 +34,8 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
       .distinct // remove duplicates if input has duplicates
   }
 
-  def apply(context: Context, result: DerivationResult): DerivationResult = {
-    val variablesInExpression   = getVariables(context.expr)
+  def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
+    val variablesInExpression   = if (expression) getVariables(context.expr) else getVariables(context.statement)
     val variablesInHyperMapping = context.gamma.mapping.keySet.map(Id(_))
     val variablesInDeltaMapping = context.delta.collection.keySet.map(Id(_))
     val allVariables            = variablesInExpression ++ variablesInHyperMapping ++ variablesInDeltaMapping
@@ -45,15 +45,15 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
     }
 
     val newResult = allRuleContext.foldLeft(result) { case (agg, capturedRuleContext) =>
-      checkAndApply(context, capturedRuleContext, agg)
+      checkAndApply(context, capturedRuleContext, agg, expression)
     }
     newResult
   }
 }
 case class EmptyWrapper(rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
 
-  def apply(context: Context, result: DerivationResult): DerivationResult = {
+  def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
     val ruleCheckContext = RuleCheckContext(Map())
-    checkAndApply(context, ruleCheckContext, result)
+    checkAndApply(context, ruleCheckContext, result, expression)
   }
 }

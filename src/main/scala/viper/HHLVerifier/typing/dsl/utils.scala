@@ -159,17 +159,23 @@ object ToIndexed {
     conclusion match {
       case AddToSet(elem, set)   => AddToSet(toIndexedVariable(mapping, elem), toIndexedVariable(mapping, set))
       case SetEquals(set1, set2) => SetEquals(toIndexedVariable(mapping, set1), toIndexedVariable(mapping, set2))
+      case MapEquals(mapping1, mapping2) => MapEquals(toIndexedVariable(mapping, mapping1), toIndexedVariable(mapping, mapping2))
     }
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], condition: Condition): Condition = {
     condition match {
+      case equalCond: Equal => toIndexedVariable(mapping, equalCond)
       case arithCond: ArithCondition => toIndexedVariable(mapping, arithCond)
       case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
       case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
       case inMapping: InMapping      => toIndexedVariable(mapping, inMapping)
       case notOperator: NotOperator  => NotOperator(toIndexedVariable(mapping, notOperator.condition))
     }
+  }
+
+  def toIndexedVariable(mapping: Map[Id, Int], equalCond: Equal): Equal = {
+    Equal(toIndexedVariable(mapping, equalCond.lhs), toIndexedVariable(mapping, equalCond.rhs))
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], arithCond: ArithCondition): ArithCondition = {
@@ -202,6 +208,12 @@ object ToIndexed {
       case Delta()                            => Delta()
       case DeltaCollectionResult()            => DeltaCollectionResult()
       case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
+      case GammaResult() => GammaResult()
+      case DeltaResult() => DeltaResult()
+      case DeriveHyperType(expr, gamma, delta, context) =>
+        DeriveHyperType(toIndexedVariable(mapping, expr), gamma, delta, context)
+      case DeriveDeltaType(expr, gamma, delta, context) => 
+        DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
       case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
@@ -225,6 +237,7 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], cond: Condition): Condition = {
     cond match {
+      case euqalCond : Equal         => Equal(applyIndexed(mapping, euqalCond.lhs), applyIndexed(mapping, euqalCond.rhs)) 
       case arithCond: ArithCondition => ArithCondition(applyIndexed(mapping, arithCond.variable), arithCond.op, arithCond.right)
       case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
       case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
@@ -237,6 +250,7 @@ object applyIndexed {
     conclusion match {
       case AddToSet(elem, set)   => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
       case SetEquals(set1, set2) => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
+      case MapEquals(mapping1, mapping2) => MapEquals(applyIndexed(mapping, mapping1), applyIndexed(mapping, mapping2))
     }
   }
 
@@ -258,13 +272,19 @@ object applyIndexed {
       case Delta()                            => Delta()
       case DeltaCollectionResult()            => DeltaCollectionResult()
       case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case GammaResult() => GammaResult()
+      case DeltaResult() => DeltaResult()
+      case DeriveHyperType(expr, gamma, delta, context) =>
+        DeriveHyperType(applyIndexed(mapping, expr), gamma, delta, context)
+      case DeriveDeltaType(expr, gamma, delta, context) =>
+        DeriveDeltaType(applyIndexed(mapping, expr), gamma, delta, context)
       case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
   def applyIndexed(mapping: Map[Id, Id], elem: Element): Element = {
     elem match {
-      case id @ Id(name)  => mapping.getOrElse(id, throw new Exception(s"Variable $id not found in mapping"))
+      case id @ Id(name)  => mapping.getOrElse(id, id)
       case hty: HyperType => applyIndexed(mapping, hty)
     }
   }

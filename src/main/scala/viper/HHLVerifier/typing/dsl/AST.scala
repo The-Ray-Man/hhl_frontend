@@ -86,7 +86,7 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
     wrappedRules
       .foldLeft(emptyResult) { (acc, rule) =>
-        rule.apply(context, acc).getExpressionResult
+        rule.apply(context, acc, true).getExpressionResult
       }
       .getExpressionResult
 
@@ -98,26 +98,23 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
   val wrappedRules: Seq[RuleWrapper] = rules.map(rule => wrapRule(rule))
 
   def wrapRule(rule: Rule): RuleWrapper = {
-    // val allVariables        = rule.conditions.flatMap(_.variables).toSet ++ rule.conclusions.flatMap(_.variables).toSet
-    // val capturedVariables   = typing.HyperTypeChecker.getVariables(statement).toSet
-    // val freeVariables       = allVariables -- capturedVariables
-    // val freeVariableMapping = freeVariables.zipWithIndex.toMap
-    // val indexedRule         = ToIndexed.toIndexedVariable(freeVariableMapping, rule)
-    // if (freeVariables.isEmpty) {
-    //   EmptyWrapper(indexedRule)
-    // } else {
-    //   ForanyVariableWrapper(freeVariables.size, indexedRule)
-    // }
-    null
+    val allVariables        = rule.conditions.flatMap(_.variables).toSet ++ rule.conclusions.flatMap(_.variables).toSet
+    val capturedVariables   = typing.HyperTypeChecker.getVariables(statement).toSet
+    val freeVariables       = allVariables -- capturedVariables
+    val freeVariableMapping = freeVariables.zipWithIndex.toMap
+    val indexedRule         = ToIndexed.toIndexedVariable(freeVariableMapping, rule)
+    if (freeVariables.isEmpty) {
+      EmptyWrapper(indexedRule)
+    } else {
+      ForanyVariableWrapper(freeVariables.size, indexedRule)
+    }
   }
 
   def derive(context: StatementDerivationContext): StatementDerivationResult = {
-    //   val emptyResult = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
-    //   wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
-    //     rule.apply(context, acc)
-    //   }
-    // }
-    null
+    val emptyResult = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
+    wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
+      rule.apply(context, acc, false).getStatementResult
+    }
   }
 }
 

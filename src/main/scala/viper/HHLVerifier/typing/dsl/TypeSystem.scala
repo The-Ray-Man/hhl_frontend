@@ -42,6 +42,7 @@ case class TypeSystem(
   }
 
   def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
+    println("derivingExpression: " + expr)
     val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule => (rule._1, rule._2.get))
     if (applicableRules.isEmpty || applicableRules.length > 1) {
       throw new Exception(s"There are ${applicableRules.length} applicable rules for expression $expr")
@@ -51,19 +52,49 @@ case class TypeSystem(
   }
 
   def deriveStatement(gamma: HyperMapping, delta: DeltaMapping, s: Stmt, pc: HyperTypeCollection): StatementDerivationResult = {
-    val context = StatementDerivationContext(this, s, gamma, delta, pc, Map.empty)
+    println("derivingStatement: " + s)
     s match {
       case ast.AssignStmt(left, right) => {
+        val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.assignRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
+        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.assignRule.derive(context)
       }
+      case CompositeStmt(stmts)  => {
+        val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
+        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+        statementTypeSystem.compositionRule.derive(context)
+      }
+      case IfElseStmt(cond, ifStmt, elseStmt) => {
+        val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.branchRule.statement).getOrElse(throw new Exception(s"Statement $s does not match branch pattern"))
+        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+        statementTypeSystem.branchRule.derive(context)
+      }
       case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                                                            => throw new Exception("While loops are not yet supported in the type system")
-      case IfElseStmt(cond, ifStmt, elseStmt)                                                                                                                                                                    => statementTypeSystem.branchRule.derive(context)
-      case CompositeStmt(stmts)                                                                                                                                                                                  => throw new Exception("CompositeStmt is not yet supported in the type system")
       case MultiAssignStmt(_, _)                                                                                                                                                                                 => throw new Exception("MultiAssignStmt is not yet supported in the type system")
       case UnfoldStmt(_, _)                                                                                                                                                                                      => throw new Exception("Fold statements are not yet supported in the type system")
       case FoldStmt(_, _)                                                                                                                                                                                        => throw new Exception("Fold statements are not yet supported in the type system")
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
+    }
+  }
+
+
+  def statementMatchesPattern(stmt: Stmt, pattern: StmtPattern): Option[(Map[Id, Stmt], Map[Id, Expr])] = {
+    (pattern, stmt) match {
+      case (AssignStmt(left, right), ast.AssignStmt(leftCheck, rightCheck)) =>
+        Some((Map.empty, Map(left -> leftCheck, right -> rightCheck)))
+      case (IfStmt(cond, ifStmt, elseStmt), IfElseStmt(condCheck, ifStmtCheck, elseStmtCheck)) =>
+        Some(Map(ifStmt -> ifStmtCheck, elseStmt -> elseStmtCheck), Map.empty(cond -> condCheck))
+      case (CompStmt(s1, s2), CompositeStmt(stmtsCheck)) => {
+        if (stmtsCheck.length == 1) {
+          throw new Exception("CompositeStmt pattern matching is not supported for single statements")
+        } else if (stmtsCheck.length == 2) {
+          Some(Map(s1 -> stmtsCheck.head, s2 -> stmtsCheck(1)), Map.empty)
+        } else {
+          Some(Map(s1 -> stmtsCheck.head, s2 -> CompositeStmt(stmtsCheck.tail)), Map.empty)
+        }
+      }
+      case _ => None
     }
   }
 }

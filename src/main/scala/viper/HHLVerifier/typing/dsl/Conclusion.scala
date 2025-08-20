@@ -3,6 +3,8 @@ package viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.typing.HyperTypeCollection
+import viper.HHLVerifier.typing.HyperMapping
 
 trait Conclusion extends CollectVariables with ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
@@ -25,7 +27,16 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
           deltaCollection = result.getExpressionResult.deltaCollection.add(variableLookup.name, elem.asInstanceOf[HyperType])
         )
       }
-      case _: Set => throw new Exception("Not implemented yet")
+      case MappingAccess(GammaResult(), variable) => {
+        val variableLookup = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+        val hyperTypes = result.getStatementResult.hyperTypeMapping.mapping.getOrElse(variableLookup.name, HyperTypeCollection(Set()))
+        val newHyperTypeCollection = hyperTypes.add(elem.asInstanceOf[HyperType])
+        StatementDerivationResult(
+          hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
+          deltaMapping = result.getStatementResult.deltaMapping
+        )
+      }
+      case _: Set => throw new Exception("Not implemented yet: " + set.getClass.getSimpleName)
     }
   }
   override def variables: ScalaSet[Id] = elem.variables ++ set.variables

@@ -35,11 +35,8 @@ case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expressio
   override def variables: ScalaSet[Id] = getVariables(expression)
 
 }
-case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt, val gamma: HyperMapping, val delta: DeltaMapping, val pc: HyperTypeCollection, val varMapping: Map[Id, Stmt]) extends Context {
+case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt, val gamma: HyperMapping, val delta: DeltaMapping, val pc: HyperTypeCollection, val varStmtMapping: Map[Id, Stmt], val varExprMapping: Map[Id, Expr]) extends Context {
 
-  override def varExprMapping: Map[Id, Expr] = throw new Exception("StatementDerivationContext does not have an expression mapping")
-
-  override def varStmtMapping: Map[Id, Stmt] = varMapping
 
   override def expr: Expr = throw new Exception("StatementDerivationContext does not have an expression")
 

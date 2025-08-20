@@ -12,15 +12,12 @@ import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.HavocStmt
 import viper.HHLVerifier.ast.WhileLoopStmt
-import viper.HHLVerifier.ast.BoolLit
-import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.ast.UnaryExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.PVarDecl
 import viper.HHLVerifier.ast.MultiAssignStmt
-import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
@@ -28,6 +25,15 @@ import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
 import viper.HHLVerifier.typing.dsl.StmtPattern
 import viper.HHLVerifier.typing.dsl.CompStmt
+import viper.HHLVerifier.ast.DeclareStmt
+import viper.HHLVerifier.ast.ReuseStmt
+import viper.HHLVerifier.ast.AssertStmt
+import viper.HHLVerifier.ast.ProofVarDecl
+import viper.HHLVerifier.ast.MethodCallStmt
+import viper.HHLVerifier.ast.FrameStmt
+import viper.HHLVerifier.ast.AssumeStmt
+import viper.HHLVerifier.ast.UseHintStmt
+
 
 object HyperTypeChecker {
 
@@ -54,79 +60,15 @@ object HyperTypeChecker {
       )
       .toMap
     val hyperMapping = new HyperMapping(mapping)
-
-    val (finalMapping, deltaMapping) = typeCheckStmt(system, hyperMapping, DeltaMapping(Map()), m.body, pc)
-
+    val typecheckResult = system.deriveStatement(hyperMapping, DeltaMapping(Map.empty), m.body, pc)
+    
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
-      val retType         = finalMapping.getUnsafe(r.name)
+      val retType         = typecheckResult.hyperTypeMapping.getUnsafe(r.name)
       if (!retType.isSubTypeOf(declaredRetType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
       }
     })
-  }
-
-  def typeCheckStmt(system: TypeSystem, mapping: HyperMapping, delta: DeltaMapping, s: Stmt, pc: HyperTypeCollection): (HyperMapping, DeltaMapping) = {
-    s match {
-      case AssignStmt(left, right) => {
-        return (mapping, delta)
-      }
-      case MultiAssignStmt(left, right) => {
-        return (mapping, delta)
-      }
-      case CompositeStmt(stmts) => {
-        val res = stmts.foldLeft((mapping, delta))((acc, stmt) => {
-          val (currentMapping, delta) = acc
-          val (newMapping, newDelta)  = typeCheckStmt(system, currentMapping, DeltaMapping(Map.empty), stmt, pc)
-          (mapping, delta)
-        })
-        return res
-      }
-      case IfElseStmt(cond, ifStmt, elseStmt) => {
-        // val (condType, _) = typeCheckExpression(system.expressionTypeSystem, mapping, cond)
-        (mapping, delta)
-      }
-      case UnfoldStmt(t, id) => {
-        val ty       = HyperTypeCollection.fromSeq(Seq(t))
-        val var_type = mapping.getUnsafe(id.name)
-        if (var_type.isSubTypeOf(ty)) {
-          return (mapping, delta)
-        } else {
-          throw new Exception("Type error: cannot unfold " + id.name + " of type " + var_type + " to type " + t)
-        }
-      }
-      case FoldStmt(t, id) => {
-        val ty         = HyperTypeCollection.fromSeq(Seq(t))
-        val newMapping = mapping.set(id.name, ty)
-        (newMapping, delta)
-      }
-      case WhileLoopStmt(cond, body, _, _, _) => {
-        (mapping, delta)
-      }
-
-      case HavocStmt(Id(name), _) => {
-        return (mapping, delta)
-      }
-
-      case PVarDecl(_, _) => {
-        return (mapping, delta)
-      }
-
-      case HyperAssertStmt(e) => {
-        return (mapping, delta)
-      }
-      case HyperAssumeStmt(e) => {
-        return (mapping, delta)
-      }
-
-      case _ => {
-        throw new Exception("Type error: cannot yet type check statement " + s)
-      }
-    }
-  }
-
-  def typeCheckExpression(system: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, e: Expr): ExpressionDerivationResult = {
-    system.deriveExpression(gamma, delta, e, Map())
   }
 
   def getVariables(expr: Expr): Set[Id] = {
@@ -145,5 +87,32 @@ object HyperTypeChecker {
       case dsl.AssignStmt(left, right)              => Set(left, right)
       case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
     }
+  }
+
+  def getVariables(stmt: Stmt) : Set[Id] = {
+    stmt match {
+      case AssignStmt(left, right) => Set(left) ++ getVariables(right) 
+      case AssertStmt(e) => getVariables(e)
+      case MethodCallStmt(methodName, args) => args.toSet
+      case MultiAssignStmt(left, right) => 
+        left.toSet ++ getVariables(right)
+      case IfElseStmt(cond, ifStmt, elseStmt) => 
+        getVariables(cond) ++ getVariables(ifStmt) ++ getVariables(elseStmt)
+      case HavocStmt(id, hintDecl) => Set(id)
+      case CompositeStmt(stmts) => 
+        stmts.flatMap(getVariables).toSet
+      case WhileLoopStmt(cond, body, inv, decr, rule) => getVariables(cond) ++ getVariables(body) 
+      case FoldStmt(t, id) => Set(id)
+      case HyperAssumeStmt(_) 
+      | AssumeStmt(_) 
+      | UnfoldStmt(_, _) 
+      | UseHintStmt(_) 
+      | HyperAssertStmt(_) 
+      | ProofVarDecl(_, _) 
+      | DeclareStmt(_, _) 
+      | PVarDecl(_, _) 
+      | FrameStmt(_, _) 
+      | ReuseStmt(_) => throw new Exception("Statement type not supported for variable extraction: " + stmt.getClass.getSimpleName)
+  } 
   }
 }
