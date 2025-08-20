@@ -60,7 +60,10 @@ case class TypeSystem(
         statementTypeSystem.assignRule.derive(context)
       }
       case CompositeStmt(stmts) => {
-        if (stmts.length == 1) {
+        if (stmts.length == 0 ) {
+          StatementDerivationResult(gamma, delta)
+        }
+        else if (stmts.length == 1) {
           deriveStatement(gamma, delta, stmts.head, pc)
         } else {
           val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
@@ -73,7 +76,23 @@ case class TypeSystem(
         val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.branchRule.derive(context)
       }
-      case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                                                            => throw new Exception("While loops are not yet supported in the type system")
+      case WhileLoopStmt(cond, body, _, _, _)  => {
+        var currentGamma = gamma
+        var currentDelta = delta
+        var newGamma = gamma
+        var newDelta = delta
+        do {
+          currentGamma = newGamma
+          currentDelta = newDelta
+          val condResult = deriveStatement(currentGamma, currentDelta, IfElseStmt(cond, body, CompositeStmt(Seq())), pc)
+          newGamma = condResult.getStatementResult.hyperTypeMapping
+          newDelta = condResult.getStatementResult.deltaMapping
+        } while (newGamma != gamma || newDelta != delta)
+        StatementDerivationResult(
+          hyperTypeMapping = newGamma,
+          deltaMapping = newDelta
+        )
+      }
       case MultiAssignStmt(_, _)                                                                                                                                                                                 => throw new Exception("MultiAssignStmt is not yet supported in the type system")
       case UnfoldStmt(_, _)                                                                                                                                                                                      => throw new Exception("Fold statements are not yet supported in the type system")
       case FoldStmt(_, _)                                                                                                                                                                                        => throw new Exception("Fold statements are not yet supported in the type system")

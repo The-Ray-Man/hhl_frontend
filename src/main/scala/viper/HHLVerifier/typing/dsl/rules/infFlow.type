@@ -90,7 +90,6 @@
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ];
 
-
 /* STMT OPERATIONS */
 (Gamma, Delta, Context) |- var := e :: [
     LOW in H[e](Gamma, Delta) => LOW addTo Gamma'(var),
@@ -102,5 +101,7 @@
     => Delta' = DD[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context)
 ];
 
-(Gamma, Delta, Context) |- if b then s1 else s2 end :: []
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: [
+    LOW in H[b](Gamma,Delta) && LOW in DH[s1](Gamma, Delta, Context)(x) && LOW in DH[s2](Gamma, Delta, Context)(x) => LOW addTo Gamma'(x)
+]
 

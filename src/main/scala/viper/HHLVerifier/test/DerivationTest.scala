@@ -15,6 +15,10 @@ import viper.HHLVerifier.ast.AssignStmt
 import viper.HHLVerifier.ast.Stmt
 import viper.HHLVerifier.ast.CompositeStmt
 import viper.HHLVerifier.ast.IfElseStmt
+import viper.HHLVerifier.ast.HHLProgram
+import viper.HHLVerifier.parsing.Parser
+import viper.HHLVerifier.typing.HyperTypeChecker
+import viper.HHLVerifier.generation.Generator
 
 object DerivationTests {
 
@@ -40,6 +44,35 @@ object DerivationTests {
     if (expectedDM.isDefined) {
       assert(result.deltaMapping == expectedDM.get, s"Expected delta mapping ${expectedDM.get} but got ${result.deltaMapping}")
     }
+  }
+
+  def runTest(typeSystem: TypeSystem, program: HHLProgram, shouldFail : Boolean) : Unit= {
+    Generator.autoSelectRules = true
+    try {
+      HyperTypeChecker.typeCheckProg(typeSystem, program)
+      if (shouldFail) {
+        throw new Exception(s"Program $program should have failed to type check but passed")
+      }
+    } catch {
+      case e: Exception => {
+        if (!shouldFail) {
+          throw new Exception(s"Program failed to type check: ${e.getMessage} \n${e.getStackTrace.mkString("\n")}")
+        } 
+      }
+    }
+  }
+
+  def programFromFile(filePath: String) : HHLProgram = {
+    val programSource = scala.io.Source.fromFile(filePath)
+    val program       = programSource.mkString
+    programSource.close()
+    val res = fastparse.parse(program, Parser.program(_))
+    if (res.isSuccess) {
+      res.get.value
+    } else {
+      throw new Exception(s"Could not parse program from file $filePath")
+    }
+   
   }
 
   def valueTests(): Unit = {
@@ -187,6 +220,15 @@ object DerivationTests {
       Some(HyperMapping(Map())),
       None
     )
+    println(typeSystem.hashCode())
+    val program1 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow1.hhl")
+    runTest(typeSystem, program1, false)
+    println(typeSystem.hashCode())
+
+
+    val program2 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow2.hhl")
+    runTest(typeSystem, program2, false)
+
   }
 
   def main(args: Array[String]): Unit = {
