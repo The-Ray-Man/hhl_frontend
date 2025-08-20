@@ -179,7 +179,7 @@ object DSLTests {
     result("53", res53)
 
     val res54 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
-    result("54", res54) 
+    result("54", res54)
 
   }
   def loadingTypeSystemTest(filename: String): Unit = {

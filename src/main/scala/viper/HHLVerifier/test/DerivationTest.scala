@@ -22,7 +22,6 @@ import viper.HHLVerifier.generation.Generator
 
 object DerivationTests {
 
-
   def runTest(typeSystem: TypeSystem, expression: Expr, gamma: HyperMapping, delta: DeltaMapping, expectedHT: Option[HyperTypeCollection], expectedHTDT: Option[DeltaCollection]) = {
     val result = typeSystem.deriveExpression(gamma, delta, expression, Map())
     println(s"$expression |- {${result.hyperTypeCollection}} {${result.deltaCollection}}")
