@@ -29,8 +29,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
         )
       }
       case MappingAccess(GammaResult(), variable) => {
-        val variableLookup = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
-        val hyperTypes = result.getStatementResult.hyperTypeMapping.mapping.getOrElse(variableLookup.name, HyperTypeCollection(Set()))
+        val variableLookup         = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+        val hyperTypes             = result.getStatementResult.hyperTypeMapping.mapping.getOrElse(variableLookup.name, HyperTypeCollection(Set()))
         val newHyperTypeCollection = hyperTypes.add(elem.asInstanceOf[HyperType])
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
@@ -84,16 +84,15 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
 
 case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
-
   def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
-    val derivedHyperMapping =  DeriveArgsUtils(context).getGamma(deriveHyperType)
+    val derivedHyperMapping = DeriveArgsUtils(context).getGamma(deriveHyperType)
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
       deltaMapping = result.getStatementResult.deltaMapping
     )
   }
 
-  def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {   
+  def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
     val derivedDeltaMapping = DeriveArgsUtils(context).getDelta(deriveDeltaType)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
@@ -103,10 +102,10 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
   override def apply(context: Context, result: DerivationResult): DerivationResult = {
     (mapping1, mapping2) match {
-      case (GammaResult(), d : DeriveHyperType) => gammaResultEqualsDeriveHyperType(context, d, result)
-      case (d : DeriveHyperType, GammaResult()) => gammaResultEqualsDeriveHyperType(context, d, result)
-      case (DeltaResult(), d : DeriveDeltaType) => gammaResultEqualsDeriveDeltaType(context, d, result)
-      case (d : DeriveDeltaType, DeltaResult()) => gammaResultEqualsDeriveDeltaType(context, d, result)
+      case (GammaResult(), d: DeriveHyperType) => gammaResultEqualsDeriveHyperType(context, d, result)
+      case (d: DeriveHyperType, GammaResult()) => gammaResultEqualsDeriveHyperType(context, d, result)
+      case (DeltaResult(), d: DeriveDeltaType) => gammaResultEqualsDeriveDeltaType(context, d, result)
+      case (d: DeriveDeltaType, DeltaResult()) => gammaResultEqualsDeriveDeltaType(context, d, result)
     }
   }
 
@@ -115,5 +114,3 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
   override def isHyperTypeConclusion(): Boolean = mapping1.isHyperTypeConclusion() && mapping2.isHyperTypeConclusion()
 
 }
-
-

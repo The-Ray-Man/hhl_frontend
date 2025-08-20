@@ -56,17 +56,17 @@ case class TypeSystem(
     s match {
       case ast.AssignStmt(left, right) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.assignRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
-        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+        val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.assignRule.derive(context)
       }
-      case CompositeStmt(stmts)  => {
+      case CompositeStmt(stmts) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
-        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+        val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.compositionRule.derive(context)
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.branchRule.statement).getOrElse(throw new Exception(s"Statement $s does not match branch pattern"))
-        val context = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+        val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.branchRule.derive(context)
       }
       case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                                                            => throw new Exception("While loops are not yet supported in the type system")
@@ -77,7 +77,6 @@ case class TypeSystem(
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }
   }
-
 
   def statementMatchesPattern(stmt: Stmt, pattern: StmtPattern): Option[(Map[Id, Stmt], Map[Id, Expr])] = {
     (pattern, stmt) match {

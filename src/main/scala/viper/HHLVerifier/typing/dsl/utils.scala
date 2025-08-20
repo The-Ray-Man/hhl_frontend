@@ -161,15 +161,15 @@ object ToIndexed {
 
   def toIndexedVariable(mapping: Map[Id, Int], conclusion: Conclusion): Conclusion = {
     conclusion match {
-      case AddToSet(elem, set)   => AddToSet(toIndexedVariable(mapping, elem), toIndexedVariable(mapping, set))
-      case SetEquals(set1, set2) => SetEquals(toIndexedVariable(mapping, set1), toIndexedVariable(mapping, set2))
+      case AddToSet(elem, set)           => AddToSet(toIndexedVariable(mapping, elem), toIndexedVariable(mapping, set))
+      case SetEquals(set1, set2)         => SetEquals(toIndexedVariable(mapping, set1), toIndexedVariable(mapping, set2))
       case MapEquals(mapping1, mapping2) => MapEquals(toIndexedVariable(mapping, mapping1), toIndexedVariable(mapping, mapping2))
     }
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], condition: Condition): Condition = {
     condition match {
-      case equalCond: Equal => toIndexedVariable(mapping, equalCond)
+      case equalCond: Equal          => toIndexedVariable(mapping, equalCond)
       case arithCond: ArithCondition => toIndexedVariable(mapping, arithCond)
       case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
       case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
@@ -208,17 +208,17 @@ object ToIndexed {
 
   def toIndexedVariable(mapping: Map[Id, Int], map: Mapping): Mapping = {
     map match {
-      case Gamma()                            => Gamma()
-      case Delta()                            => Delta()
-      case DeltaCollectionResult()            => DeltaCollectionResult()
-      case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
-      case GammaResult() => GammaResult()
-      case DeltaResult() => DeltaResult()
+      case Gamma()                                      => Gamma()
+      case Delta()                                      => Delta()
+      case DeltaCollectionResult()                      => DeltaCollectionResult()
+      case DeltaTypeCheck(expr, gamma, delta)           => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
+      case GammaResult()                                => GammaResult()
+      case DeltaResult()                                => DeltaResult()
       case DeriveHyperType(expr, gamma, delta, context) =>
         DeriveHyperType(toIndexedVariable(mapping, expr), gamma, delta, context)
-      case DeriveDeltaType(expr, gamma, delta, context) => 
+      case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
-      case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -241,7 +241,7 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], cond: Condition): Condition = {
     cond match {
-      case euqalCond : Equal         => Equal(applyIndexed(mapping, euqalCond.lhs), applyIndexed(mapping, euqalCond.rhs)) 
+      case euqalCond: Equal          => Equal(applyIndexed(mapping, euqalCond.lhs), applyIndexed(mapping, euqalCond.rhs))
       case arithCond: ArithCondition => ArithCondition(applyIndexed(mapping, arithCond.variable), arithCond.op, arithCond.right)
       case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
       case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
@@ -252,8 +252,8 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], conclusion: Conclusion): Conclusion = {
     conclusion match {
-      case AddToSet(elem, set)   => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
-      case SetEquals(set1, set2) => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
+      case AddToSet(elem, set)           => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
+      case SetEquals(set1, set2)         => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
       case MapEquals(mapping1, mapping2) => MapEquals(applyIndexed(mapping, mapping1), applyIndexed(mapping, mapping2))
     }
   }
@@ -272,17 +272,17 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], map: Mapping): Mapping = {
     map match {
-      case Gamma()                            => Gamma()
-      case Delta()                            => Delta()
-      case DeltaCollectionResult()            => DeltaCollectionResult()
-      case DeltaTypeCheck(expr, gamma, delta) => DeltaTypeCheck(applyIndexed(mapping, expr), gamma, delta)
-      case GammaResult() => GammaResult()
-      case DeltaResult() => DeltaResult()
+      case Gamma()                                      => Gamma()
+      case Delta()                                      => Delta()
+      case DeltaCollectionResult()                      => DeltaCollectionResult()
+      case DeltaTypeCheck(expr, gamma, delta)           => DeltaTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case GammaResult()                                => GammaResult()
+      case DeltaResult()                                => DeltaResult()
       case DeriveHyperType(expr, gamma, delta, context) =>
         DeriveHyperType(applyIndexed(mapping, expr), gamma, delta, context)
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(applyIndexed(mapping, expr), gamma, delta, context)
-      case _: Mapping                         => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -309,10 +309,10 @@ case class DeriveArgsUtils(context: Context) {
     (newGamma, newDelta)
   }
 
-  def getHyperCollection(collection: Set) : HyperTypeCollection = {
+  def getHyperCollection(collection: Set): HyperTypeCollection = {
     collection match {
       case HyperTypeCheck(expr, gammaArg, deltaArg) => {
-        val subExpression = context.varExprMapping.getOrElse(expr, throw new Exception(s"Variable $expr not found in variable mapping"))
+        val subExpression  = context.varExprMapping.getOrElse(expr, throw new Exception(s"Variable $expr not found in variable mapping"))
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
         context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).hyperTypeCollection
       }
@@ -320,10 +320,10 @@ case class DeriveArgsUtils(context: Context) {
     }
   }
 
-  def getDeltaCollection(mapping: Mapping) : DeltaCollection = {
+  def getDeltaCollection(mapping: Mapping): DeltaCollection = {
     mapping match {
       case DeltaTypeCheck(id, gammaArg, deltaArg) => {
-        val subExpression = context.varExprMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val subExpression  = context.varExprMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
         context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).deltaCollection
       }
@@ -331,32 +331,31 @@ case class DeriveArgsUtils(context: Context) {
     }
   }
 
-  def getGamma(gamma: Mapping) : HyperMapping = {
+  def getGamma(gamma: Mapping): HyperMapping = {
 
     gamma match {
       case DeriveHyperType(id, gammaArg, deltaArg, contextArg) => {
-        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val newGamma = getGamma(gammaArg)
         val newDelta = getDelta(deltaArg)
         context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
       }
       case Gamma() => context.gamma
-      case _ => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
+      case _       => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
     }
 
   }
 
-
-  def getDelta(delta: Mapping) : DeltaMapping = {
+  def getDelta(delta: Mapping): DeltaMapping = {
     delta match {
       case DeriveDeltaType(id, gammaArg, deltaArg, contextArg) => {
-        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
         val newGamma = getGamma(gammaArg)
         val newDelta = getDelta(deltaArg)
         context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
       }
       case Delta() => context.delta
-      case _ => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
+      case _       => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
     }
   }
 }

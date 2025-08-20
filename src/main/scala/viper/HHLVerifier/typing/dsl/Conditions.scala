@@ -40,17 +40,17 @@ case class InSet(elem: Element, set: Set) extends Condition {
 
   override def check(context: Context, expression: Boolean): Boolean = {
     set match {
-      case _ : HyperTypeCheck => {
+      case _: HyperTypeCheck => {
         val derivedCollection = DeriveArgsUtils(context).getHyperCollection(set)
         derivedCollection.hypertypes.contains(elem.asInstanceOf[HyperType])
       }
-      case MappingAccess(d : DeltaTypeCheck, id) => {
+      case MappingAccess(d: DeltaTypeCheck, id) => {
         val derivedDeltaCollection = DeriveArgsUtils(context).getDeltaCollection(d)
-        val indexedId = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
-        val indexedSet        = derivedDeltaCollection.mapping.getOrElse(indexedId.name, throw new Exception(s"Variable $id not found in delta mapping"))
+        val indexedId              = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+        val indexedSet             = derivedDeltaCollection.mapping.getOrElse(indexedId.name, throw new Exception(s"Variable $id not found in delta mapping"))
         indexedSet.hypertypes.contains(elem.asInstanceOf[HyperType])
       }
-      case MappingAccess(Gamma(), id) =>  {
+      case MappingAccess(Gamma(), id) => {
         val indexedValue = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         context.gamma.mapping.getOrElse(indexedValue.name, return false).hypertypes.contains(elem.asInstanceOf[HyperType])
       }
@@ -66,10 +66,10 @@ case class InMapping(elem: Element, mapping: Mapping) extends Condition {
 
   override def check(context: Context, expression: Boolean): Boolean = {
     (elem, mapping) match {
-      case (Id(name), Delta())                   => context.delta.collection.contains(name)
-      case (Id(name), Gamma())                   => context.gamma.mapping.contains(name)
-      case (id : Id, d : DeltaTypeCheck) => {
-        val indexedId = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+      case (Id(name), Delta())         => context.delta.collection.contains(name)
+      case (Id(name), Gamma())         => context.gamma.mapping.contains(name)
+      case (id: Id, d: DeltaTypeCheck) => {
+        val indexedId         = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         val derivedCollection = DeriveArgsUtils(context).getDeltaCollection(d)
         derivedCollection.mapping.contains(indexedId.name)
       }

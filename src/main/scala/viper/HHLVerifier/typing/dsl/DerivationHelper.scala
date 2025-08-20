@@ -37,7 +37,6 @@ case class ExpressionDerivationContext(val typeSystem: TypeSystem, val expressio
 }
 case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt, val gamma: HyperMapping, val delta: DeltaMapping, val pc: HyperTypeCollection, val varStmtMapping: Map[Id, Stmt], val varExprMapping: Map[Id, Expr]) extends Context {
 
-
   override def expr: Expr = throw new Exception("StatementDerivationContext does not have an expression")
 
   override def statement: Stmt = stmt

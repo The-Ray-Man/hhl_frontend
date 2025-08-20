@@ -10,8 +10,8 @@ import viper.HHLVerifier.ast.Stmt
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
 abstract class RuleWrapper(rule: dsl.Rule) {
-  def apply(context: Context, result: DerivationResult, expression : Boolean): DerivationResult
-  def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression : Boolean): DerivationResult = {
+  def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
+  def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression: Boolean): DerivationResult = {
 
     val appliedIndexedRule = applyIndexed.applyIndexed(ruleCheckContext.variables, rule)
     val conditionHolds     = appliedIndexedRule.conditions.forall(condition => condition.check(context, expression))

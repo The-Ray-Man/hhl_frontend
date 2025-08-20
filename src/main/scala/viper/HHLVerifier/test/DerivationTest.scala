@@ -132,19 +132,28 @@ object DerivationTests {
   }
 
   def statementTests(): Unit = {
-    val infFlowPath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath))
+    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath))
 
-    val gamma1 = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
-    val statement = AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
+    val gamma1     = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
+    val statement  = AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
     val expectedHM = Some(HyperMapping(Map("y" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
     runTest(typeSystem, statement, gamma1, DeltaMapping(Map()), expectedHM, None)
 
-    val statement2 = CompositeStmt(Seq(
-      AssignStmt(Id("x"), Num(3)),
-      AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
-    ))
-    runTest(typeSystem, statement2, HyperMapping(Map()), DeltaMapping(Map()), Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "y" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))), None)
+    val statement2 = CompositeStmt(
+      Seq(
+        AssignStmt(Id("x"), Num(3)),
+        AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
+      )
+    )
+    runTest(
+      typeSystem,
+      statement2,
+      HyperMapping(Map()),
+      DeltaMapping(Map()),
+      Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "y" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))),
+      None
+    )
   }
 
   def main(args: Array[String]): Unit = {
