@@ -8,12 +8,15 @@ import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.dsl.Parser.set
 import viper.HHLVerifier.typing.dsl.Parser.mapping
 
-trait Conclusion extends CollectVariables with ConclusionInfo {
+trait Conclusion extends CollectVariables with ConclusionInfo with DerivationInfo {
   def isHyperTypeConclusion(): Boolean
   def apply(context: Context, result: DerivationResult): DerivationResult
 }
 
 case class AddToSet(elem: Element, set: Set) extends Conclusion {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = set.getNecessaryDerivations
+
   def apply(context: Context, result: DerivationResult): DerivationResult = {
     set match {
       case HyperCollectionResult() => {
@@ -48,6 +51,9 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
 }
 
 case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = set1.getNecessaryDerivations ++ set2.getNecessaryDerivations
+
 
   override def check(context: Context, expression: Boolean): Boolean = {
     val utils = DeriveArgsUtils(context)
@@ -104,6 +110,9 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
 }
 
 case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion with Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = mapping1.getNecessaryDerivations ++ mapping2.getNecessaryDerivations
+
   val mapping1Type = findMappingType(mapping1)
   val mapping2Type = findMappingType(mapping2)
 

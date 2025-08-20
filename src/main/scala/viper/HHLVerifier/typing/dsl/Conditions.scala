@@ -4,12 +4,14 @@ import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 
-trait Condition extends CollectVariables {
+trait Condition extends CollectVariables with DerivationInfo{
 
   def check(context: Context, expression: Boolean): Boolean
 }
 
 case class Equal(lhs: Element, rhs: Element) extends Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
 
   override def variables: ScalaSet[Id] = lhs.variables ++ rhs.variables
 
@@ -37,6 +39,9 @@ case class Equal(lhs: Element, rhs: Element) extends Condition {
 }
 
 case class InSet(elem: Element, set: Set) extends Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = set.getNecessaryDerivations
+
 
   override def check(context: Context, expression: Boolean): Boolean = {
     set match {
@@ -70,6 +75,9 @@ case class InSet(elem: Element, set: Set) extends Condition {
 
 case class InMapping(elem: Element, mapping: Mapping) extends Condition {
 
+  override def getNecessaryDerivations: ScalaSet[Derivation] = mapping.getNecessaryDerivations
+
+
   override def check(context: Context, expression: Boolean): Boolean = {
     (elem, mapping) match {
       case (Id(name), Delta())         => context.delta.collection.contains(name)
@@ -89,6 +97,8 @@ case class InMapping(elem: Element, mapping: Mapping) extends Condition {
 }
 
 case class ArithCondition(variable: Id, op: String, right: Int) extends Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
 
   def check(context: Context, expression: Boolean): Boolean = {
     val expression = context.getExprById(variable)
@@ -114,6 +124,9 @@ case class ArithCondition(variable: Id, op: String, right: Int) extends Conditio
 
 case class BoolCondition(variable: Id) extends Condition {
 
+  override def getNecessaryDerivations: ScalaSet[Derivation] = ScalaSet.empty[Derivation]
+
+
   def check(context: Context, expression: Boolean): Boolean = {
     val expression = context.getExprById(variable)
     expression match {
@@ -127,6 +140,8 @@ case class BoolCondition(variable: Id) extends Condition {
 }
 
 case class NotOperator(condition: Condition) extends Condition {
+
+  override def getNecessaryDerivations: ScalaSet[Derivation] = condition.getNecessaryDerivations
 
   def check(context: Context, expression: Boolean): Boolean = {
     !condition.check(context, expression)
