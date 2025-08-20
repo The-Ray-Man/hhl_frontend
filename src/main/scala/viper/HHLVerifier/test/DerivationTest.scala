@@ -13,6 +13,7 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.ast.AssignStmt
 import viper.HHLVerifier.ast.Stmt
+import viper.HHLVerifier.ast.CompositeStmt
 
 object DerivationTests {
 
@@ -138,6 +139,12 @@ object DerivationTests {
     val statement = AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
     val expectedHM = Some(HyperMapping(Map("y" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
     runTest(typeSystem, statement, gamma1, DeltaMapping(Map()), expectedHM, None)
+
+    val statement2 = CompositeStmt(Seq(
+      AssignStmt(Id("x"), Num(3)),
+      AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
+    ))
+    runTest(typeSystem, statement2, HyperMapping(Map()), DeltaMapping(Map()), Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "y" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))), None)
   }
 
   def main(args: Array[String]): Unit = {

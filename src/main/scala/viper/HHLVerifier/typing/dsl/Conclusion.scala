@@ -5,6 +5,7 @@ import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.DeltaMapping
 
 trait Conclusion extends CollectVariables with ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
@@ -83,12 +84,76 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
 
 case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
+
+  def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
+    val subStatement = context.varStmtMapping.getOrElse(deriveHyperType.expr, throw new Exception(s"Variable ${deriveHyperType.expr} not found in variable mapping"))
+    
+    val gamma = ConclusionUtils.getGamma(context, deriveHyperType.gamma)
+    val delta = ConclusionUtils.getDelta(context, deriveHyperType.delta)
+    
+    val derivedHyperMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).hyperTypeMapping
+    StatementDerivationResult(
+      hyperTypeMapping = derivedHyperMapping,
+      deltaMapping = result.getStatementResult.deltaMapping
+    )
+  }
+
+  def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
+    val subStatement = context.varStmtMapping.getOrElse(deriveDeltaType.expr, throw new Exception(s"Variable ${deriveDeltaType.expr} not found in variable mapping"))
+    val gamma = ConclusionUtils.getGamma(context, deriveDeltaType.gamma)
+    val delta = ConclusionUtils.getDelta(context, deriveDeltaType.delta)
+    
+    val derivedDeltaMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
+    StatementDerivationResult(
+      hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
+      deltaMapping = derivedDeltaMapping
+    )
+  }
+
   override def apply(context: Context, result: DerivationResult): DerivationResult = {
-    throw new Exception("MapEquals conclusion is not implemented yet")
+    (mapping1, mapping2) match {
+      case (GammaResult(), d : DeriveHyperType)  => gammaResultEqualsDeriveHyperType(context, d, result)
+      case (d : DeriveHyperType, GammaResult())=> gammaResultEqualsDeriveHyperType(context, d, result)
+      case (DeltaResult(), d : DeriveDeltaType) => gammaResultEqualsDeriveDeltaType(context, d, result)
+      case (d : DeriveDeltaType, DeltaResult()) => gammaResultEqualsDeriveDeltaType(context, d, result)
+    }
   }
 
   override def variables: ScalaSet[Id] = mapping1.variables ++ mapping2.variables
 
   override def isHyperTypeConclusion(): Boolean = mapping1.isHyperTypeConclusion() && mapping2.isHyperTypeConclusion()
 
+}
+
+
+object ConclusionUtils {
+
+  def getGamma(context: Context, gamma: Mapping) : HyperMapping = {
+
+    gamma match {
+      case DeriveHyperType(id, gammaArg, deltaArg, contextArg) => {
+        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val newGamma = getGamma(context, gammaArg)
+        val newDelta = getDelta(context, deltaArg)
+        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
+      }
+      case Gamma() => context.gamma
+      case _ => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
+    }
+
+  }
+
+
+  def getDelta(context: Context, delta: Mapping) : DeltaMapping = {
+    delta match {
+      case DeriveDeltaType(id, gammaArg, deltaArg, contextArg) => {
+        val stmt = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
+        val newGamma = getGamma(context, gammaArg)
+        val newDelta = getDelta(context, deltaArg)
+        context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
+      }
+      case Delta() => context.delta
+      case _ => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
+    }
+  }
 }
