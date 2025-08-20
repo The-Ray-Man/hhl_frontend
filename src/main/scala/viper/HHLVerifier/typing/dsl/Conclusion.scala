@@ -86,24 +86,15 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
 
   def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
-    val subStatement = context.varStmtMapping.getOrElse(deriveHyperType.expr, throw new Exception(s"Variable ${deriveHyperType.expr} not found in variable mapping"))
-    
-    val gamma = DeriveArgsUtils.getGamma(context, deriveHyperType.gamma)
-    val delta = DeriveArgsUtils.getDelta(context, deriveHyperType.delta)
-    
-    val derivedHyperMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).hyperTypeMapping
+    val derivedHyperMapping =  DeriveArgsUtils(context).getGamma(deriveHyperType)
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
       deltaMapping = result.getStatementResult.deltaMapping
     )
   }
 
-  def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
-    val subStatement = context.varStmtMapping.getOrElse(deriveDeltaType.expr, throw new Exception(s"Variable ${deriveDeltaType.expr} not found in variable mapping"))
-    val gamma = DeriveArgsUtils.getGamma(context, deriveDeltaType.gamma)
-    val delta = DeriveArgsUtils.getDelta(context, deriveDeltaType.delta)
-    
-    val derivedDeltaMapping = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
+  def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {   
+    val derivedDeltaMapping = DeriveArgsUtils(context).getDelta(deriveDeltaType)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
       deltaMapping = derivedDeltaMapping
@@ -112,8 +103,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
   override def apply(context: Context, result: DerivationResult): DerivationResult = {
     (mapping1, mapping2) match {
-      case (GammaResult(), d : DeriveHyperType)  => gammaResultEqualsDeriveHyperType(context, d, result)
-      case (d : DeriveHyperType, GammaResult())=> gammaResultEqualsDeriveHyperType(context, d, result)
+      case (GammaResult(), d : DeriveHyperType) => gammaResultEqualsDeriveHyperType(context, d, result)
+      case (d : DeriveHyperType, GammaResult()) => gammaResultEqualsDeriveHyperType(context, d, result)
       case (DeltaResult(), d : DeriveDeltaType) => gammaResultEqualsDeriveDeltaType(context, d, result)
       case (d : DeriveDeltaType, DeltaResult()) => gammaResultEqualsDeriveDeltaType(context, d, result)
     }
