@@ -19,9 +19,9 @@ case class Equal(lhs: Element, rhs: Element) extends Condition {
       case (HyperTypeWithListArgs(lhsName, lhsArgs), HyperTypeWithListArgs(rhsName, rhsArgs)) => lhsName == rhsName && lhsArgs == rhsArgs
       case (HyperTypeWithSetArgs(lhsName, lhsArgs), HyperTypeWithSetArgs(rhsName, rhsArgs))   => lhsName == rhsName && lhsArgs == rhsArgs
       case (lhs @ Id(_), rhs @ Id(_))                                                         => {
-        val lhsIndexed = if (expression) { context.varExprMapping.getOrElse(lhs, lhs) }
+        val lhsIndexed = if (context.varExprMapping.contains(lhs)) { context.varExprMapping.getOrElse(lhs, lhs) }
         else context.varStmtMapping.getOrElse(lhs, lhs)
-        val rhsIndexed = if (expression) { context.varExprMapping.getOrElse(rhs, rhs) }
+        val rhsIndexed = if (context.varExprMapping.contains(rhs)) { context.varExprMapping.getOrElse(rhs, rhs) }
         else context.varStmtMapping.getOrElse(rhs, rhs)
         lhsIndexed == rhsIndexed
       }
@@ -41,7 +41,7 @@ case class InSet(elem: Element, set: Set) extends Condition {
   override def check(context: Context, expression: Boolean): Boolean = {
     set match {
       case _: HyperTypeCheck => {
-        val derivedCollection = DeriveArgsUtils(context).getHyperCollection(set)
+        val derivedCollection = DeriveArgsUtils(context).getHyperTypeCollection(set)
         derivedCollection.hypertypes.contains(elem.asInstanceOf[HyperType])
       }
       case MappingAccess(d: DeltaTypeCheck, id) => {
@@ -55,9 +55,9 @@ case class InSet(elem: Element, set: Set) extends Condition {
         context.gamma.mapping.getOrElse(indexedValue.name, return false).hypertypes.contains(elem.asInstanceOf[HyperType])
       }
       case MappingAccess(d: DeriveHyperType, id) => {
-        val derivedGamma = DeriveArgsUtils(context).getGamma(d)
+        val derivedGamma = DeriveArgsUtils(context).getHyperMapping(d)
         val indexedId    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
-        val indexedSet   = derivedGamma.mapping.getOrElse(indexedId.name, throw new Exception(s"Variable $id not found in gamma mapping"))
+        val indexedSet   = derivedGamma.get(indexedId.name)
         indexedSet.hypertypes.contains(elem.asInstanceOf[HyperType])
       }
       case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())

@@ -24,11 +24,9 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
     ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => ZERO addTo H,
     POS  in H[e1](Gamma, Delta) && POS  in H[e2](Gamma, Delta) => POS  addTo H,
     POS  in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => POS  addTo H,
-    POS  in H[e2](Gamma, Delta) && POS  in H[e1](Gamma, Delta) => POS  addTo H,
     POS  in H[e2](Gamma, Delta) && ZERO in H[e1](Gamma, Delta) => POS  addTo H,
     NEG  in H[e1](Gamma, Delta) && NEG  in H[e2](Gamma, Delta) => NEG  addTo H,
     NEG  in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => NEG  addTo H,
-    NEG  in H[e2](Gamma, Delta) && NEG  in H[e1](Gamma, Delta) => NEG  addTo H,
     NEG  in H[e2](Gamma, Delta) && ZERO in H[e1](Gamma, Delta) => NEG  addTo H
 ];
 
@@ -150,7 +148,10 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 
 
 /* STMT OPERATIONS */
-(Gamma, Delta, Context) |- var := e :: [];
+(Gamma, Delta, Context) |- var := e :: [
+    => H[e](Gamma, Delta) = Gamma'(var),
+    !(x == var) => Gamma'(x) = Gamma(x)
+];
 
 (Gamma, Delta, Context) |- s1;s2 :: [];
 

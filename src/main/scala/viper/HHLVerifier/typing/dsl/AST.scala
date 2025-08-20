@@ -182,7 +182,7 @@ case class HyperCollectionResult() extends Set {
   override def isHyperTypeConclusion(): Boolean = true
   override def variables: immutable.Set[Id]     = immutable.Set.empty[Id]
 }
-case class MappingAccess(mapping: Mapping, id: Id) extends Set {
+case class MappingAccess(mapping: Mapping, id: Id) extends Set with Mapping {
 
   override def isHyperTypeConclusion(): Boolean = mapping.isHyperTypeConclusion()
   override def variables: immutable.Set[Id]     = scala.collection.immutable.Set(id)

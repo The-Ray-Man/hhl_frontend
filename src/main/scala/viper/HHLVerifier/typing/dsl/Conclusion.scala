@@ -1,11 +1,10 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.DeltaMapping
+import viper.HHLVerifier.typing.HyperMapping
 
 trait Conclusion extends CollectVariables with ConclusionInfo {
   def isHyperTypeConclusion(): Boolean
@@ -61,10 +60,22 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
     }
   }
 
+  def setHyperMapping(context: Context, variable: Id, collection: Set, result: DerivationResult): DerivationResult = {
+    val hyperTypeCollection = DeriveArgsUtils(context).getHyperTypeCollection(collection)
+    val indexedVariable     = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+    val updatedMapping      = result.getStatementResult.hyperTypeMapping.set(indexedVariable.name, hyperTypeCollection)
+    StatementDerivationResult(
+      hyperTypeMapping = updatedMapping,
+      deltaMapping = context.delta
+    )
+  }
+
   override def apply(context: Context, result: DerivationResult): DerivationResult = {
     (set1, set2) match {
       case (HyperCollectionResult(), MappingAccess(Gamma(), index)) => hyperTypeResultToGammaLookup(context, result, index)
       case (MappingAccess(Gamma(), index), HyperCollectionResult()) => hyperTypeResultToGammaLookup(context, result, index)
+      case (MappingAccess(GammaResult(), index), _)                 => setHyperMapping(context, index, set2, result)
+      case (_, MappingAccess(GammaResult(), index))                 => setHyperMapping(context, index, set1, result)
       case _                                                        => throw new Exception("Not yet implemented")
     }
   }
@@ -85,7 +96,7 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
 case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
 
   def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
-    val derivedHyperMapping = DeriveArgsUtils(context).getGamma(deriveHyperType)
+    val derivedHyperMapping = DeriveArgsUtils(context).getHyperMapping(deriveHyperType)
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
       deltaMapping = result.getStatementResult.deltaMapping
@@ -93,7 +104,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion {
   }
 
   def gammaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
-    val derivedDeltaMapping = DeriveArgsUtils(context).getDelta(deriveDeltaType)
+    val derivedDeltaMapping = DeriveArgsUtils(context).getDeltaMapping(deriveDeltaType)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
       deltaMapping = derivedDeltaMapping

@@ -42,18 +42,18 @@ case class TypeSystem(
   }
 
   def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
-    println("derivingExpression: " + expr)
     val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule => (rule._1, rule._2.get))
     if (applicableRules.isEmpty || applicableRules.length > 1) {
       throw new Exception(s"There are ${applicableRules.length} applicable rules for expression $expr")
     }
-    val rule = applicableRules.head
-    rule._1.derive(this, gamma, delta, expr, rule._2)
+    val rule   = applicableRules.head
+    val result = rule._1.derive(this, gamma, delta, expr, rule._2)
+    println(s"${gamma} |- ${expr} :: ${result.hyperTypeCollection} ${result.deltaCollection}")
+    result
   }
 
   def deriveStatement(gamma: HyperMapping, delta: DeltaMapping, s: Stmt, pc: HyperTypeCollection): StatementDerivationResult = {
-    println("derivingStatement: " + s)
-    s match {
+    val res = s match {
       case ast.AssignStmt(left, right) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.assignRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
         val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
@@ -98,6 +98,8 @@ case class TypeSystem(
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }
+    println(s"${gamma} |-  ${s} :: ${res.hyperTypeMapping} ${res.deltaMapping}")
+    res
   }
 
   def statementMatchesPattern(stmt: Stmt, pattern: StmtPattern): Option[(Map[Id, Stmt], Map[Id, Expr])] = {

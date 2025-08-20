@@ -304,17 +304,22 @@ object applyIndexed {
 case class DeriveArgsUtils(context: Context) {
 
   def getArgs(gamma: Mapping, delta: Mapping): (HyperMapping, DeltaMapping) = {
-    val newGamma = getGamma(gamma)
-    val newDelta = getDelta(delta)
+    val newGamma = getHyperMapping(gamma)
+    val newDelta = getDeltaMapping(delta)
     (newGamma, newDelta)
   }
 
-  def getHyperCollection(collection: Set): HyperTypeCollection = {
+  def getHyperTypeCollection(collection: Set): HyperTypeCollection = {
     collection match {
       case HyperTypeCheck(expr, gammaArg, deltaArg) => {
         val subExpression  = context.varExprMapping.getOrElse(expr, throw new Exception(s"Variable $expr not found in variable mapping"))
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
         context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).hyperTypeCollection
+      }
+      case MappingAccess(mapping, id) => {
+        val idIndexed    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+        val hyperMapping = getHyperMapping(mapping)
+        hyperMapping.get(idIndexed.name)
       }
       case _ => throw new Exception("Unsupported set type for HyperCollection retrieval: " + collection.getClass.getSimpleName)
     }
@@ -327,35 +332,41 @@ case class DeriveArgsUtils(context: Context) {
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
         context.typeSystem.deriveExpression(gamma, delta, subExpression, Map()).deltaCollection
       }
+      case MappingAccess(DeriveDeltaType(id, gammaArg, deltaArg, contextArg), indexId) => {
+        val subStatement   = context.getStmtById(id)
+        val (gamma, delta) = getArgs(gammaArg, deltaArg)
+        val deltaMapping   = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
+        deltaMapping.collection.getOrElse(indexId.name, throw new Exception(s"Index $indexId not found in delta mapping"))
+      }
       case _ => throw new Exception("Unsupported mapping type for DeltaCollection retrieval: " + mapping.getClass.getSimpleName)
     }
   }
 
-  def getGamma(gamma: Mapping): HyperMapping = {
+  def getHyperMapping(mapping: Mapping): HyperMapping = {
 
-    gamma match {
+    mapping match {
       case DeriveHyperType(id, gammaArg, deltaArg, contextArg) => {
         val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
-        val newGamma = getGamma(gammaArg)
-        val newDelta = getDelta(deltaArg)
+        val newGamma = getHyperMapping(gammaArg)
+        val newDelta = getDeltaMapping(deltaArg)
         context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).hyperTypeMapping
       }
       case Gamma() => context.gamma
-      case _       => throw new Exception("Unsupported mapping type for Gamma condition" + gamma.getClass.getSimpleName)
+      case _       => throw new Exception("Unsupported mapping type for Gamma condition" + mapping.getClass.getSimpleName)
     }
 
   }
 
-  def getDelta(delta: Mapping): DeltaMapping = {
-    delta match {
+  def getDeltaMapping(mapping: Mapping): DeltaMapping = {
+    mapping match {
       case DeriveDeltaType(id, gammaArg, deltaArg, contextArg) => {
         val stmt     = context.varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
-        val newGamma = getGamma(gammaArg)
-        val newDelta = getDelta(deltaArg)
+        val newGamma = getHyperMapping(gammaArg)
+        val newDelta = getDeltaMapping(deltaArg)
         context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc).deltaMapping
       }
       case Delta() => context.delta
-      case _       => throw new Exception("Unsupported mapping type for Delta condition" + delta.getClass.getSimpleName)
+      case _       => throw new Exception("Unsupported mapping type for Delta condition" + mapping.getClass.getSimpleName)
     }
   }
 }
