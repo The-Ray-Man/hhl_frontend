@@ -2,24 +2,23 @@ package viper.HHLVerifier.generation
 
 import viper.silver.{ast => vpr}
 
-
 object HHLMap {
   private val mapDomainName = "HHLMap"
-  private val kTypeVarName = "K"
-  private val vTypeVarName = "V"
+  private val kTypeVarName  = "K"
+  private val vTypeVarName  = "V"
 
   private object FunctionIDs {
     val cardinality = "HHLMap_card"
-    val lookUp = "HHLMap_apply"
-    val create = "HHLMap_empty"
-    val update = "HHLMap_update"
-    val domain = "HHLMap_domain"
+    val lookUp      = "HHLMap_apply"
+    val create      = "HHLMap_empty"
+    val update      = "HHLMap_update"
+    val domain      = "HHLMap_domain"
   }
 
   private val kTypeVar = vpr.TypeVar(kTypeVarName)
   private val vTypeVar = vpr.TypeVar(vTypeVarName)
 
-  val axiomName = "HHLMap"
+  val axiomName                     = "HHLMap"
   lazy val domains: Seq[vpr.Domain] = AxiomParser.parseAxioms(axiomName).domains
 
   private def typeVarMap(kType: vpr.Type, vType: vpr.Type): Map[vpr.TypeVar, vpr.Type] = Map(kTypeVar -> kType, vTypeVar -> vType)

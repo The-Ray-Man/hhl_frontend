@@ -11,26 +11,26 @@ import scala.jdk.CollectionConverters._
 object Test {
   var failedForAll: List[String] = List.empty
   var failedExists: List[String] = List.empty
-  var failedOther: List[String] = List.empty
-  var totalNum = 0
-  var totalRuntime = 0.0
+  var failedOther: List[String]  = List.empty
+  var totalNum                   = 0
+  var totalRuntime               = 0.0
 
-  val specKeyword = List("requires", "ensures")
-  val proofKeyword = List("use", "hyperAssert", "hyperAssume", "declare", "reuse", "let", "invariant", "frame")
-  val otherKeyword = List("assume", "assert", "while", "if", "else", "}", "{", "havoc")
-  val commentKeyword = List("//", "/*") // The current implementation doesn't support the counting of block comments
+  val specKeyword     = List("requires", "ensures")
+  val proofKeyword    = List("use", "hyperAssert", "hyperAssume", "declare", "reuse", "let", "invariant", "frame")
+  val otherKeyword    = List("assume", "assert", "while", "if", "else", "}", "{", "havoc")
+  val commentKeyword  = List("//", "/*") // The current implementation doesn't support the counting of block comments
   val defaultNumOfRep = 1
 
   def partOfCurrStmt(lineInd: Int, allNonemptyLines: Array[String]): Boolean = {
 
-    val line = allNonemptyLines(lineInd).trim
+    val line        = allNonemptyLines(lineInd).trim
     val allKeywords = specKeyword ++ proofKeyword ++ otherKeyword ++ commentKeyword
 
     if (allKeywords.exists(k => line.startsWith(k))) {
       return false
     }
 
-    val isVarDecl = fastparse.parse(line, Parser.varDecl(_))
+    val isVarDecl    = fastparse.parse(line, Parser.varDecl(_))
     val isAssignment = fastparse.parse(line, Parser.assign(_))
     if (isVarDecl.isSuccess || isAssignment.isSuccess) {
       return false
@@ -40,15 +40,15 @@ object Test {
 
   def getDataForTestCase(testPath: String): Array[Int] = {
     val programSource = scala.io.Source.fromFile(testPath)
-    val program = programSource.mkString
+    val program       = programSource.mkString
     programSource.close()
-    val allLines = program.split("\n")
+    val allLines         = program.split("\n")
     val allNonemptyLines = allLines.filter(l => l.trim.nonEmpty)
 
     var commentLOC = 0
-    var specLOC = 0
-    var proofLOC = 0
-    var i = 0
+    var specLOC    = 0
+    var proofLOC   = 0
+    var i          = 0
 
     while (i < allNonemptyLines.length) {
       val line = allNonemptyLines(i).trim
@@ -112,7 +112,7 @@ object Test {
 
   def main(args: Array[String]): Unit = {
     val numOfRep = if (args.length == 0) {
-      println("Number of repetitions is not specified. Evaluation will be run for "+  defaultNumOfRep  + " time(s) by default. ")
+      println("Number of repetitions is not specified. Evaluation will be run for " + defaultNumOfRep + " time(s) by default. ")
       defaultNumOfRep
     } else {
       val rep = args(0).toInt
@@ -120,13 +120,13 @@ object Test {
       rep
     }
 
-    val pathOfForAllTests = "src/test/evaluation/forall"
-    val pathOfExistsTests = "src/test/evaluation/exists"
+    val pathOfForAllTests       = "src/test/evaluation/forall"
+    val pathOfExistsTests       = "src/test/evaluation/exists"
     val pathOfForAllExistsTests = "src/test/evaluation/forall-exists"
     val pathOfExistsForAllTests = "src/test/evaluation/exists-forall"
 
-    val forAllTests = getListOfFiles(pathOfForAllTests)
-    val existsTests = getListOfFiles(pathOfExistsTests)
+    val forAllTests       = getListOfFiles(pathOfForAllTests)
+    val existsTests       = getListOfFiles(pathOfExistsTests)
     val forAllExistsTests = getListOfFiles(pathOfForAllExistsTests)
     val existsForAllTests = getListOfFiles(pathOfExistsForAllTests)
 
@@ -155,10 +155,10 @@ object Test {
       println("Runtime: " + totalRuntime + " s")
 
       val outputFilePath = "src/test/evaluation/output" + i + ".csv"
-      val outputFile = new BufferedWriter(new FileWriter(outputFilePath))
-      val csvWriter = new CSVWriter(outputFile)
-      val schema = Array("Test case name", "Option", "Runtime (s)", "Test result", "Actual LOC", "Spec LOC", "Proof LOC")
-      val dataToWrite = List(schema) ++ allTestData
+      val outputFile     = new BufferedWriter(new FileWriter(outputFilePath))
+      val csvWriter      = new CSVWriter(outputFile)
+      val schema         = Array("Test case name", "Option", "Runtime (s)", "Test result", "Actual LOC", "Spec LOC", "Proof LOC")
+      val dataToWrite    = List(schema) ++ allTestData
       csvWriter.writeAll(dataToWrite.map(_.toArray).asJava)
       outputFile.close()
       println("Test data is saved to: " + outputFilePath)
@@ -178,8 +178,8 @@ object Test {
     val d = new File(dir)
     if (d.exists && d.isDirectory) {
       val content = d.listFiles
-      val files = content.filter(_.isFile).toList
-      val subDir = content.filter(_.isDirectory).toList
+      val files   = content.filter(_.isFile).toList
+      val subDir  = content.filter(_.isDirectory).toList
       files ++ subDir.flatMap(subD => getListOfFiles(subD.getPath))
     } else {
       List[File]()

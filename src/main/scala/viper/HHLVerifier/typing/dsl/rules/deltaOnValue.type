@@ -1,0 +1,39 @@
+
+/* BASIC OPERATIONS */
+
+
+(Gamma, Delta) |- n :: [];
+
+(Gamma, Delta) |- var :: [
+    => ZERO addTo D(var),
+    => LOW addTo D(var)
+];
+
+(Gamma, Delta) |- b :: [];
+
+/* ARITHMETIC OPERATIONS */
+(Gamma, Delta) |- e1 + e2 :: [
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && LOW  in D[e1](Gamma, Delta)(x)  && LOW in H[e2](Gamma, Delta)     => LOW addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && LOW  in D[e2](Gamma, Delta)(x)  && LOW in H[e1](Gamma, Delta)     => LOW addTo D(x),
+    x in D[e1](Gamma, Delta)    && x in D[e2](Gamma, Delta)    && LOW  in D[e1](Gamma, Delta)(x)  && LOW in D[e2](Gamma, Delta)(x)  => LOW addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && POS  in D[e1](Gamma, Delta)(x)  && POS in H[e2](Gamma, Delta)     => POS addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && POS  in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta)    => POS addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && POS  in H[e1](Gamma, Delta)     && POS in D[e2](Gamma, Delta)(x)  => POS addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && ZERO in H[e1](Gamma, Delta)     && POS in D[e2](Gamma, Delta)(x) => POS addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && NEG  in D[e1](Gamma, Delta)(x)  && NEG in H[e2](Gamma, Delta)     => NEG addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && NEG  in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta)    => NEG addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && NEG  in H[e1](Gamma, Delta)     && NEG in D[e2](Gamma, Delta)(x)  => NEG addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && ZERO  in H[e1](Gamma, Delta)    && NEG in D[e2](Gamma, Delta)(x) => NEG addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && ZERO in D[e1](Gamma, Delta)(x)  && POS in H[e2](Gamma, Delta)     => POS addTo D(x),
+    x in D[e1](Gamma, Delta)    && !(x in D[e2](Gamma, Delta)) && ZERO in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta)    => ZERO addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && POS  in H[e1](Gamma, Delta)     && ZERO in D[e2](Gamma, Delta)(x) => POS addTo D(x),
+    !(x in D[e1](Gamma, Delta)) && x in D[e2](Gamma, Delta)    && ZERO in H[e1](Gamma, Delta)     && ZERO in D[e2](Gamma, Delta)(x) => ZERO addTo D(x)
+];
+
+
+/* STMT OPERATIONS */
+(Gamma, Delta, Context) |- var := e :: [];
+
+(Gamma, Delta, Context) |- s1;s2 :: [];
+
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: []

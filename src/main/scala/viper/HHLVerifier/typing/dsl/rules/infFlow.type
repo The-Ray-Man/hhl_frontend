@@ -1,0 +1,107 @@
+
+/* BASIC OPERATIONS */
+
+(Gamma, Delta) |- n :: [
+    => LOW addTo H
+];
+
+(Gamma, Delta) |- var :: [
+    => Gamma(var) = H
+];
+
+(Gamma, Delta) |- b :: [
+    => LOW addTo H
+];
+
+/* ARITHMETIC OPERATIONS */
+(Gamma, Delta) |- e1 + e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 % e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 * e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 / e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 - e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+
+(Gamma, Delta) |- -e1 :: [
+    LOW in H[e1](Gamma, Delta) => LOW addTo H
+];
+
+/* BOOLEAN OPERATIONS */
+(Gamma, Delta) |- e1 || e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 == e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- !e1 :: [
+    LOW in H[e1](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 && e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 > e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 >= e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 < e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 <= e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 ==> e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 != e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+
+
+
+/* LIST/SET/MAP OPERATIONS */
+
+
+(Gamma, Delta) |- e1[e2] :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- |e1|:: [
+    LOW in H[e1](Gamma, Delta)  => LOW addTo H
+];
+(Gamma, Delta) |- e1 ++ e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 in e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 setminus e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+(Gamma, Delta) |- e1 union e2 :: [
+    LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
+];
+
+/* STMT OPERATIONS */
+(Gamma, Delta, Context) |- var := e :: [
+    LOW in H[e](Gamma, Delta) => LOW addTo Gamma'(var),
+    !(x == var) && LOW in Gamma(x) => LOW addTo Gamma'(x) 
+];
+
+(Gamma, Delta, Context) |- s1;s2 :: [
+    => Gamma' = DH[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context),
+    => Delta' = DD[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context)
+];
+
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: [
+    LOW in H[b](Gamma,Delta) && LOW in DH[s1](Gamma, Delta, Context)(x) && LOW in DH[s2](Gamma, Delta, Context)(x) => LOW addTo Gamma'(x)
+]
+

@@ -2,22 +2,21 @@ package viper.HHLVerifier.generation
 
 import viper.silver.{ast => vpr}
 
-
 object HHLSeq {
   val seqDomainName = "HHLSeq"
-  val typeVarName = "E"
+  val typeVarName   = "E"
 
   private object FunctionIDs {
-    val empty = "HHLSeq_empty"
+    val empty     = "HHLSeq_empty"
     val singleton = "HHLSeq_singleton"
-    val append = "HHLSeq_append"
-    val lookUp = "HHLSeq_index"
-    val length = "HHLSeq_length"
+    val append    = "HHLSeq_append"
+    val lookUp    = "HHLSeq_index"
+    val length    = "HHLSeq_length"
   }
 
   private val typeVar = vpr.TypeVar(typeVarName)
 
-  val axiomName = "HHLSeq"
+  val axiomName                     = "HHLSeq"
   lazy val domains: Seq[vpr.Domain] = AxiomParser.parseAxioms(axiomName).domains
 
   private def typeVarMap(typ: vpr.Type): Map[vpr.TypeVar, vpr.Type] = Map(typeVar -> typ)
