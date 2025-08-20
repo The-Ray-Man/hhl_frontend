@@ -18,14 +18,13 @@ case class HyperMapping(val mapping: Map[String, HyperTypeCollection]) {
   }
 
   def get(key: String): Option[HyperTypeCollection] = {
-    // mapping.get(key)
     mapping.get(key)
   }
 
   def getUnsafe(key: String): HyperTypeCollection = {
     mapping.get(key) match {
       case Some(value) => value
-      case None        => throw new NoSuchElementException(s"Key $key not found in mapping")
+      case None        => HyperTypeCollection(Set())
     }
   }
 

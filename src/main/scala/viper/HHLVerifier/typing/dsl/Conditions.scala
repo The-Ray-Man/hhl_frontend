@@ -91,7 +91,7 @@ case class InMapping(elem: Element, mapping: Mapping) extends Condition {
 case class ArithCondition(variable: Id, op: String, right: Int) extends Condition {
 
   def check(context: Context, expression: Boolean): Boolean = {
-    val expression = context.varExprMapping.get(variable).getOrElse(throw new Exception("Variable " + variable.name + " not found in mapping"))
+    val expression = context.getExprById(variable)
     expression match {
       case Num(value) => {
         op match {
@@ -115,7 +115,7 @@ case class ArithCondition(variable: Id, op: String, right: Int) extends Conditio
 case class BoolCondition(variable: Id) extends Condition {
 
   def check(context: Context, expression: Boolean): Boolean = {
-    val expression = context.varExprMapping.get(variable).getOrElse(throw new Exception("Variable " + variable.name + " not found in mapping"))
+    val expression = context.getExprById(variable)
     expression match {
       case BoolLit(value) => value
       case _              => throw new Exception("BoolCondition can only be checked against BoolLit expressions")

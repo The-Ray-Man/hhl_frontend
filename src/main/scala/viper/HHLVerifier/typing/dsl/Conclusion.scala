@@ -49,7 +49,7 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
 case class SetEquals(set1: Set, set2: Set) extends Conclusion {
 
   def hyperTypeResultToGammaLookup(context: Context, result: DerivationResult, index: Id): DerivationResult = {
-    context.varExprMapping.getOrElse(index, throw new Exception(s"Variable $index not found in variable mapping")) match {
+    context.getExprById(index) match {
       case Id(name) => {
         val hyperTypes = context.gamma.getUnsafe(name)
         ExpressionDerivationResult(

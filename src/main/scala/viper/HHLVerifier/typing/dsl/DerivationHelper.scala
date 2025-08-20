@@ -8,13 +8,15 @@ import viper.HHLVerifier.typing.DeltaCollection
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 
-trait Context {
+abstract class  Context {
   def typeSystem: TypeSystem
   def gamma: HyperMapping
   def delta: DeltaMapping
   def expr: Expr
   def varExprMapping: Map[Id, Expr]
+  def getExprById(id: Id) : Expr = varExprMapping.getOrElse(id, throw new Exception(s"Variable $id not found in variable mapping"))
   def varStmtMapping: Map[Id, Stmt]
+  def getStmtById(id: Id) : Stmt = varStmtMapping.getOrElse(id, throw new Exception(s"Variable $id not found in statement mapping"))
   def statement: Stmt
   def pc: HyperTypeCollection
   def variables: ScalaSet[Id]
