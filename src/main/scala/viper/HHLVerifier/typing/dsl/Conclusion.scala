@@ -30,7 +30,7 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
       }
       case MappingAccess(GammaResult(), variable) => {
         val variableLookup         = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
-        val hyperTypes             = result.getStatementResult.hyperTypeMapping.mapping.getOrElse(variableLookup.name, HyperTypeCollection(Set()))
+        val hyperTypes             = result.getStatementResult.hyperTypeMapping.get(variableLookup.name)
         val newHyperTypeCollection = hyperTypes.add(elem.asInstanceOf[HyperType])
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
@@ -51,7 +51,7 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion {
   def hyperTypeResultToGammaLookup(context: Context, result: DerivationResult, index: Id): DerivationResult = {
     context.getExprById(index) match {
       case Id(name) => {
-        val hyperTypes = context.gamma.getUnsafe(name)
+        val hyperTypes = context.gamma.get(name)
         ExpressionDerivationResult(
           hyperTypeCollection = hyperTypes,
           deltaCollection = result.getExpressionResult.deltaCollection

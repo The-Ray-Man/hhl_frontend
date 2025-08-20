@@ -22,7 +22,6 @@ import viper.HHLVerifier.ast.HyperAssertStmt
 import viper.HHLVerifier.ast.HyperAssumeStmt
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.dsl.TypeSystem
-import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
 import viper.HHLVerifier.typing.dsl.StmtPattern
 import viper.HHLVerifier.typing.dsl.CompStmt
 import viper.HHLVerifier.ast.DeclareStmt
@@ -58,12 +57,13 @@ object HyperTypeChecker {
         })
       )
       .toMap
-    val hyperMapping    = new HyperMapping(mapping)
+    val hyperMapping = new HyperMapping(mapping)
+    println("HyperMapping: " + hyperMapping)
     val typecheckResult = system.deriveStatement(hyperMapping, DeltaMapping(Map.empty), m.body, pc)
 
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
-      val retType         = typecheckResult.hyperTypeMapping.getUnsafe(r.name)
+      val retType         = typecheckResult.hyperTypeMapping.get(r.name)
       if (!declaredRetType.isSubTypeOf(retType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
       }

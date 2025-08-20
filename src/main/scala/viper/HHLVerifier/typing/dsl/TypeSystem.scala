@@ -60,10 +60,9 @@ case class TypeSystem(
         statementTypeSystem.assignRule.derive(context)
       }
       case CompositeStmt(stmts) => {
-        if (stmts.length == 0 ) {
+        if (stmts.length == 0) {
           StatementDerivationResult(gamma, delta)
-        }
-        else if (stmts.length == 1) {
+        } else if (stmts.length == 1) {
           deriveStatement(gamma, delta, stmts.head, pc)
         } else {
           val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
@@ -76,11 +75,11 @@ case class TypeSystem(
         val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
         statementTypeSystem.branchRule.derive(context)
       }
-      case WhileLoopStmt(cond, body, _, _, _)  => {
+      case WhileLoopStmt(cond, body, _, _, _) => {
         var currentGamma = gamma
         var currentDelta = delta
-        var newGamma = gamma
-        var newDelta = delta
+        var newGamma     = gamma
+        var newDelta     = delta
         do {
           currentGamma = newGamma
           currentDelta = newDelta

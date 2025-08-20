@@ -46,7 +46,7 @@ object DerivationTests {
     }
   }
 
-  def runTest(typeSystem: TypeSystem, program: HHLProgram, shouldFail : Boolean) : Unit= {
+  def runTest(typeSystem: TypeSystem, program: HHLProgram, shouldFail: Boolean): Unit = {
     Generator.autoSelectRules = true
     try {
       HyperTypeChecker.typeCheckProg(typeSystem, program)
@@ -57,12 +57,12 @@ object DerivationTests {
       case e: Exception => {
         if (!shouldFail) {
           throw new Exception(s"Program failed to type check: ${e.getMessage} \n${e.getStackTrace.mkString("\n")}")
-        } 
+        }
       }
     }
   }
 
-  def programFromFile(filePath: String) : HHLProgram = {
+  def programFromFile(filePath: String): HHLProgram = {
     val programSource = scala.io.Source.fromFile(filePath)
     val program       = programSource.mkString
     programSource.close()
@@ -72,7 +72,7 @@ object DerivationTests {
     } else {
       throw new Exception(s"Could not parse program from file $filePath")
     }
-   
+
   }
 
   def valueTests(): Unit = {
@@ -189,13 +189,11 @@ object DerivationTests {
       None
     )
 
-
     val statement3 = IfElseStmt(
       BoolLit(true),
       CompositeStmt(Seq(AssignStmt(Id("x"), Num(3)))),
       CompositeStmt(Seq(AssignStmt(Id("x"), Num(4))))
     )
-
 
     runTest(
       typeSystem,
@@ -224,7 +222,6 @@ object DerivationTests {
     val program1 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow1.hhl")
     runTest(typeSystem, program1, false)
     println(typeSystem.hashCode())
-
 
     val program2 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow2.hhl")
     runTest(typeSystem, program2, false)
