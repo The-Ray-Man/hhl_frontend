@@ -64,7 +64,7 @@ object HyperTypeChecker {
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
       val retType         = typecheckResult.hyperTypeMapping.getUnsafe(r.name)
-      if (!retType.isSubTypeOf(declaredRetType)) {
+      if (!declaredRetType.isSubTypeOf(retType)) {
         throw new Exception("Type error: return type " + retType + " does not match declared type " + declaredRetType)
       }
     })
