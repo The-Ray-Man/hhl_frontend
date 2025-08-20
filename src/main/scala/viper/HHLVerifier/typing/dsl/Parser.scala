@@ -66,7 +66,7 @@ object Parser {
   def deriveHyperType[$: P]: P[DeriveHyperType]  = P("DH" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveHyperType(id, gamma, delta, context) }
   def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveDeltaType(id, gamma, delta, context) }
   def setWithoutElement[$: P]: P[WithoutElement] = P("(" ~ set ~ ws ~ "\\" ~ element ~ ws ~ ")").map { case (set, elem) => WithoutElement(set, elem) }
-  def condition[$: P]: P[Condition]              = P(equal | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
+  def condition[$: P]: P[Condition]              = P(equal | setEquals | mapEquals | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)

@@ -16,6 +16,7 @@ import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
+import viper.HHLVerifier.typing.dsl.Parser.setEquals
 
 object SpecificationUtil {
 
@@ -174,12 +175,22 @@ object ToIndexed {
       case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
       case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
       case inMapping: InMapping      => toIndexedVariable(mapping, inMapping)
+      case mapEquals: MapEquals => toIndexedVariable(mapping, mapEquals)
+      case setEquals: SetEquals => toIndexedVariable(mapping, setEquals)
       case notOperator: NotOperator  => NotOperator(toIndexedVariable(mapping, notOperator.condition))
     }
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], equalCond: Equal): Equal = {
     Equal(toIndexedVariable(mapping, equalCond.lhs), toIndexedVariable(mapping, equalCond.rhs))
+  }
+
+  def toIndexedVariable(mapping: Map[Id, Int], setEquals: SetEquals): SetEquals = {
+    SetEquals(toIndexedVariable(mapping, setEquals.set1), toIndexedVariable(mapping, setEquals.set2))
+  }
+
+  def toIndexedVariable(mapping: Map[Id, Int], mapEquals: MapEquals): MapEquals = {
+    MapEquals(toIndexedVariable(mapping, mapEquals.mapping1), toIndexedVariable(mapping, mapEquals.mapping2))
   }
 
   def toIndexedVariable(mapping: Map[Id, Int], arithCond: ArithCondition): ArithCondition = {
@@ -246,6 +257,8 @@ object applyIndexed {
       case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
       case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
       case notOperator: NotOperator  => NotOperator(applyIndexed(mapping, notOperator.condition))
+      case setEquals: SetEquals      => SetEquals(applyIndexed(mapping, setEquals.set1), applyIndexed(mapping, setEquals.set2))
+      case mapEquals: MapEquals      => MapEquals(applyIndexed(mapping, mapEquals.mapping1), applyIndexed(mapping, mapEquals.mapping2))
       case inMappingCond: InMapping  => InMapping(applyIndexed(mapping, inMappingCond.elem), applyIndexed(mapping, inMappingCond.mapping))
     }
   }
