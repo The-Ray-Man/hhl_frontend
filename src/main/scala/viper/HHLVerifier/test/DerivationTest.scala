@@ -14,6 +14,7 @@ import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.ast.AssignStmt
 import viper.HHLVerifier.ast.Stmt
 import viper.HHLVerifier.ast.CompositeStmt
+import viper.HHLVerifier.ast.IfElseStmt
 
 object DerivationTests {
 
@@ -152,6 +153,38 @@ object DerivationTests {
       HyperMapping(Map()),
       DeltaMapping(Map()),
       Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "y" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))),
+      None
+    )
+
+
+    val statement3 = IfElseStmt(
+      BoolLit(true),
+      CompositeStmt(Seq(AssignStmt(Id("x"), Num(3)))),
+      CompositeStmt(Seq(AssignStmt(Id("x"), Num(4))))
+    )
+
+
+    runTest(
+      typeSystem,
+      statement3,
+      HyperMapping(Map()),
+      DeltaMapping(Map()),
+      Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))),
+      None
+    )
+
+    val statement4 = IfElseStmt(
+      BinaryExpr(Id("x"), ">", Num(0)),
+      CompositeStmt(Seq(AssignStmt(Id("y"), Num(3)))),
+      CompositeStmt(Seq(AssignStmt(Id("y"), Num(4))))
+    )
+
+    runTest(
+      typeSystem,
+      statement4,
+      HyperMapping(Map("x" -> HyperTypeCollection(Set()))),
+      DeltaMapping(Map()),
+      Some(HyperMapping(Map())),
       None
     )
   }
