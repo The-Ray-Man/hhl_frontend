@@ -54,7 +54,13 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val indexedValue = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         context.gamma.mapping.getOrElse(indexedValue.name, return false).hypertypes.contains(elem.asInstanceOf[HyperType])
       }
-      case _: Set => throw new Exception("Not implemented yet")
+      case MappingAccess(d: DeriveHyperType, id) => {
+        val derivedGamma = DeriveArgsUtils(context).getGamma(d)
+        val indexedId    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+        val indexedSet   = derivedGamma.mapping.getOrElse(indexedId.name, throw new Exception(s"Variable $id not found in gamma mapping"))
+        indexedSet.hypertypes.contains(elem.asInstanceOf[HyperType])
+      }
+      case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())
     }
 
   }
