@@ -60,9 +60,13 @@ case class TypeSystem(
         statementTypeSystem.assignRule.derive(context)
       }
       case CompositeStmt(stmts) => {
-        val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
-        val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
-        statementTypeSystem.compositionRule.derive(context)
+        if (stmts.length == 1) {
+          deriveStatement(gamma, delta, stmts.head, pc)
+        } else {
+          val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
+          val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching)
+          statementTypeSystem.compositionRule.derive(context)
+        }
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.branchRule.statement).getOrElse(throw new Exception(s"Statement $s does not match branch pattern"))
@@ -83,7 +87,7 @@ case class TypeSystem(
       case (AssignStmt(left, right), ast.AssignStmt(leftCheck, rightCheck)) =>
         Some((Map.empty, Map(left -> leftCheck, right -> rightCheck)))
       case (IfStmt(cond, ifStmt, elseStmt), IfElseStmt(condCheck, ifStmtCheck, elseStmtCheck)) =>
-        Some(Map(ifStmt -> ifStmtCheck, elseStmt -> elseStmtCheck), Map.empty(cond -> condCheck))
+        Some(Map(ifStmt -> ifStmtCheck, elseStmt -> elseStmtCheck), Map(cond -> condCheck))
       case (CompStmt(s1, s2), CompositeStmt(stmtsCheck)) => {
         if (stmtsCheck.length == 1) {
           throw new Exception("CompositeStmt pattern matching is not supported for single statements")
