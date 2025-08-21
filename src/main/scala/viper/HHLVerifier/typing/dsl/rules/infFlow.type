@@ -1,6 +1,8 @@
 
 /* BASIC OPERATIONS */
 
+exp : LOW <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp]
+
 (Gamma, Delta) |- n :: [
     => LOW addTo H
 ];

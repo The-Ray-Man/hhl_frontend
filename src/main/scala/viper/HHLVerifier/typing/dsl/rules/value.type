@@ -1,7 +1,12 @@
 
 /* BASIC OPERATIONS */
 
-exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
+exp : LOW <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp]
+exp : ZERO <=> forall <_s1> :: _s1[exp] == 0
+exp : POS <=> forall <_s1> :: _s1[exp] > 0
+exp : NEG <=> forall <_s1> :: _s1[exp] < 0
+exp : TRUE <=> forall <_s1> :: _s1[exp]
+exp : FALSE <=> forall <_s1> :: !_s1[exp]
 
 
 (Gamma, Delta) |- n :: [
@@ -56,7 +61,7 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
 (Gamma, Delta) |- -e1 :: [
     ZERO in H[e1](Gamma, Delta) => ZERO addTo H,
     POS in H[e1](Gamma, Delta) => NEG addTo H,
-    NEG in H[e1](Gamma, Delta) => NEG addTo H
+    NEG in H[e1](Gamma, Delta) => POS addTo H
 ];
 
 
@@ -104,7 +109,7 @@ exp : LOW[x] <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp] && _s1[x] == 0
     ZERO in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
     NEG in H[e1](Gamma, Delta) && POS in H[e2](Gamma, Delta) => TRUE addTo H,
     NEG in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H,
-    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => TRUE addTo H
+    ZERO in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H
 ];
 (Gamma, Delta) |- e1 <= e2 :: [
     POS in H[e1](Gamma, Delta) && ZERO in H[e2](Gamma, Delta) => FALSE addTo H,
