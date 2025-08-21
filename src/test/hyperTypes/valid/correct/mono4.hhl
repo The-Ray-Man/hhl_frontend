@@ -1,4 +1,4 @@
-method mono(n: Int, k: Int[low]) returns (o: Int[monoUp[n]]) {
+method mono(n: Int, k: Int[LOW]) returns (o: Int[MONOUP[n]]) {
     var i : Int
     var j : Int
 

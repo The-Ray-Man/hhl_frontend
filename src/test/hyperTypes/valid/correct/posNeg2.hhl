@@ -1,5 +1,5 @@
 
-method foo(x: Int[low, neg], z: Int[pos], y : Int) returns (o : Int[low]) {
+method foo(x: Int[LOW, NEG], z: Int[POS], y : Int) returns (o : Int[LOW]) {
     
     o := y
 

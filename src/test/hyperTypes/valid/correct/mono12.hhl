@@ -1,4 +1,4 @@
-method mono(n: Int, x:Int[low]) returns (o: Int[monoDown[n]]) {
+method mono(n: Int, x:Int[LOW]) returns (o: Int[MONODOWN[n]]) {
     
     o := x
 

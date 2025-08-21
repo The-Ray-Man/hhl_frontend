@@ -1,4 +1,4 @@
-method testControlFlowLeak(s1: Int[low], s2: Int) returns (o : Int[low])
+method testControlFlowLeak(s1: Int[LOW], s2: Int) returns (o : Int[LOW])
 {
     if (s2 > 0) {
         o := 1

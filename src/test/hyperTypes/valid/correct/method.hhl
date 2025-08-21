@@ -1,9 +1,9 @@
-method bar(x: Int[low]) returns (o: Int) {
+method bar(x: Int[LOW]) returns (o: Int) {
     o := x
 }
 
 
-method foo(x: Int[low], y : Int) returns (o : Int) {
+method foo(x: Int[LOW], y : Int) returns (o : Int) {
     
     var tmp : Int
     o := 1

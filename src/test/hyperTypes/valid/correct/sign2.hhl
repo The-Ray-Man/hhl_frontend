@@ -1,4 +1,4 @@
-method pos1(p : Int[pos], z: Int[zero], h: Int) returns (o : Int[pos]) {
+method pos1(p : Int[POS], z: Int[ZERO], h: Int) returns (o : Int[POS]) {
     o := p
     if (h > 0) {
         o := p + z

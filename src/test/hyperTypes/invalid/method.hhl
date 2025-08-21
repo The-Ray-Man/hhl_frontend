@@ -1,6 +1,6 @@
 
 
-method foo(x : Int[low], y : Int) returns (o : Int[low]) 
+method foo(x : Int[LOW], y : Int) returns (o : Int[LOW]) 
 {
     var z : Int
     o := 0
@@ -11,7 +11,7 @@ method foo(x : Int[low], y : Int) returns (o : Int[low])
     }
 }
 
-method bar(y: Int[low], z:Seq[Int]) returns (o : Int[low])
+method bar(y: Int[LOW], z:Seq[Int]) returns (o : Int[LOW])
 {
     var i : Int
     var e : Int

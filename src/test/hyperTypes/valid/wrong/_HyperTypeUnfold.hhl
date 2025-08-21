@@ -1,10 +1,10 @@
-method testSequences(s1: Int[low], s2: Map[Int, Seq[Int]][high]) returns (o : Int[low])
+method testSequences(s1: Int[LOW], s2: Map[Int, Seq[Int]][HIGH]) returns (o : Int[LOW])
 {
     var x : Int
 
     x := s2[s1]
 
-    unfold (low) s1
+    unfold (LOW) s1
 
     o := s1
 }

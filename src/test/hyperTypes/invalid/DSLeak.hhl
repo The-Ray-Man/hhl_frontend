@@ -1,4 +1,4 @@
-method testDataStructureLeak(s1: Int[low], s2: Map[Int, Int]) returns (o : Int[low])
+method testDataStructureLeak(s1: Int[LOW], s2: Map[Int, Int]) returns (o : Int[LOW])
 {
     o := s2[s1]
 }

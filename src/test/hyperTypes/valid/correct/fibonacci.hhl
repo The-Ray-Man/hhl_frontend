@@ -1,6 +1,6 @@
 
 
-method fib(n : Int, k : Int[low]) returns (o: Int[monoUp[n]])
+method fib(n : Int, k : Int[LOW]) returns (o: Int[MONOUP[n]])
 {
     var a : Int
     var b : Int

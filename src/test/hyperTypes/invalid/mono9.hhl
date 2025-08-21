@@ -1,4 +1,4 @@
-method mono(n: Int, x:Int[monoUp[n]], y: Int[monoUp[n]]) returns (o: Int[monoUp[n]]) {
+method mono(n: Int, x:Int[MONOUP[n]], y: Int[MONOUP[n]]) returns (o: Int[MONOUP[n]]) {
     
     o := x
 

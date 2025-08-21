@@ -1,4 +1,4 @@
-method mono(n: Int) returns (o: Int[monoDown[n]]) {
+method mono(n: Int) returns (o: Int[MONODOWN[n]]) {
     
     var i : Int
     i := 0

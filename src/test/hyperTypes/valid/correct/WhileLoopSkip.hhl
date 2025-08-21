@@ -1,4 +1,4 @@
-method whileLoopSkip(s1: Int[low], s2: Int) returns (o : Int[low])
+method whileLoopSkip(s1: Int[LOW], s2: Int) returns (o : Int[LOW])
 {
     var negative : Int
     negative := -3

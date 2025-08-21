@@ -1,4 +1,4 @@
-method secure(l : Int[low], h : Int) returns (o : Int[low])
+method secure(l : Int[LOW], h : Int) returns (o : Int[LOW])
     requires forall <_s1>, <_s2> :: (_s1[l] == _s2[l])
     ensures forall <_s1>, <_s2> :: (_s1[o] == _s2[o])
 {
@@ -13,7 +13,7 @@ method secure(l : Int[low], h : Int) returns (o : Int[low])
         z := z + 1
     }
 
-    unfold (low) x
+    unfold (LOW) x
  
     o := 0
     while (x > 0)
@@ -25,5 +25,5 @@ method secure(l : Int[low], h : Int) returns (o : Int[low])
         o := o - h
     }
 
-    fold (low) o
+    fold (LOW) o
 }

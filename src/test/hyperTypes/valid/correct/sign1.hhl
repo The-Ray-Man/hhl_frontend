@@ -1,4 +1,4 @@
-method sign(p : Int[pos], z: Int[zero], h: Int) returns (o : Int[pos]) {
+method sign(p : Int[POS], z: Int[ZERO], h: Int) returns (o : Int[POS]) {
 
     if (h > 0) {
         o := p + z

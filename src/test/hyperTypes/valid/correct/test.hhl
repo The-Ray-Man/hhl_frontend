@@ -1,6 +1,6 @@
 
 
-method test(n : Int) returns (o: Int[monoUp[n]])
+method test(n : Int) returns (o: Int[MONOUP[n]])
 {
     o := 0
     while (o < n) {
