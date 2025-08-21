@@ -1,483 +1,464 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.ast.Expr
-import viper.HHLVerifier.ast.SpecialId
-import viper.HHLVerifier.ast.AssertVar
-import viper.HHLVerifier.ast.AssertVarDecl
-import viper.HHLVerifier.ast.Num
-import viper.HHLVerifier.ast.BoolLit
-import viper.HHLVerifier.ast.BinaryExpr
-import viper.HHLVerifier.ast.UnaryExpr
-import viper.HHLVerifier.ast.ImpliesExpr
-import viper.HHLVerifier.ast.Assertion
-import viper.HHLVerifier.ast.StateExistsExpr
-import viper.HHLVerifier.ast.LoopIndex
-import viper.HHLVerifier.ast.HintDecl
-import viper.HHLVerifier.ast.Hint
-import viper.HHLVerifier.ast.MethodCallExpr
-import viper.HHLVerifier.ast.SeqAssignExpr
-import viper.HHLVerifier.ast.SetAssignExpr
-import viper.HHLVerifier.ast.MapAssignExpr
-import viper.HHLVerifier.ast.LookupExpr
-import viper.HHLVerifier.ast.LengthExpr
-import viper.HHLVerifier.ast.CombExpr
-import viper.HHLVerifier.ast.UpdateMapExpr
-import viper.HHLVerifier.ast.MapTupleExpr
-import viper.HHLVerifier.typing.IntType
-import viper.HHLVerifier.typing.BoolType
-import viper.HHLVerifier.ast.HHLProgram
-import viper.HHLVerifier.ast.Method
-import viper.HHLVerifier.ast.CompositeStmt
-import viper.HHLVerifier.ast.Stmt
+import viper.HHLVerifier.ast._
+import viper.HHLVerifier.typing.{BoolType, IntType}
 import viper.HHLVerifier.symbols.SymbolChecker
 import viper.HHLVerifier.typing.TypeChecker
 import viper.HHLVerifier.generation.Generator
-import viper.HHLVerifier.management.ViperRunner
+import viper.HHLVerifier.management.{PrettyPrinter, ViperRunner}
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
-import viper.HHLVerifier.management.PrettyPrinter
-import viper.HHLVerifier.ast.AssumeStmt
+
 
 object Soundness {
-  var typeSystem: TypeSystem = null
-  // report contains the information about the check.
-  //   the first string is the ruleName e.g. exprplus
-  // the number is the index of the rule
+  // Current type system (used by expression builders)
+  var currentTypeSystem: TypeSystem = null
+
+  // Report of rule soundness: ruleName -> (index -> status)
   var report: Map[String, Map[Int, String]] = Map.empty
+
+  // -------- Entry points ----------------------------------------------------
+
 
   def main(args: Array[String]): Unit = {
     report = Map.empty
-
-    val typeSystem = TypeSystem.loadTypeSystem(Seq("/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"))
-    check(typeSystem)
-
+    val ts = TypeSystem.loadTypeSystem(Seq(
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    ))
+    check(ts)
     generateReport()
   }
 
+  /** Prints the aggregated report to stdout. */
   def generateReport(): Unit = {
     report.foreach { case (ruleName, indices) =>
-      println(s"Rule ${ruleName.dropRight(1)}")
-      indices.toSeq.sortBy(_._1).foreach { case (index, status) =>
-        println(s"  $index: $status")
+      println(s"Rule ${ruleName.stripSuffix("_")}")
+      indices.toSeq.sortBy(_._1).foreach { case (idx, status) =>
+        println(s"  $idx: $status")
       }
     }
   }
 
-  def isOnlyStateExists(expr: Expr): Boolean = {
-    expr match {
-      case StateExistsExpr(_, _)  => true
-      case BinaryExpr(e1, op, e2) => isOnlyStateExists(e1) && isOnlyStateExists(e2)
-      case UnaryExpr(op, e)       => isOnlyStateExists(e)
-      case _                      => false
-    }
-  }
+  /** Top-level driver. Builds programs for each rule and runs verification. */
+  def check(ts: TypeSystem): Unit = {
+    currentTypeSystem = ts
 
-  def removeStateExistsImplication(expr: Expr): Expr = {
-    expr match {
-      case Assertion(quantifier, assertVarDecls, body) => {
-        val newBody = body match {
-          case ImpliesExpr(left, right) if isOnlyStateExists(left) => right
-          case _                                                   => body
-        }
-        Assertion(quantifier, assertVarDecls, newBody)
+    val generated: Seq[(String, Seq[(Int, Option[HHLProgram])])]=
+      ts.expressionTypeSystem.map(generateProgramsForExpressionRule)
+
+    generated.foreach { case (ruleName, indexedPrograms) =>
+      indexedPrograms.foreach {
+        case (i, Some(program)) =>
+          val ok = verifyProgram(s"${ruleName}$i", program)
+          updateReport(ruleName, i, if (ok) "sound" else "might be unsound")
+        case (i, None) =>
+          updateReport(ruleName, i, "notChecked")
       }
-      case _ => expr
     }
   }
 
-  def programToFile(filePath: String, program: HHLProgram): Unit = {
-    // needs to filter out the state exists expressions.
+  // -------- Verification pipeline ------------------------------------------
 
-    val newProgram = HHLProgram(program.methods.map(method => {
-      val filteredPrecondition  = method.pre.map(removeStateExistsImplication(_))
-      val filteredPostcondition = method.post.map(removeStateExistsImplication(_))
-      method.copy(pre = filteredPrecondition, post = filteredPostcondition)
-    }))
-    val file   = new java.io.File(filePath)
-    val writer = new java.io.PrintWriter(file)
-    writer.write(PrettyPrinter.formatProgram(newProgram))
-    writer.close()
-    println(s"Wrote soundness check program to $filePath")
+  /** Writes a copy of the (filtered) program to disk for inspection. */
+  private def writeProgramToFile(path: String, program: HHLProgram): Unit = {
+    // Filter out state-exists implications from pre/post conditions before writing.
+    val sanitized = HHLProgram(program.methods.map { m =>
+      val pre  = m.pre.map(stripStateExistsAntecedent)
+      val post = m.post.map(stripStateExistsAntecedent)
+      m.copy(pre = pre, post = post)
+    })
 
+    val content = PrettyPrinter.formatProgram(sanitized)
+    val file    = new java.io.File(path)
+    val writer  = new java.io.PrintWriter(file)
+    try writer.write(content)
+    finally writer.close()
+
+    println(s"Wrote soundness check program to $path")
   }
 
-  def checkProgram(name: String, parsedProgram: HHLProgram): Boolean = {
-
-    programToFile(s"${name}.hhl", parsedProgram)
+  /** Runs the full Viper pipeline and returns true if verification succeeds. */
+  private def verifyProgram(name: String, program: HHLProgram): Boolean = {
+    writeProgramToFile(s"$name.hhl", program)
 
     SymbolChecker.reset()
     TypeChecker.reset()
     Generator.reset()
 
-    SymbolChecker.checkSymbolsProg(parsedProgram)
+    SymbolChecker.checkSymbolsProg(program)
+    TypeChecker.typeCheckProg(program)
 
-    TypeChecker.typeCheckProg(parsedProgram)
-    val viperProgram = Generator.generate(parsedProgram, "")
+    val vpr = Generator.generate(program, "")
+    val consistencyErrors = vpr.checkTransitively
 
-    val consistencyErrors = viperProgram.checkTransitively
-    // We check whether the program is well-defined (i.e., has no consistency errors such as ill-typed expressions)
     if (consistencyErrors.nonEmpty) {
       consistencyErrors.foreach(err => println(err.readableMessage))
-      return false
+      false
     } else {
-      val result = ViperRunner.runSiliconAndCarbon(viperProgram)
-
-      result match {
-        case ResSuccess => {
-          return true
-        }
-        case ResFailure(err) =>
-          err.foreach(e => println(e))
-          return false
+      ViperRunner.runSiliconAndCarbon(vpr) match {
+        case ResSuccess      => true
+        case ResFailure(errs) =>
+          errs.foreach(e => println(e))
+          false
       }
     }
   }
 
-  def check(ts: TypeSystem): Unit = {
-    typeSystem = ts
+  // -------- Reporting helpers ----------------------------------------------
 
-    val programs = ts.expressionTypeSystem.map(generateExpressionRule(_))
+  private def updateReport(ruleName: String, idx: Int, status: String): Unit = {
+    val inner = report.getOrElse(ruleName, Map.empty).updated(idx, status)
+    report = report.updated(ruleName, inner)
+  }
 
-    programs.foreach { derivationProgram =>
-      derivationProgram._2.foreach {
-        case (i, Some(prog)) => {
-          if (checkProgram(s"${derivationProgram._1}$i", prog)) {
-            report = report.updated(derivationProgram._1, report(derivationProgram._1).updated(i, "sound"))
-          } else {
-            report = report.updated(derivationProgram._1, report(derivationProgram._1).updated(i, "might be unsound"))
-          }
-        }
-        case (i, None) =>
-          report = report.updated(derivationProgram._1, report(derivationProgram._1).updated(i, "notChecked"))
-      }
+  // -------- Rule -> Program generation -------------------------------------
+
+  private def generateProgramsForExpressionRule(
+    exprRule: ExpressionDerivationRule
+  ): (String, Seq[(Int, Option[HHLProgram])]) = {
+    val ruleName = humanReadableRuleName(exprRule)
+    report += (ruleName -> Map.empty)
+
+    exprRule.expr match {
+      case bin: BinaryExpr                    => buildForBinaryExpr(bin, exprRule)
+      case un:  UnaryExpr                     => buildForUnaryExpr(un, exprRule)
+      case Id(name) if name == "n" || name == "b" => buildForConst(Id(name), exprRule)
+      case ImpliesExpr(left, right)           => buildForBinaryExpr(BinaryExpr(left, "==>", right), exprRule)
+      case _ =>
+        // Not a supported expression head: mark all rules as not checkable.
+        ruleName -> exprRule.rules.zipWithIndex.map { case (_, i) => i -> None }
     }
   }
 
-  def getRuleName(derivationRule: DerivationRule): String = {
-    derivationRule match {
-      case exprRule: ExpressionDerivationRule =>
-        "expr_" + (exprRule.expr match {
-          case BinaryExpr(e1, op, e2) =>
-            op match {
-              case "+"   => "plus"
-              case "-"   => "minus"
-              case "*"   => "times"
-              case "/"   => "div"
-              case "%"   => "modulo"
-              case "<"   => "lessThan"
-              case "<="  => "lessThanOrEqual"
-              case ">"   => "greaterThan"
-              case ">="  => "greaterThanOrEqual"
-              case "=="  => "equal"
-              case "!="  => "notEqual"
-              case "&&"  => "and"
-              case "||"  => "or"
-              case "==>" => "implies"
-            }
-          case UnaryExpr(op, e) =>
-            op match {
-              case "!" => "not"
-              case "-" => "negate"
-            }
-          case ImpliesExpr(left, right) => "implies"
-          case Id(name)                 =>
-            name match {
-              case "var" => "variable"
-              case "n"   => "num"
-              case "b"   => "bool"
-            }
-          case LookupExpr(id, index)  => "lookup"
-          case LengthExpr(id)         => "length"
-          case CombExpr(lhs, rhs, op) =>
-            op match {
-              case "++"           => "concat"
-              case "setminus"     => "setminus"
-              case "union"        => "union"
-              case "in"           => "contains"
-              case "intersection" => "intersection"
-            }
-          case _ => throw new Exception("For this expression no typing rules are considered")
-        }) + "_"
-      case _: StatementDerivationRule => "StatementRule"
+  private def buildForConst(constId: Id, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+    val (inputName, inputType) = constId.name match {
+      case "n" => ("input", IntType())
+      case "b" => ("input", BoolType())
     }
+
+    val input = Id(inputName)
+    input.typ = inputType
+
+    val mapping             = Map(constId -> input)
+    val rulesWithIdx        = exprRule.rules.zipWithIndex
+    val prePost             = rulesToTriples(rulesWithIdx, mapping, input)
+    val ruleName            = humanReadableRuleName(exprRule)
+    val programs            = triplesToPrograms(ruleName, Seq(input), prePost)
+    ruleName -> programs
   }
 
-  def generateExpressionRule(expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
-    report += (getRuleName(expressionRule) -> Map.empty)
-    expressionRule.expr match {
-      case binOp @ BinaryExpr(e1, op, e2)                    => checkBinOpExpressionRule(binOp, expressionRule)
-      case unOp @ UnaryExpr(op, e)                           => checkUnaryExpressionRule(unOp, expressionRule)
-      case variable @ Id(name) if name == "n" || name == "b" =>
-        checkConstExpressionRule(variable, expressionRule)
-      case implicationOp @ ImpliesExpr(left, right) =>
-        checkBinOpExpressionRule(BinaryExpr(left, "==>", right), expressionRule)
-      case _ => {
-        (getRuleName(expressionRule), expressionRule.rules.zipWithIndex.map { case (rule, index) => (index, None) })
-      }
-    }
-  }
-
-  def buildPrograms(ruleName: String, args: Seq[Id], formulas: Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])]): Seq[(Int, Option[HHLProgram])] = {
-    formulas.map {
-      case (i, Some((conds, concs, assertion))) => {
-        (i, Some(HHLProgram(Seq(Method(s"${ruleName}$i", args, Seq.empty, conds, concs, CompositeStmt(assertion))))))
-      }
-      case (i, None) => (i, None)
-    }
-  }
-
-  def checkConstExpressionRule(const: Id, expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
-    var inputVar  = Id("inputVar")
-    val inputType = const.name match {
-      case "n" => IntType()
-      case "b" => BoolType()
-    }
-    inputVar.typ = inputType
-    var templateToIds     = Map(const -> inputVar)
-    val rulesWithIndex    = expressionRule.rules.zipWithIndex
-    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, inputVar)
-    val ruleName          = getRuleName(expressionRule)
-    val programs          = buildPrograms(ruleName, Seq(inputVar), prePostConditions)
-    (ruleName, programs)
-  }
-
-  def checkUnaryExpressionRule(unOp: UnaryExpr, expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
-    val (inputType, outputType) = unOp.op match {
+  private def buildForUnaryExpr(un: UnaryExpr, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+    val (inT, outT) = un.op match {
       case "!" => (BoolType(), BoolType())
       case "-" => (IntType(), IntType())
     }
-    var inputVar = Id("inputVar")
-    inputVar.typ = inputType
 
-    val templateToIds     = Map(unOp.e.asInstanceOf[Id] -> inputVar)
-    val rulesWithIndex    = expressionRule.rules.zipWithIndex
-    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, UnaryExpr(unOp.op, inputVar))
-    val ruleName          = getRuleName(expressionRule)
-    val programs          = buildPrograms(ruleName, Seq(inputVar), prePostConditions)
-    (ruleName, programs)
+    val input = Id("input")
+    input.typ = inT
+
+    val mapping      = Map(un.e.asInstanceOf[Id] -> input)
+    val rulesWithIdx = exprRule.rules.zipWithIndex
+    val resultExpr   = UnaryExpr(un.op, input)
+
+    val prePost  = rulesToTriples(rulesWithIdx, mapping, resultExpr)
+    val ruleName = humanReadableRuleName(exprRule)
+    val programs = triplesToPrograms(ruleName, Seq(input), prePost)
+
+    ruleName -> programs
   }
 
-  def checkBinOpExpressionRule(binOp: BinaryExpr, expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
-    // check if the left and right expressions are of the same type
-
-    val (leftType, rightType, resType) = binOp.op match {
-      case "+" | "-" | "*" | "/" | "%"           => (IntType(), IntType(), IntType())
-      case "<" | "<=" | ">" | ">=" | "==" | "!=" => (IntType(), IntType(), BoolType())
-      case "&&" | "||" | "==>"                   => (BoolType(), BoolType(), BoolType())
+  private def buildForBinaryExpr(bin: BinaryExpr, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+    val (leftT, rightT, resT) = bin.op match {
+      case "+" | "-" | "*" | "/" | "%"           => (IntType(),  IntType(),  IntType())
+      case "<" | "<=" | ">" | ">=" | "==" | "!=" => (IntType(),  IntType(),  BoolType())
+      case "&&" | "||" | "==>"                        => (BoolType(), BoolType(), BoolType())
     }
 
-    var lhs = Id("lhsVar")
-    var rhs = Id("rhsVar")
-    lhs.typ = leftType
-    rhs.typ = rightType
-    val templateToIds = Map(binOp.e1.asInstanceOf[Id] -> lhs, binOp.e2.asInstanceOf[Id] -> rhs)
+    val left  = Id("left")
+    val right = Id("right")
+    left.typ  = leftT
+    right.typ = rightT
 
-    val rulesWithIndex = expressionRule.rules.zipWithIndex
-
-    val resultingExpr = binOp.op match {
-      case "==>" => ImpliesExpr(lhs, rhs)
-      case _     => BinaryExpr(lhs, binOp.op, rhs)
+    val mapping = Map(bin.e1.asInstanceOf[Id] -> left, bin.e2.asInstanceOf[Id] -> right)
+    val rulesWithIdx = exprRule.rules.zipWithIndex
+    val resultExpr: Expr = bin.op match {
+      case "==>" => ImpliesExpr(left, right)
+      case _      => BinaryExpr(left, bin.op, right)
     }
-    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, resultingExpr)
 
-    val ruleName = getRuleName(expressionRule)
+    val prePost  = rulesToTriples(rulesWithIdx, mapping, resultExpr)
+    val ruleName = humanReadableRuleName(exprRule)
+    val programs = triplesToPrograms(ruleName, Seq(left, right), prePost)
 
-    val programs = buildPrograms(ruleName, Seq(lhs, rhs), prePostConditions)
-
-    (ruleName, programs)
-
+    ruleName -> programs
   }
 
-  def transformCondition(condition: Condition, templateToIds: Map[Id, Id]): Option[(Boolean, Expr)] = {
-    condition match {
-      case InSet(htyp: HyperType, HyperTypeCheck(expr, Gamma(), Delta())) => {
-        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
-        Some((true, getExpression(variable, htyp)))
+  /** Convert (conditions, conclusions, stmts) triples to complete HHL programs. */
+  private def triplesToPrograms(
+    ruleName: String,
+    args: Seq[Id],
+    triples: Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])]
+  ): Seq[(Int, Option[HHLProgram])] = {
+    triples.map {
+      case (i, Some((pres, posts, stmts))) =>
+        i -> Some(HHLProgram(Seq(Method(s"${ruleName}$i", args, Seq.empty, pres, posts, CompositeStmt(stmts)))))
+      case (i, None) => i -> None
+    }
+  }
+
+  // -------- Human-readable rule names --------------------------------------
+
+  private def humanReadableRuleName(dr: DerivationRule): String = dr match {
+    case er: ExpressionDerivationRule =>
+      val suffix = er.expr match {
+        case BinaryExpr(_, op, _) => binaryOpLabel(op)
+        case UnaryExpr(op, _)     => unaryOpLabel(op)
+        case ImpliesExpr(_, _)    => "implies"
+        case Id(name)             => name match {
+          case "var" => "variable"
+          case "n"   => "num"
+          case "b"   => "bool"
+        }
+        case LookupExpr(_, _)     => "lookup"
+        case LengthExpr(_)        => "length"
+        case CombExpr(_, _, op)   => combOpLabel(op)
+        case _ => throw new Exception("No typing rules considered for this expression head.")
       }
-      case ArithCondition(expr, op, num) => {
-        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
-        Some((false, BinaryExpr(variable, op, Num(num))))
-      }
-      case BoolCondition(expr) => {
-        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
-        Some((false, variable))
-      }
-      case NotOperator(condition) => {
-        val subCondition = transformCondition(condition, templateToIds)
-        subCondition match {
-          case Some((true, _))     => None
-          case Some((false, expr)) => Some((false, UnaryExpr("!", expr)))
-          case None                => None
+      s"expr_${suffix}_"
+    case _: StatementDerivationRule => "StatementRule" // not used here
+  }
+
+  private def binaryOpLabel(op: String): String = op match {
+    case "+"  => "plus"
+    case "-"  => "minus"
+    case "*"  => "times"
+    case "/"  => "div"
+    case "%"  => "modulo"
+    case "<"  => "lessThan"
+    case "<=" => "lessThanOrEqual"
+    case ">"  => "greaterThan"
+    case ">=" => "greaterThanOrEqual"
+    case "==" => "equal"
+    case "!=" => "notEqual"
+    case "&&" => "and"
+    case "||" => "or"
+    case "==>"=> "implies"
+  }
+
+  private def unaryOpLabel(op: String): String = op match {
+    case "!" => "not"
+    case "-" => "negate"
+  }
+
+  private def combOpLabel(op: String): String = op match {
+    case "++"           => "concat"
+    case "setminus"     => "setminus"
+    case "union"        => "union"
+    case "in"           => "contains"
+    case "intersection" => "intersection"
+  }
+
+  // -------- Rule translation ------------------------------------------------
+
+  /**
+   * Translate rules into (preconditions, postconditions, assertion statements).
+   *
+   * A rule can be marked as not-checkable (None) if it contains constructs that
+   * are not supported by the current transformation.
+   */
+  private def rulesToTriples(
+    rulesWithIdx: Seq[(Rule, Int)],
+    templateToIds: Map[Id, Id],
+    resultExpr: Expr
+  ): Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])] = {
+    rulesWithIdx.map { case (rule, idx) =>
+      var pres        = Seq.empty[Expr]
+      var asserts     = Seq.empty[Stmt]
+      var posts       = Seq.empty[Expr]
+      var notCheckable = false
+
+      rule.conditions.foreach { c =>
+        transformCondition(c, templateToIds) match {
+          case Some((true, e))  => pres    :+= e
+          case Some((false, e)) => asserts :+= AssumeStmt(e)
+          case None             => notCheckable = true
         }
       }
-      case _ => None
-    }
-  }
 
-  def transformConclusion(conclusion: Conclusion, resultExpr: Expr, templateToIds: Map[Id, Id]): Option[Expr] = {
-    conclusion match {
-      case AddToSet(htyp: HyperType, HyperCollectionResult()) => {
-        Some(getExpression(resultExpr, htyp))
-      }
-      case _ => None
-    }
-  }
-
-  def ruleToPreAndPostCondition(rulesWithIndex: Seq[(Rule, Int)], templateToIds: Map[Id, Id], resultExpr: Expr): Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])] = {
-    rulesWithIndex.map {
-      case (rule, index) => {
-        var conditions   = Seq.empty[Expr]
-        var assertions   = Seq.empty[Stmt]
-        var conclusion   = Seq.empty[Expr]
-        var notCheckable = false
-        rule.conditions.foreach(cond => {
-          transformCondition(cond, templateToIds) match {
-            case Some((true, expr))  => conditions :+= expr
-            case Some((false, expr)) => assertions :+= AssumeStmt(expr)
-            case None                => notCheckable = true
-          }
-        })
-
-        rule.conclusions.foreach(conc => {
-          transformConclusion(conc, resultExpr, templateToIds) match {
-            case Some(expr) => conclusion :+= expr
-            case None       => notCheckable = true
-          }
-        })
-        if (notCheckable) {
-          (index, None)
-        } else {
-          (index, Some((conditions, conclusion, assertions)))
+      rule.conclusions.foreach { conc =>
+        transformConclusion(conc, resultExpr, templateToIds) match {
+          case Some(e) => posts :+= e
+          case None    => notCheckable = true
         }
       }
+
+      if (notCheckable) idx -> None
+      else               idx -> Some((pres, posts, asserts))
     }
   }
 
-  def getExpression(expr: Expr, htyp: HyperType): Expr = {
-    val possibleHTDeclarations = typeSystem.hyperTypeDeclaration.map(decl => (decl, getMapping(decl.hty, htyp))).filter { case (_, d) => d.isDefined }.map { case (decl, d) => (decl, d.get) }
-    if (possibleHTDeclarations.length != 1) {
-      throw new Exception(s"Expected exactly one matching HyperType declaration for $htyp, found ${possibleHTDeclarations.length}.")
-    }
-    val declaration            = possibleHTDeclarations.head._1
-    val mapping: Map[Id, Expr] = possibleHTDeclarations.head._2 + (declaration.variable -> expr)
-    // val expr = applyMapping(, declaration.definition)
-    val conditionExpr = pushIntoStates(applyMapping(mapping, declaration.definition))
-    conditionExpr
-  }
+  /** Transform a DSL condition to an AST expression.
+    * @return Some((isPrecondition, expr)) or None if unsupported.
+    */
+  private def transformCondition(condition: Condition, templateToIds: Map[Id, Id]): Option[(Boolean, Expr)] = condition match {
+    case InSet(ht: HyperType, HyperTypeCheck(template, Gamma(), Delta())) =>
+      val id = templateToIds.getOrElse(template, sys.error("Missing template mapping"))
+      Some(true -> buildExpression(id, ht))
 
-  def getExpression(id: Id, htyp: HyperType): Expr = {
-    // find the matching expression
-    val possibleHTDeclarations = typeSystem.hyperTypeDeclaration.map(decl => (decl, getMapping(decl.hty, htyp))).filter { case (_, d) => d.isDefined }.map { case (decl, d) => (decl, d.get) }
+    case ArithCondition(template, op, num) =>
+      val id = templateToIds.getOrElse(template, sys.error("Missing template mapping"))
+      Some(false -> BinaryExpr(id, op, Num(num)))
 
-    if (possibleHTDeclarations.length != 1) {
-      throw new Exception(s"Expected exactly one matching HyperType declaration for $htyp, found ${possibleHTDeclarations.length}.")
-    }
-    val declaration = possibleHTDeclarations.head._1
-    val mapping     = possibleHTDeclarations.head._2 + (declaration.variable -> id)
+    case BoolCondition(template) =>
+      val id = templateToIds.getOrElse(template, sys.error("Missing template mapping"))
+      Some(false -> id)
 
-    val expr = applyMapping(mapping, declaration.definition)
-    expr
-  }
-
-  def getMapping(fromElement: Element, toElement: Element): Option[Map[Id, Id]] = {
-    (fromElement, toElement) match {
-      case (SimpleHyperType(fromName), SimpleHyperType(toName)) if fromName == toName                                                                   => Some(Map.empty)
-      case (HyperTypeWithListArgs(fromName, fromArgs), HyperTypeWithListArgs(toName, toArgs)) if fromName == toName && fromArgs.length == toArgs.length => {
-        val argsMapped = fromArgs.zip(toArgs).map { case (fromArg, toArg) =>
-          getMapping(fromArg, toArg)
-        }
-        if (!argsMapped.forall(_.isDefined)) None
-        else {
-          val mapping = argsMapped.flatten.flatten.toMap
-          Some(mapping)
-        }
+    case NotOperator(inner) =>
+      transformCondition(inner, templateToIds) match {
+        case Some((true, _))      => None // negated precondition not supported
+        case Some((false, expr))  => Some(false -> UnaryExpr("!", expr))
+        case None                 => None
       }
-      case (HyperTypeWithSetArgs(fromName, fromArgs), HyperTypeWithSetArgs(toName, toArgs)) if fromName == toName && fromArgs.size == toArgs.size => {
-        val argsMapped = fromArgs.zip(toArgs).map { case (fromArg, toArg) =>
-          getMapping(fromArg, toArg)
-        }
-        if (!argsMapped.forall(_.isDefined)) None
-        else {
-          val mapping = argsMapped.flatten.flatten.toMap
-          Some(mapping)
-        }
+
+    case _ => None
+  }
+
+  /** Transform a DSL conclusion to an AST postcondition expression. */
+  private def transformConclusion(conclusion: Conclusion, resultExpr: Expr, templateToIds: Map[Id, Id]): Option[Expr] = conclusion match {
+    case AddToSet(ht: HyperType, HyperCollectionResult()) => Some(buildExpression(resultExpr, ht))
+    case _                                                => None
+  }
+
+  // -------- Expression builders / mappings ---------------------------------
+
+  /** Convert a (expr, HyperType) pair to a concrete AST expression via the current type system. */
+  private def buildExpression(expr: Expr, ht: HyperType): Expr = {
+    val candidates: Seq[(HyperTypeDeclaration, Map[Id, Id])] =
+      currentTypeSystem.hyperTypeDeclaration
+        .map(decl => decl -> getMapping(decl.hty, ht))
+        .collect { case (decl, Some(m)) => decl -> m }
+
+    if (candidates.length != 1)
+      throw new Exception(s"Expected exactly one matching HyperType declaration for $ht, found ${candidates.length}.")
+
+    val (decl, mapping) = candidates.head
+    val fullMapping: Map[Id, Expr] = mapping + (decl.variable -> expr)
+
+    val mapped = applyMapping(fullMapping, decl.definition)
+    propagateStateLookups(mapped)
+  }
+
+  /** Convert an (Id, HyperType) pair to a concrete AST expression. */
+  private def buildExpression(id: Id, ht: HyperType): Expr = {
+    val candidates: Seq[(HyperTypeDeclaration, Map[Id, Id])] =
+      currentTypeSystem.hyperTypeDeclaration
+        .map(decl => decl -> getMapping(decl.hty, ht))
+        .collect { case (decl, Some(m)) => decl -> m }
+
+    if (candidates.length != 1)
+      throw new Exception(s"Expected exactly one matching HyperType declaration for $ht, found ${candidates.length}.")
+
+    val (decl, mapping) = candidates.head
+    val fullMapping: Map[Id, Expr] = mapping + (decl.variable -> id)
+    applyMapping(fullMapping, decl.definition)
+  }
+
+  /** Attempt to map one DSL element onto another; returns a variable mapping if compatible. */
+  private def getMapping(from: Element, to: Element): Option[Map[Id, Id]] = (from, to) match {
+    case (SimpleHyperType(fn), SimpleHyperType(tn)) if fn == tn => Some(Map.empty)
+
+    case (HyperTypeWithListArgs(fn, fArgs), HyperTypeWithListArgs(tn, tArgs)) if fn == tn && fArgs.length == tArgs.length =>
+      val pairs = fArgs.zip(tArgs).map { case (fa, ta) => getMapping(fa, ta) }
+      if (pairs.forall(_.isDefined)) Some(pairs.flatten.flatten.toMap) else None
+
+    case (HyperTypeWithSetArgs(fn, fArgs), HyperTypeWithSetArgs(tn, tArgs)) if fn == tn && fArgs.size == tArgs.size =>
+      val pairs = fArgs.zip(tArgs).map { case (fa, ta) => getMapping(fa, ta) }
+      if (pairs.forall(_.isDefined)) Some(pairs.flatten.flatten.toMap) else None
+
+    case _ => None
+  }
+
+  // -------- AST rewriting ---------------------------------------------------
+
+  /** True if the expression only contains StateExistsExpr nodes (modulo boolean structure). */
+  private def containsOnlyStateExists(expr: Expr): Boolean = expr match {
+    case StateExistsExpr(_, _)      => true
+    case BinaryExpr(l, _, r)        => containsOnlyStateExists(l) && containsOnlyStateExists(r)
+    case UnaryExpr(_, e)            => containsOnlyStateExists(e)
+    case _                          => false
+  }
+
+  /** Remove an implication whose antecedent is solely built from StateExistsExpr. */
+  private def stripStateExistsAntecedent(expr: Expr): Expr = expr match {
+    case Assertion(q, decls, body) =>
+      val newBody = body match {
+        case ImpliesExpr(left, right) if containsOnlyStateExists(left) => right
+        case _                                                         => body
       }
-      case (_, _) => None
-    }
+      Assertion(q, decls, newBody)
+    case _ => expr
   }
 
-  def pushIntoStates(expr: Expr): Expr = {
-    expr match {
-      case id: Id                                      => id
-      case num: Num                                    => num
-      case bool: BoolLit                               => bool
-      case BinaryExpr(e1, op, e2)                      => BinaryExpr(pushIntoStates(e1), op, pushIntoStates(e2))
-      case UnaryExpr(op, e)                            => UnaryExpr(op, pushIntoStates(e))
-      case ImpliesExpr(left, right)                    => ImpliesExpr(pushIntoStates(left), pushIntoStates(right))
-      case Assertion(quantifier, assertVarDecls, body) => Assertion(quantifier, assertVarDecls, pushIntoStates(body))
-      case StateExistsExpr(state, err)                 => StateExistsExpr(state, err)
-      case LookupExpr(id: AssertVar, index)            => {
-        insideState(id, index)
-      }
-      case _ => throw new Exception(s"Unsupported expression type: ${expr.getClass().getSimpleName()}")
-    }
+  /** Push a SpecialId (state) lookup through the expression. */
+  private def insideState(state: SpecialId, e: Expr): Expr = e match {
+    case id: Id                 => LookupExpr(state, id)
+    case n: Num                 => n
+    case b: BoolLit             => b
+    case BinaryExpr(l, op, r)   => BinaryExpr(insideState(state, l), op, insideState(state, r))
+    case UnaryExpr(op, sub)     => UnaryExpr(op, insideState(state, sub))
+    case ImpliesExpr(l, r)      => ImpliesExpr(insideState(state, l), insideState(state, r))
+    case other                  => throw new Exception(s"Unsupported expression type inside state: ${other.getClass.getSimpleName}")
   }
 
-  def insideState(state: SpecialId, expr: Expr): Expr = {
-    expr match {
-      case id: Id                   => LookupExpr(state, id)
-      case num: Num                 => num
-      case bool: BoolLit            => bool
-      case BinaryExpr(e1, op, e2)   => BinaryExpr(insideState(state, e1), op, insideState(state, e2))
-      case UnaryExpr(op, e)         => UnaryExpr(op, insideState(state, e))
-      case ImpliesExpr(left, right) => ImpliesExpr(insideState(state, left), insideState(state, right))
-      case _                        => throw new Exception(s"Unsupported expression type: ${expr.getClass().getSimpleName()}")
-    }
+  /** After mapping, convert any LookupExpr with AssertVar into a state-indexed form. */
+  private def propagateStateLookups(e: Expr): Expr = e match {
+    case id: Id                                      => id
+    case n: Num                                      => n
+    case b: BoolLit                                   => b
+    case BinaryExpr(l, op, r)                         => BinaryExpr(propagateStateLookups(l), op, propagateStateLookups(r))
+    case UnaryExpr(op, sub)                           => UnaryExpr(op, propagateStateLookups(sub))
+    case ImpliesExpr(l, r)                            => ImpliesExpr(propagateStateLookups(l), propagateStateLookups(r))
+    case Assertion(q, decls, body)                    => Assertion(q, decls, propagateStateLookups(body))
+    case StateExistsExpr(s, err)                      => StateExistsExpr(s, err)
+    case LookupExpr(av: AssertVar, idx)               => insideState(av, idx)
+    case other                                        => throw new Exception(s"Unsupported expression type: ${other.getClass.getSimpleName}")
   }
 
-  def applyMapping(mapping: Map[Id, Expr], expr: Expr): Expr = {
-    expr match {
-      case id @ Id(name)                               => applyMapping(mapping, id)
-      case num @ Num(value)                            => num
-      case bool @ BoolLit(value)                       => bool
-      case BinaryExpr(e1, op, e2)                      => BinaryExpr(applyMapping(mapping, e1), op, applyMapping(mapping, e2))
-      case UnaryExpr(op, e)                            => UnaryExpr(op, applyMapping(mapping, e))
-      case ImpliesExpr(left, right)                    => ImpliesExpr(applyMapping(mapping, left), applyMapping(mapping, right))
-      case Assertion(quantifier, assertVarDecls, body) =>
-        Assertion(quantifier, assertVarDecls.map(ad => applyMapping(mapping, ad)), applyMapping(mapping, body))
-      case StateExistsExpr(state, err)                                                   => StateExistsExpr(applyMapping(mapping, state).asInstanceOf[SpecialId], err)
-      case LookupExpr(id, index)                                                         => LookupExpr(applyMapping(mapping, id), applyMapping(mapping, index))
-      case LengthExpr(id)                                                                => LengthExpr(applyMapping(mapping, id))
-      case CombExpr(lhs, rhs, op)                                                        => CombExpr(applyMapping(mapping, lhs), applyMapping(mapping, rhs), op)
-      case UpdateMapExpr(id, update)                                                     => UpdateMapExpr(applyMapping(mapping, id), applyMapping(mapping, update))
-      case mapTupleExpr @ MapTupleExpr(k, v)                                             => applyMapping(mapping, mapTupleExpr)
-      case LoopIndex() | HintDecl(_) | Hint(_, _)                                        => expr
-      case _: SpecialId                                                                  => expr
-      case MethodCallExpr(_, _) | SetAssignExpr(_) | MapAssignExpr(_) | SeqAssignExpr(_) => throw new Exception(s"${expr.getClass().getSimpleName()} is not yet supported in the Soundness Check.")
-    }
+  // -------- Mapping over different AST nodes --------------------------------
+
+  private def applyMapping(mapping: Map[Id, Expr], e: Expr): Expr = e match {
+    case id: Id                                 => applyMapping(mapping, id)
+    case n: Num                                 => n
+    case b: BoolLit                             => b
+    case BinaryExpr(l, op, r)                   => BinaryExpr(applyMapping(mapping, l), op, applyMapping(mapping, r))
+    case UnaryExpr(op, sub)                     => UnaryExpr(op, applyMapping(mapping, sub))
+    case ImpliesExpr(l, r)                      => ImpliesExpr(applyMapping(mapping, l), applyMapping(mapping, r))
+    case Assertion(q, decls, body)              => Assertion(q, decls.map(d => applyMapping(mapping, d)), applyMapping(mapping, body))
+    case StateExistsExpr(s, err)                => StateExistsExpr(applyMapping(mapping, s).asInstanceOf[SpecialId], err)
+    case LookupExpr(id, idx)                    => LookupExpr(applyMapping(mapping, id), applyMapping(mapping, idx))
+    case LengthExpr(id)                         => LengthExpr(applyMapping(mapping, id))
+    case CombExpr(l, r, op)                     => CombExpr(applyMapping(mapping, l), applyMapping(mapping, r), op)
+    case UpdateMapExpr(id, update)              => UpdateMapExpr(applyMapping(mapping, id), applyMapping(mapping, update))
+    case mt: MapTupleExpr                       => applyMapping(mapping, mt)
+    case LoopIndex() | HintDecl(_) | Hint(_, _) => e
+    case _: SpecialId                           => e
+    case MethodCallExpr(_, _) | SetAssignExpr(_) | MapAssignExpr(_) | SeqAssignExpr(_) =>
+      throw new Exception(s"${e.getClass.getSimpleName} is not yet supported in the Soundness Check.")
   }
 
-  def applyMapping(mapping: Map[Id, Expr], mapTupleExpr: MapTupleExpr): MapTupleExpr = {
-    MapTupleExpr(applyMapping(mapping, mapTupleExpr.k), applyMapping(mapping, mapTupleExpr.v))
-  }
+  private def applyMapping(mapping: Map[Id, Expr], mt: MapTupleExpr): MapTupleExpr =
+    MapTupleExpr(applyMapping(mapping, mt.k), applyMapping(mapping, mt.v))
 
-  def applyMapping(mapping: Map[Id, Expr], id: Id): Expr = {
+  private def applyMapping(mapping: Map[Id, Expr], id: Id): Expr =
     mapping.getOrElse(id, id)
-  }
 
-  def applyMapping(mapping: Map[Id, Expr], varDecl: AssertVarDecl): AssertVarDecl = {
-    varDecl
-  }
-  def applyMapping(mapping: Map[Id, Expr], specialId: SpecialId): SpecialId = {
-    specialId
-  }
+  private def applyMapping(mapping: Map[Id, Expr], decl: AssertVarDecl): AssertVarDecl = decl
 
-  def applyMapping(mapping: Map[Id, Expr], element: Element): Element = {
-    element match {
-      case SimpleHyperType(name)             => element
-      case id @ Id(name)                     => applyMapping(mapping, id)
-      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(applyMapping(mapping, _)))
-      case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(applyMapping(mapping, _)))
-    }
+  private def applyMapping(mapping: Map[Id, Expr], sid: SpecialId): SpecialId = sid
+
+  private def applyMapping(mapping: Map[Id, Expr], el: Element): Element = el match {
+    case s @ SimpleHyperType(_)          => s
+    case id: Id                          => applyMapping(mapping, id)
+    case HyperTypeWithListArgs(n, args)  => HyperTypeWithListArgs(n, args.map(applyMapping(mapping, _)))
+    case HyperTypeWithSetArgs(n, args)   => HyperTypeWithSetArgs(n, args.map(applyMapping(mapping, _)))
   }
 }
