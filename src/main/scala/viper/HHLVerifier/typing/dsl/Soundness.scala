@@ -36,6 +36,7 @@ import viper.HHLVerifier.generation.Generator
 import viper.HHLVerifier.management.ViperRunner
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
 import viper.HHLVerifier.management.PrettyPrinter
+import viper.HHLVerifier.ast.AssumeStmt
 
 object Soundness {
   var typeSystem: TypeSystem = null
@@ -47,16 +48,16 @@ object Soundness {
   def main(args: Array[String]): Unit = {
     report = Map.empty
 
-    val typeSystem = TypeSystem.loadTypeSystem(Seq("/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"))
+    val typeSystem = TypeSystem.loadTypeSystem(Seq("/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"))
     check(typeSystem)
 
     generateReport()
   }
 
-  def generateReport() : Unit = {
+  def generateReport(): Unit = {
     report.foreach { case (ruleName, indices) =>
       println(s"Rule ${ruleName.dropRight(1)}")
-      indices.foreach { case (index, status) =>
+      indices.toSeq.sortBy(_._1).foreach { case (index, status) =>
         println(s"  $index: $status")
       }
     }
@@ -178,21 +179,25 @@ object Soundness {
               case "!" => "not"
               case "-" => "negate"
             }
-            case ImpliesExpr(left, right) => "implies"
-          case BoolLit(value) => "bool"
-          case Num(value)     => "num"
-          case Id(name)       => "variable"
-          case LookupExpr(id, index) => "lookup"
-          case LengthExpr(id) => "length"
-          case CombExpr(lhs, rhs, op) => op match {
-            case "++" => "concat"
-            case "setminus" => "setminus"
-            case "union" => "union"
-            case "in" => "contains"
-            case "intersection" => "intersection"
-          }
+          case ImpliesExpr(left, right) => "implies"
+          case Id(name)                 =>
+            name match {
+              case "var" => "variable"
+              case "n"   => "num"
+              case "b"   => "bool"
+            }
+          case LookupExpr(id, index)  => "lookup"
+          case LengthExpr(id)         => "length"
+          case CombExpr(lhs, rhs, op) =>
+            op match {
+              case "++"           => "concat"
+              case "setminus"     => "setminus"
+              case "union"        => "union"
+              case "in"           => "contains"
+              case "intersection" => "intersection"
+            }
           case _ => throw new Exception("For this expression no typing rules are considered")
-        }) +"_"
+        }) + "_"
       case _: StatementDerivationRule => "StatementRule"
     }
   }
@@ -200,36 +205,55 @@ object Soundness {
   def generateExpressionRule(expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
     report += (getRuleName(expressionRule) -> Map.empty)
     expressionRule.expr match {
-      case binOp @ BinaryExpr(e1, op, e2) => checkBinOpExpressionRule(binOp, expressionRule)
-      case unOp @ UnaryExpr(op, e) => checkUnaryExpressionRule(unOp, expressionRule)
-      case _                              => {
-        (getRuleName(expressionRule), expressionRule.rules.zipWithIndex.map {case (rule, index) => (index, None)})
+      case binOp @ BinaryExpr(e1, op, e2)                    => checkBinOpExpressionRule(binOp, expressionRule)
+      case unOp @ UnaryExpr(op, e)                           => checkUnaryExpressionRule(unOp, expressionRule)
+      case variable @ Id(name) if name == "n" || name == "b" =>
+        checkConstExpressionRule(variable, expressionRule)
+      case implicationOp @ ImpliesExpr(left, right) =>
+        checkBinOpExpressionRule(BinaryExpr(left, "==>", right), expressionRule)
+      case _ => {
+        (getRuleName(expressionRule), expressionRule.rules.zipWithIndex.map { case (rule, index) => (index, None) })
       }
     }
   }
 
-  def checkUnaryExpressionRule(unOp: UnaryExpr, expressionRule: ExpressionDerivationRule) : (String, Seq[(Int, Option[HHLProgram])]) = {
+  def buildPrograms(ruleName: String, args: Seq[Id], formulas: Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])]): Seq[(Int, Option[HHLProgram])] = {
+    formulas.map {
+      case (i, Some((conds, concs, assertion))) => {
+        (i, Some(HHLProgram(Seq(Method(s"${ruleName}$i", args, Seq.empty, conds, concs, CompositeStmt(assertion))))))
+      }
+      case (i, None) => (i, None)
+    }
+  }
+
+  def checkConstExpressionRule(const: Id, expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+    var inputVar  = Id("inputVar")
+    val inputType = const.name match {
+      case "n" => IntType()
+      case "b" => BoolType()
+    }
+    inputVar.typ = inputType
+    var templateToIds     = Map(const -> inputVar)
+    val rulesWithIndex    = expressionRule.rules.zipWithIndex
+    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, inputVar)
+    val ruleName          = getRuleName(expressionRule)
+    val programs          = buildPrograms(ruleName, Seq(inputVar), prePostConditions)
+    (ruleName, programs)
+  }
+
+  def checkUnaryExpressionRule(unOp: UnaryExpr, expressionRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
     val (inputType, outputType) = unOp.op match {
-        case "!" => (BoolType(), BoolType())
-        case "-" => (IntType(), IntType())
+      case "!" => (BoolType(), BoolType())
+      case "-" => (IntType(), IntType())
     }
     var inputVar = Id("inputVar")
     inputVar.typ = inputType
 
-
-    val templateToIds = Map(unOp.e.asInstanceOf[Id] -> inputVar)
-    val rulesWithIndex = expressionRule.rules.zipWithIndex
+    val templateToIds     = Map(unOp.e.asInstanceOf[Id] -> inputVar)
+    val rulesWithIndex    = expressionRule.rules.zipWithIndex
     val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, UnaryExpr(unOp.op, inputVar))
-    val ruleName = getRuleName(expressionRule)
-    val programs = prePostConditions.map {
-      case (i, conds, concs) => {
-        if (conds.forall(_.isDefined) && concs.forall(_.isDefined)) {
-          (i, Some(HHLProgram(Seq(Method(s"${ruleName}$i", Seq(inputVar), Seq.empty, conds.flatten, concs.flatten, CompositeStmt(Seq.empty[Stmt]))))))
-        } else {
-          (i, None)
-        }
-      }
-    }
+    val ruleName          = getRuleName(expressionRule)
+    val programs          = buildPrograms(ruleName, Seq(inputVar), prePostConditions)
     (ruleName, programs)
   }
 
@@ -250,45 +274,81 @@ object Soundness {
 
     val rulesWithIndex = expressionRule.rules.zipWithIndex
 
-    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, BinaryExpr(lhs, binOp.op, rhs))
+    val resultingExpr = binOp.op match {
+      case "==>" => ImpliesExpr(lhs, rhs)
+      case _     => BinaryExpr(lhs, binOp.op, rhs)
+    }
+    val prePostConditions = ruleToPreAndPostCondition(rulesWithIndex, templateToIds, resultingExpr)
 
     val ruleName = getRuleName(expressionRule)
 
-    val programs = prePostConditions.map {
-      case (i, conds, concs) => {
-        if (conds.forall(_.isDefined) && concs.forall(_.isDefined)) {
-          (i, Some(HHLProgram(Seq(Method(s"${ruleName}$i", Seq(lhs, rhs), Seq.empty, conds.flatten, concs.flatten, CompositeStmt(Seq.empty[Stmt]))))))
-        } else {
-          (i, None)
-        }
-      }
-    }
+    val programs = buildPrograms(ruleName, Seq(lhs, rhs), prePostConditions)
 
     (ruleName, programs)
 
   }
 
-  def ruleToPreAndPostCondition(rulesWithIndex : Seq[(Rule, Int)], templateToIds : Map[Id, Id], resultExpr: Expr) : Seq[(Int, Seq[Option[Expr]], Seq[Option[Expr]])] = {
+  def transformCondition(condition: Condition, templateToIds: Map[Id, Id]): Option[(Boolean, Expr)] = {
+    condition match {
+      case InSet(htyp: HyperType, HyperTypeCheck(expr, Gamma(), Delta())) => {
+        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
+        Some((true, getExpression(variable, htyp)))
+      }
+      case ArithCondition(expr, op, num) => {
+        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
+        Some((false, BinaryExpr(variable, op, Num(num))))
+      }
+      case BoolCondition(expr) => {
+        val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
+        Some((false, variable))
+      }
+      case NotOperator(condition) => {
+        val subCondition = transformCondition(condition, templateToIds)
+        subCondition match {
+          case Some((true, _))     => None
+          case Some((false, expr)) => Some((false, UnaryExpr("!", expr)))
+          case None                => None
+        }
+      }
+      case _ => None
+    }
+  }
+
+  def transformConclusion(conclusion: Conclusion, resultExpr: Expr, templateToIds: Map[Id, Id]): Option[Expr] = {
+    conclusion match {
+      case AddToSet(htyp: HyperType, HyperCollectionResult()) => {
+        Some(getExpression(resultExpr, htyp))
+      }
+      case _ => None
+    }
+  }
+
+  def ruleToPreAndPostCondition(rulesWithIndex: Seq[(Rule, Int)], templateToIds: Map[Id, Id], resultExpr: Expr): Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])] = {
     rulesWithIndex.map {
       case (rule, index) => {
-        val conditions = rule.conditions.map(cond => {
-          cond match {
-            case InSet(htyp: HyperType, HyperTypeCheck(expr, Gamma(), Delta())) => {
-              val variable = templateToIds.getOrElse(expr, throw new Exception("This should never happen!"))
-              Some(getExpression(variable, htyp))
-            }
-            case _ => None
+        var conditions   = Seq.empty[Expr]
+        var assertions   = Seq.empty[Stmt]
+        var conclusion   = Seq.empty[Expr]
+        var notCheckable = false
+        rule.conditions.foreach(cond => {
+          transformCondition(cond, templateToIds) match {
+            case Some((true, expr))  => conditions :+= expr
+            case Some((false, expr)) => assertions :+= AssumeStmt(expr)
+            case None                => notCheckable = true
           }
         })
-        val conclusions = rule.conclusions.map(conc => {
-          conc match {
-            case AddToSet(htyp: HyperType, HyperCollectionResult()) => {
-              Some(getExpression(resultExpr, htyp))
-            }
-            case _ => None
+
+        rule.conclusions.foreach(conc => {
+          transformConclusion(conc, resultExpr, templateToIds) match {
+            case Some(expr) => conclusion :+= expr
+            case None       => notCheckable = true
           }
         })
-        (index, conditions, conclusions)
+        if (notCheckable) {
+          (index, None)
+        } else {
+          (index, Some((conditions, conclusion, assertions)))
+        }
       }
     }
   }
