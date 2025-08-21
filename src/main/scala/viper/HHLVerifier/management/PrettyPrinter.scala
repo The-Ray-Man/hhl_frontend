@@ -10,6 +10,8 @@ import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.ast.HHLProgram
+import viper.HHLVerifier.ast.Method
 object PrettyPrinter {
 
   // prints a statement by matching recursively on AST
@@ -71,10 +73,16 @@ object PrettyPrinter {
   // prints expression by matching recursively on AST
   def formatExpr(expr: Expr): String = {
     expr match {
-      case Id(name)                                    => name
-      case AssertVar(name)                             => name
-      case ProofVar(name)                              => name
-      case AssertVarDecl(vName, vType)                 => vName + ": " + formatType(vType)
+      case Id(name)                    => name
+      case AssertVar(name)             => name
+      case ProofVar(name)              => name
+      case AssertVarDecl(vName, vType) => {
+        val typeDecl = vType match {
+          case StateType() => ""
+          case _           => ": " + formatType(vType)
+        }
+        vName.name + typeDecl
+      }
       case Num(value)                                  => value.toString
       case BoolLit(value)                              => value.toString
       case BinaryExpr(e1, op, e2)                      => "(" + formatExpr(e1) + ") " + op + " (" + formatExpr(e2) + ")"
@@ -102,14 +110,36 @@ object PrettyPrinter {
   def formatType(typ: Type): String = {
     typ match {
       case _: UnknownType   => "unknown"
-      case _: IntType       => "int"
-      case _: BoolType      => "bool"
-      case _: StateType     => "state"
+      case _: IntType       => "Int"
+      case _: BoolType      => "Bool"
+      case _: StateType     => "State"
       case _: StmtBlockType => "StmtBlock"
       case t: SetType       => f"set_${formatType(t.sType)}_"
       case t: SeqType       => f"seq_${formatType(t.sType)}_"
       case t: MapType       => f"map_${formatType(t.kType)}1${formatType(t.vType)}_"
     }
+  }
+
+  def formatMethodArg(id: Id): String = {
+    val htyp = id.hyperType match {
+      case None             => ""
+      case Some(collection) => collection.toString()
+    }
+    s"${id.name} : ${formatType(id.typ)}${htyp}"
+  }
+
+  def formatMethod(method: Method): String = {
+    val body          = formatStmt(method.body)
+    val params        = method.params.map(p => formatMethodArg(p)).mkString(", ")
+    val returnType    = method.res.map(r => s"${r.name} : ${formatType(r.typ)}").mkString(", ")
+    val precondition  = method.pre.map(p => s"requires ${formatExpr(p)}").mkString("\n") + "\n"
+    val postcondition = method.post.map(p => s"ensures ${formatExpr(p)}").mkString("\n") + "\n"
+
+    s"method ${method.mName}($params) returns ($returnType) \n${precondition}${postcondition}{\n$body\n}"
+  }
+
+  def formatProgram(program: HHLProgram): String = {
+    program.methods.map(method => PrettyPrinter.formatMethod(method)).mkString("\n")
   }
 
   def formatHyperType(ty: typing.dsl.HyperType): String = {
