@@ -193,6 +193,9 @@ object DSLTests {
     val res58 = fastparse.parse("x in Vars[e1]", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("58", res58)
 
+    val res59 = fastparse.parse("POS in DD[s1](Gamma, Delta, Context)(y)(y)", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
+    result("59", res59)
+
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)

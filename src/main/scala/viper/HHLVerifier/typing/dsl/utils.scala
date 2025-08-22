@@ -20,6 +20,11 @@ import viper.HHLVerifier.typing.dsl.Parser.setEquals
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.ast.Stmt
 import scala.collection.View.Empty
+import viper.carbon.boogie.All.apply
+import viper.HHLVerifier.ast.Num
+import viper.HHLVerifier.ast.BoolLit
+import viper.HHLVerifier.ast.MethodCallExpr
+import viper.HHLVerifier.ast.CombExpr
 
 object SpecificationUtil {
 
@@ -235,6 +240,7 @@ object ToIndexed {
         DeriveHyperType(toIndexedVariable(mapping, expr), gamma, delta, context)
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
+      case MappingAccess(subMapping, id) => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
       case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
@@ -285,7 +291,7 @@ object applyIndexed {
   def applyIndexed(mapping: Map[Id, Id], set: Set): Set = {
     set match {
       case HyperCollectionResult()            => HyperCollectionResult()
-      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), applyIndexed(mapping,gamma), applyIndexed(mapping,delta))
       case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
       case Variables(content)                 => Variables(applyIndexed(mapping, content))
@@ -301,9 +307,10 @@ object applyIndexed {
       case GammaResult()                                => GammaResult()
       case DeltaResult()                                => DeltaResult()
       case DeriveHyperType(expr, gamma, delta, context) =>
-        DeriveHyperType(applyIndexed(mapping, expr), gamma, delta, context)
+        DeriveHyperType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
       case DeriveDeltaType(expr, gamma, delta, context) =>
-        DeriveDeltaType(applyIndexed(mapping, expr), gamma, delta, context)
+        DeriveDeltaType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
+      case MappingAccess(subMapping, id) => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
       case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
@@ -319,6 +326,39 @@ object applyIndexed {
       case SimpleHyperType(name)             => hty
       case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => applyIndexed(mapping, arg)))
       case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => applyIndexed(mapping, arg)))
+    }
+  }
+  def applyIndexed(mapping: Map[Id, Id], expr: Expr) : Expr = {
+    expr match {
+      case BinaryExpr(left, op, right) =>
+        BinaryExpr(applyIndexed(mapping, left), op, applyIndexed(mapping, right))
+      case UnaryExpr(op, inner) =>
+        UnaryExpr(op, applyIndexed(mapping, inner))
+      case Id(name) =>
+        mapping.getOrElse(Id(name), Id(name))
+      case Num(value) =>
+        Num(value)
+      case BoolLit(value) =>
+        BoolLit(value)
+      case ImpliesExpr(left, right) =>
+        ImpliesExpr(applyIndexed(mapping, left), applyIndexed(mapping, right))
+      case MethodCallExpr(methodName, args) =>
+        MethodCallExpr(methodName, args.map(arg => applyIndexed(mapping, arg).asInstanceOf[Id]))
+      case LookupExpr(dataStructure, index) =>
+        LookupExpr(applyIndexed(mapping, dataStructure), applyIndexed(mapping, index))
+      case LengthExpr(dataStructure) =>
+        LengthExpr(applyIndexed(mapping, dataStructure))
+      case CombExpr(lhs, rhs, op) =>
+        CombExpr(applyIndexed(mapping, lhs), applyIndexed(mapping, rhs), op)
+      case _ => throw new Exception(s"Unsupported expression type for indexing: $expr")
+    }
+  }
+
+  def applyIndexed(mapping: Map[Id, Id], stmt: StmtPattern): StmtPattern = {
+    stmt match {
+      case AssignStmt(variable, value) => AssignStmt(applyIndexed(mapping, variable), applyIndexed(mapping, value))
+      case CompStmt(first, second) => CompStmt(applyIndexed(mapping, first), applyIndexed(mapping, second))
+      case IfStmt(condition, thenBranch, elseBranch) => IfStmt(applyIndexed(mapping, condition), applyIndexed(mapping, thenBranch), applyIndexed(mapping, elseBranch))
     }
   }
 }

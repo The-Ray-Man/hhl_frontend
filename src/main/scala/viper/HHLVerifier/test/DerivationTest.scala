@@ -245,6 +245,9 @@ object DerivationTests {
     val program4 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/value2.hhl")
     runTest(typeSystem2, program4, false)
 
+    val program5 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/mono1.hhl")
+    runTest(typeSystem2, program5, false)
+
   }
 
   def main(args: Array[String]): Unit = {

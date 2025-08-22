@@ -55,11 +55,13 @@ object Parser {
   def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma)
   def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta)
 
-  def mapping[$: P]: P[Mapping] = P(deltaResult | deriveHyperType | deriveDeltaType | deltaTypeCheck | gammaResult | gamma | delta | deltaCollectionResult)
+  def mapping[$: P]: P[Mapping] = P(deltaResult | deriveHyperType |deriveDeltaType | deltaTypeCheck | gammaResult | gamma | delta | deltaCollectionResult)
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
-  def set[$: P]: P[Set] = P(setWithoutElement | mappingAccess | hyperTypeCheck | hyperCollectionResult | context | variablesInExpression)
+  def mappingDoubleAccess[$: P] : P[MappingAccess] = P(mapping ~ "(" ~ variable ~")(" ~ variable ~")").map {case (mapping, var1, var2) => MappingAccess(MappingAccess(mapping, var1), var2)}
+
+  def set[$: P]: P[Set] = P(setWithoutElement | mappingDoubleAccess | mappingAccess | hyperTypeCheck | hyperCollectionResult | context | variablesInExpression)
 
   def hyperTypeCheck[$: P]: P[HyperTypeCheck]    = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
   def deltaTypeCheck[$: P]: P[DeltaTypeCheck]    = P("D" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => DeltaTypeCheck(id, gamma, delta) }
