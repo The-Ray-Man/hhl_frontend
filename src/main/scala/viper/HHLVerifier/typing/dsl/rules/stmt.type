@@ -13,5 +13,5 @@
     LOW in H[b](Gamma,Delta) && LOW in DH[s1](Gamma, Delta, Context)(x) && LOW in DH[s2](Gamma, Delta, Context)(x) => LOW addTo Gamma'(x),
     TRUE in H[b](Gamma, Delta) => Gamma' = DH[s1](Gamma, Delta, Context) && Delta' = DD[s1](Gamma, Delta, Context),
     FALSE in H[b](Gamma, Delta) => Gamma' = DH[s2](Gamma, Delta, Context) && Delta' = DD[s2](Gamma, Delta, Context),
-    !(TRUE in H[b](Gamma,Delta)) && !(FALSE in H[b](Gamma, Delta)) && (DH[s1](Gamma, Delta, Context)(x) \ LOW) = (DH[s2](Gamma, Delta, Context)(x) \ LOW) => Gamma'(x) = (DH[s1](Gamma, Delta, Context)(x) \ LOW)
+    DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x) => (DH[s1](Gamma, Delta, Context)(x) \ LOW) addTo Gamma'(x)
 ]
