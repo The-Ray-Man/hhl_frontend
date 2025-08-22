@@ -12,6 +12,9 @@ import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Method
+import viper.HHLVerifier.typing.dsl.SimpleHyperType
+import viper.HHLVerifier.typing.dsl.HyperTypeWithSetArgs
+import viper.HHLVerifier.typing.dsl.HyperTypeWithListArgs
 object PrettyPrinter {
 
   // prints a statement by matching recursively on AST
@@ -41,7 +44,7 @@ object PrettyPrinter {
         // If statement, creates condition and executable statement
         // May include else statement
         val ifStmtStr   = "if ( " + formatExpr(cond) + " ) {\n" + formatStmt(ifStmt) + "\n}"
-        val elseStmtStr = if (elseStmt.stmts.nonEmpty) "" else " else {\n" + formatStmt(elseStmt) + "\n}"
+        val elseStmtStr = if (elseStmt.stmts.isEmpty) "" else " else {\n" + formatStmt(elseStmt) + "\n}"
         ifStmtStr + elseStmtStr
       case WhileLoopStmt(cond, body, inv, decr, rule) =>
         // While Statement, includes (possibly) specified rule, condition, invariant, variant, body
@@ -143,7 +146,12 @@ object PrettyPrinter {
   }
 
   def formatHyperType(ty: typing.dsl.HyperType): String = {
-    ty.toString()
+    ty match {
+      case SimpleHyperType(name) => name
+      case HyperTypeWithSetArgs(name, setArgs) => s"$name{${setArgs.map(a => a.toString()).mkString(", ")}}"
+      case HyperTypeWithListArgs(name, listArgs) => s"$name[${listArgs.map(a => a.toString()).mkString(", ")}]"
+
+    }
   }
 
   def formatHyperTypeCollection(col: HyperTypeCollection): String = {

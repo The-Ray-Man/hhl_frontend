@@ -1,0 +1,17 @@
+/* STMT OPERATIONS */
+(Gamma, Delta, Context) |- var := e :: [
+    => H[e](Gamma, Delta) = Gamma'(var),
+    !(x == var) => Gamma(x) = Gamma'(x) 
+];
+
+(Gamma, Delta, Context) |- s1;s2 :: [
+    => Gamma' = DH[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context),
+    => Delta' = DD[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context)
+];
+
+(Gamma, Delta, Context) |- if b then s1 else s2 end :: [
+    LOW in H[b](Gamma,Delta) && LOW in DH[s1](Gamma, Delta, Context)(x) && LOW in DH[s2](Gamma, Delta, Context)(x) => LOW addTo Gamma'(x),
+    TRUE in H[b](Gamma, Delta) => Gamma' = DH[s1](Gamma, Delta, Context) && Delta' = DD[s1](Gamma, Delta, Context),
+    FALSE in H[b](Gamma, Delta) => Gamma' = DH[s2](Gamma, Delta, Context) && Delta' = DD[s2](Gamma, Delta, Context),
+    !(TRUE in H[b](Gamma,Delta)) && !(FALSE in H[b](Gamma, Delta)) && (DH[s1](Gamma, Delta, Context)(x) \ LOW) = (DH[s2](Gamma, Delta, Context)(x) \ LOW) => Gamma'(x) = (DH[s1](Gamma, Delta, Context)(x) \ LOW)
+]

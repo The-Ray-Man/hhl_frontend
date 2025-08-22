@@ -113,9 +113,10 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
 
   def derive(context: StatementDerivationContext): StatementDerivationResult = {
     val emptyResult = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
-    wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
+    val derivedResult = wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
       rule.apply(context, acc, false).getStatementResult
     }
+    derivedResult
   }
 }
 

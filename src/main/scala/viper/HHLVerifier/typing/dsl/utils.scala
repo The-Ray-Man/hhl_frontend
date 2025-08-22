@@ -217,6 +217,7 @@ object ToIndexed {
       case HyperCollectionResult()            => HyperCollectionResult()
       case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
       case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
+      case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
     }
   }
 
@@ -283,6 +284,7 @@ object applyIndexed {
       case HyperCollectionResult()            => HyperCollectionResult()
       case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), gamma, delta)
       case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
+      case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
     }
   }
 
@@ -343,6 +345,10 @@ case class DeriveArgsUtils(var context: Context) {
         val idIndexed    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         val hyperMapping = getHyperMapping(mapping)
         hyperMapping.get(idIndexed.name)
+      }
+      case WithoutElement(set, elem) => {
+        val derivedCollection = getHyperTypeCollection(set)
+        derivedCollection.without(elem.asInstanceOf[HyperType])
       }
       case _ => throw new Exception("Unsupported set type for HyperCollection retrieval: " + collection.getClass.getSimpleName)
     }
@@ -429,9 +435,11 @@ class Cache() {
 
   def get(gamma: HyperMapping, delta: DeltaMapping, expr: Expr): Option[ExpressionDerivationResult] = {
     expressionCache.get((expr, gamma, delta))
+    // None
   }
 
   def get(gamma: HyperMapping, delta: DeltaMapping, stmt: Stmt): Option[StatementDerivationResult] = {
     statementCache.get((stmt, gamma, delta))
+    // None
   }
 }

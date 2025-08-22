@@ -27,6 +27,7 @@ case class TypeCheckSuccess(verifyResult: VerificationResult) extends TestResult
 case class TypeCheckFailure(message: Option[String])          extends TestResult
 case class Unknown()                                          extends TestResult
 
+
 object HyperTest {
   var success: List[String]   = List.empty
   var failed: List[String]    = List.empty
@@ -96,7 +97,12 @@ object HyperTest {
   }
 
   def hyperTypeCheck(program: HHLProgram, test: (File, TestResult)): Unit = {
-    val system = TypeSystem()
+    val system = TypeSystem.loadTypeSystem(Seq(
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type",
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type",
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    ))
     try {
       HyperTypeChecker.typeCheckProg(system, program)
     } catch {
@@ -132,7 +138,7 @@ object HyperTest {
     }
   }
 
-  def main(): Unit = {
+  def main(args: Array[String]): Unit = {
     val pathOfHyperTests = "src/test/hyperTypes"
     val typeTests        = getAllTestFiles(pathOfHyperTests)
 

@@ -53,6 +53,10 @@ case class HyperTypeCollection(
     new HyperTypeCollection(this.hypertypes ++ other.hypertypes)
   }
 
+  def without(ty: HyperType): HyperTypeCollection = {
+    new HyperTypeCollection(this.hypertypes - ty)
+  }
+
   override def toString: String = {
     PrettyPrinter.formatHyperTypeCollection(this)
   }

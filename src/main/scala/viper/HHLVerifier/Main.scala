@@ -35,18 +35,9 @@ object Main {
     //   sys.exit(1)
     // }
 
-    if (args.contains("--tests")) {
-      HyperTest.main()
-      return
-    }
 
-    if (args.contains("--testRules")) {
-      RuleSoundnessTests.main()
-      return
-    }
-
-    // val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/mono2.hhl"
-    var programAbsPath = args(0)
+    val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/invalid/leak.hhl"
+    // var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
     val program       = programSource.mkString
@@ -72,7 +63,11 @@ object Main {
     val hyperTypeSystem = if (args.contains("--typeSystem")) {
       typing.dsl.TypeSystem.loadTypeSystem(Seq(args(args.indexOf("--typeSystem") + 1)))
     } else {
-      typing.dsl.TypeSystem()
+      typing.dsl.TypeSystem.loadTypeSystem(Seq(
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
+      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+      // "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    ))
     }
 
     try {
@@ -84,7 +79,7 @@ object Main {
         new Logger("Parsing successful.").log()
 
         var parsedProgram: HHLProgram = res.get.value
-        // HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
+        HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
 
         new Logger("HyperType checking successful.").log()
         if (args.contains("--hypraToHypra")) {

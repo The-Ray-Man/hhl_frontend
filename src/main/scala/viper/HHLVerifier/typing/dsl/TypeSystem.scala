@@ -73,7 +73,8 @@ case class TypeSystem(
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.branchRule.statement).getOrElse(throw new Exception(s"Statement $s does not match branch pattern"))
         val context                      = StatementDerivationContext(this, s, gamma, delta, pc, stmtMatching, exprMatching, new Cache())
-        statementTypeSystem.branchRule.derive(context)
+        val derivedResult = statementTypeSystem.branchRule.derive(context)
+        derivedResult
       }
       case WhileLoopStmt(cond, body, _, _, _) => {
         var currentGamma = gamma
@@ -86,7 +87,7 @@ case class TypeSystem(
           val condResult = deriveStatement(currentGamma, currentDelta, IfElseStmt(cond, body, CompositeStmt(Seq())), pc)
           newGamma = condResult.getStatementResult.hyperTypeMapping
           newDelta = condResult.getStatementResult.deltaMapping
-        } while (newGamma != gamma || newDelta != delta)
+        } while (newGamma != currentGamma || newDelta != currentDelta)
         StatementDerivationResult(
           hyperTypeMapping = newGamma,
           deltaMapping = newDelta
