@@ -181,11 +181,24 @@ object DSLTests {
     val res54 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("54", res54)
 
+    val res55 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x) => (DH[s1](Gamma, Delta, Context)(x) \\ LOW) addTo Gamma'(x)", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
+    result("55", res55)
+
+    val res56 = fastparse.parse("(DH[s1](Gamma, Delta, Context)(x) \\ LOW)", viper.HHLVerifier.typing.dsl.Parser.set(_))
+    result("56", res56)
+
+    val res57 = fastparse.parse("Vars[x]", viper.HHLVerifier.typing.dsl.Parser.set(_))
+    result("57", res57)
+    
+    val res58 = fastparse.parse("x in Vars[e1]", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
+    result("58", res58)
+
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
     val path = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
-    val _    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path))
+    val stmtPath = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val _    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
   }
 
   def main(args: Array[String]): Unit = {
@@ -193,6 +206,7 @@ object DSLTests {
     loadingTypeSystemTest("value.type")
     loadingTypeSystemTest("infFlow.type")
     loadingTypeSystemTest("deltaOnValue.type")
+    loadingTypeSystemTest("mono.type")
 
   }
 }

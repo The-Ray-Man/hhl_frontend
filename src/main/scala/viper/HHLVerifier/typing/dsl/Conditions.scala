@@ -3,6 +3,7 @@ package viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 
 trait Condition extends CollectVariables {
 
@@ -59,6 +60,14 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val indexedId    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         val indexedSet   = derivedGamma.get(indexedId.name)
         indexedSet.hypertypes.contains(elem.asInstanceOf[HyperType])
+      }
+      case Variables(content) => {
+        val variable = elem.asInstanceOf[Id]
+        var existingVariables = getVariables(context.getExprById(content))
+        if (context.isInstanceOf[StatementDerivationContext]) {
+          existingVariables ++= getVariables(context.getStmtById(content))
+        }
+        existingVariables.contains(variable)
       }
       case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())
     }

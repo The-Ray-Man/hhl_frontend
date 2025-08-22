@@ -59,13 +59,14 @@ object Parser {
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
-  def set[$: P]: P[Set] = P(setWithoutElement | mappingAccess | hyperTypeCheck | hyperCollectionResult | context)
+  def set[$: P]: P[Set] = P(setWithoutElement | mappingAccess | hyperTypeCheck | hyperCollectionResult | context | variablesInExpression)
 
   def hyperTypeCheck[$: P]: P[HyperTypeCheck]    = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
   def deltaTypeCheck[$: P]: P[DeltaTypeCheck]    = P("D" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => DeltaTypeCheck(id, gamma, delta) }
   def deriveHyperType[$: P]: P[DeriveHyperType]  = P("DH" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveHyperType(id, gamma, delta, context) }
   def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveDeltaType(id, gamma, delta, context) }
   def setWithoutElement[$: P]: P[WithoutElement] = P("(" ~ set ~ ws ~ "\\" ~ element ~ ws ~ ")").map { case (set, elem) => WithoutElement(set, elem) }
+  def variablesInExpression[$ :P] : P[Variables] = P("Vars[" ~ HypraParser.progVar ~ "]").map { case id => Variables(id) }
   def condition[$: P]: P[Condition]              = P(equal | setEquals | mapEquals | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
@@ -101,7 +102,8 @@ object Parser {
     HyperTypeWithListArgs(name, args.toSeq)
   }
 
-  def conclusion[$: P]: P[Conclusion] = P(mapEquals | addToSet | setEquals)
+  def conclusion[$: P]: P[Conclusion] = P(mapEquals | addToSet | extendSet | setEquals)
+  def extendSet[$: P]: P[ExtendSet] = P(set ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => ExtendSet(elem, set) }
   def addToSet[$: P]: P[AddToSet]     = P(element ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => AddToSet(elem, set) }
   def setEquals[$: P]: P[SetEquals]   = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
   def mapEquals[$: P]: P[MapEquals]   = P(mapping ~ ws ~ "=" ~ ws ~ mapping).map { case (map1, map2) => MapEquals(map1, map2) }

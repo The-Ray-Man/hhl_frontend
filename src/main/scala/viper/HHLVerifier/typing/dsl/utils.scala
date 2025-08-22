@@ -168,6 +168,7 @@ object ToIndexed {
       case AddToSet(elem, set)           => AddToSet(toIndexedVariable(mapping, elem), toIndexedVariable(mapping, set))
       case SetEquals(set1, set2)         => SetEquals(toIndexedVariable(mapping, set1), toIndexedVariable(mapping, set2))
       case MapEquals(mapping1, mapping2) => MapEquals(toIndexedVariable(mapping, mapping1), toIndexedVariable(mapping, mapping2))
+      case ExtendSet(toAdd, toExtend)    => ExtendSet(toIndexedVariable(mapping, toAdd), toIndexedVariable(mapping, toExtend))
     }
   }
 
@@ -218,6 +219,7 @@ object ToIndexed {
       case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
       case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
+      case Variables(content) => Variables(toIndexedVariable(mapping, content))
     }
   }
 
@@ -272,6 +274,7 @@ object applyIndexed {
       case AddToSet(elem, set)           => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
       case SetEquals(set1, set2)         => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
       case MapEquals(mapping1, mapping2) => MapEquals(applyIndexed(mapping, mapping1), applyIndexed(mapping, mapping2))
+      case ExtendSet(toAdd, toExtend)    => ExtendSet(applyIndexed(mapping, toAdd), applyIndexed(mapping, toExtend))
     }
   }
 
@@ -285,6 +288,7 @@ object applyIndexed {
       case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), gamma, delta)
       case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
+      case Variables(content)                 => Variables(applyIndexed(mapping, content))
     }
   }
 

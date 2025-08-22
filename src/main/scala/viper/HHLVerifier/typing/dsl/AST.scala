@@ -150,6 +150,12 @@ case class ProgramContext() extends Set {
 
 }
 
+case class Variables(content: Id) extends Set {
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set(content)
+}
+
 case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false

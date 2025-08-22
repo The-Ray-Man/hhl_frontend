@@ -65,4 +65,12 @@ case class DeltaCollection(val mapping: Map[String, HyperTypeCollection]) {
     DeltaCollection(updatedMapping)
   }
 
+  def extend(variable: String, hyperTypes: HyperTypeCollection): DeltaCollection = {
+    val updatedMapping = mapping.get(variable) match {
+      case Some(existingCollection) => mapping.updated(variable, existingCollection.extend(hyperTypes))
+      case None                     => mapping.updated(variable, hyperTypes)
+    }
+    DeltaCollection(updatedMapping)
+  }
+
 }

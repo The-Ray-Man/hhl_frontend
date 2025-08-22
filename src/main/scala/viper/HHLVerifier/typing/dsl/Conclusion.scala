@@ -31,8 +31,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
         )
       }
       case MappingAccess(GammaResult(), variable) => {
-        val variableLookup         = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
-        val hyperTypes             = result.getStatementResult.hyperTypeMapping.get(variableLookup.name)
+        val variableLookup = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+        val hyperTypes = result.getStatementResult.hyperTypeMapping.get(variableLookup.name)
         val newHyperTypeCollection = hyperTypes.add(elem.asInstanceOf[HyperType])
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
@@ -46,6 +46,43 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
 
   override def isHyperTypeConclusion(): Boolean = set.isHyperTypeConclusion()
 
+}
+
+case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
+
+  override def variables: ScalaSet[Id] = toAdd.variables ++ toExtend.variables
+
+  override def isHyperTypeConclusion(): Boolean = toAdd.isHyperTypeConclusion() && toExtend.isHyperTypeConclusion()
+
+  def apply(context: Context, result: DerivationResult): DerivationResult = {
+    val utils = DeriveArgsUtils(context)
+    toExtend match {
+      case HyperCollectionResult() => {
+        val toAddSet = utils.getHyperTypeCollection(toAdd)
+        ExpressionDerivationResult(
+          hyperTypeCollection = result.getExpressionResult.hyperTypeCollection.extend(toAddSet),
+          deltaCollection = result.getExpressionResult.deltaCollection
+        )
+      }
+      case MappingAccess(DeltaCollectionResult(), variable) => {
+        val variableLookup = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+        val toAddSet    = utils.getHyperTypeCollection(toAdd)
+        ExpressionDerivationResult(
+          hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
+          deltaCollection = result.getExpressionResult.deltaCollection.extend(variableLookup.name, toAddSet)
+        )
+      }
+      case MappingAccess(GammaResult(), variable) => {
+        val variableLookup         = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
+        val hyperTypes             = result.getStatementResult.hyperTypeMapping.get(variableLookup.name)
+        val toAddSet = utils.getHyperTypeCollection(toAdd)
+        val newHyperTypeCollection = hyperTypes.extend(toAddSet)
+        StatementDerivationResult(
+          hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
+          deltaMapping = result.getStatementResult.deltaMapping
+        )
+      }
+    }}
 }
 
 case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
