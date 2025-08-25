@@ -69,7 +69,7 @@ object HyperTest {
     }
   }
 
-  def verificationCheck(typeSystem:TypeSystem, program: HHLProgram, test: (File, TestResult)) = {
+  def verificationCheck(typeSystem: TypeSystem, program: HHLProgram, test: (File, TestResult)) = {
     Generator.verifierOption = 2
     Generator.autoSelectRules = true
     val translatedProgram = HyperTranslate.translateProgram(typeSystem, program)
@@ -101,7 +101,8 @@ object HyperTest {
         "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
         "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type",
         "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type",
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type",
+        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
       )
     )
     try {
@@ -142,7 +143,7 @@ object HyperTest {
   def main(args: Array[String]): Unit = {
     val pathOfHyperTests = "src/test/hyperTypes"
     var typeTests        = getAllTestFiles(pathOfHyperTests)
-    typeTests = typeTests.filter(test => test._1.getAbsolutePath().endsWith("src/test/hyperTypes/valid/correct/mono4.hhl"))
+    // typeTests = typeTests.filter(test => test._1.getAbsolutePath().endsWith("src/test/hyperTypes/valid/correct/mono2.hhl"))
 
     for (test <- typeTests) {
       println(f"Test: ${test._1.getPath} with expected result: ${test._2}")

@@ -48,33 +48,45 @@ case class TypeSystem(
   def initializeMethod(method: ast.Method): StatementDerivationResult = {
     val allVars = getVariables(method)
     allVariables = allVars
-    val result = method.params
-      .map(p => {
+    val (hyperTypeMapping, deltaMapping) = initializeVariables(allVars)
+
+    val hyperTypeMappingWithDecl = method.params.foldLeft(hyperTypeMapping) { case (agg, param) =>
+      val declaredTypes = param.hyperType.getOrElse(Seq()).toSet
+      val currentTypes  = agg.mapping.getOrElse(param.name, HyperTypeCollection(Set()))
+      agg.copy(mapping = agg.mapping.updated(param.name, HyperTypeCollection(currentTypes.hypertypes ++ declaredTypes)))
+    }
+
+    StatementDerivationResult(
+      hyperTypeMapping = hyperTypeMappingWithDecl,
+      deltaMapping = deltaMapping
+    )
+  }
+
+  def initializeVariables(variables: ScalaSet[Id]): (HyperMapping, DeltaMapping) = {
+    val result = variables
+      .map(v => {
         val emptyContext = StatementDerivationContext(
           typeSystem = this,
           stmt = null,
-          allVars = allVars,
+          allVars = variables,
           gamma = new HyperMapping(Map.empty),
           delta = DeltaMapping(Map.empty),
           pc = HyperTypeCollection(Set()),
           varStmtMapping = Map.empty,
-          varExprMapping = Map(statementTypeSystem.initRule.statement.asInstanceOf[InitStmt].variable -> p),
+          varExprMapping = Map(statementTypeSystem.initRule.statement.asInstanceOf[InitStmt].variable -> v),
           cache = new Cache()
         )
         val res            = statementTypeSystem.initRule.derive(emptyContext)
-        val htypesFromDecl = p.hyperType.getOrElse(Seq()).toSet
-        val htypesFromInit = res.hyperTypeMapping.get(p.name).hypertypes
-        val deltaTypes     = res.deltaMapping.collection.getOrElse(p.name, DeltaCollection(Map()))
-        (p.name -> HyperTypeCollection(htypesFromDecl ++ htypesFromInit), (p.name -> deltaTypes))
+        val htypesFromDecl = v.hyperType.getOrElse(Seq()).toSet
+        val htypesFromInit = res.hyperTypeMapping.get(v.name).hypertypes
+        val deltaTypes     = res.deltaMapping.collection.getOrElse(v.name, DeltaCollection(Map()))
+        (v.name -> HyperTypeCollection(htypesFromDecl ++ htypesFromInit), (v.name -> deltaTypes))
       })
+      .toSeq
 
     val hyperTypeMapping = HyperMapping(result.map(_._1).toMap)
     val deltaMapping     = DeltaMapping(result.map(_._2).toMap)
-
-    StatementDerivationResult(
-      hyperTypeMapping = hyperTypeMapping,
-      deltaMapping = deltaMapping
-    )
+    (hyperTypeMapping, deltaMapping)
   }
 
   def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
@@ -135,20 +147,19 @@ case class TypeSystem(
         val typeCollection = gamma.get(id.name)
         if (!typeCollection.hypertypes.contains(htyp)) {
           throw new Exception(s"${id} may not have hyper type ${htyp}")
-        }
-        else {
+        } else {
           StatementDerivationResult(
             hyperTypeMapping = gamma,
             deltaMapping = delta
           )
         }
-      }                                                                                                                                                                            
+      }
       case FoldStmt(htyp, id) => {
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(gamma.mapping.updated(id.name, gamma.mapping.getOrElse(id.name, HyperTypeCollection(Set())).add(htyp))),
           deltaMapping = delta
         )
-      }                                                                                                                                                                                        
+      }
       case MultiAssignStmt(_, _)                                                                                                                                                                                 => throw new Exception("MultiAssignStmt is not yet supported in the type system")
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)

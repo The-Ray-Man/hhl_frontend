@@ -78,9 +78,9 @@ case class InSet(elem: Element, set: Set) extends Condition {
         getDeltaMapping.collection.getOrElse(indexedVar1.name, return false).mapping.getOrElse(indexedVar2.name, return false).hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
       case AssignedVariables(stmt) => {
-        val actualStmt = context.varStmtMapping.getOrElse(stmt, throw new Exception("Could not index stmt"))
+        val actualStmt       = context.varStmtMapping.getOrElse(stmt, throw new Exception("Could not index stmt"))
         val changedVariables = getAssignedVariables(actualStmt)
-        val variable = elem.asInstanceOf[Id]
+        val variable         = elem.asInstanceOf[Id]
         changedVariables.contains(variable)
       }
       case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())

@@ -53,14 +53,16 @@ object Parser {
   def context[$: P]: P[ProgramContext]                      = P("Context").map(_ => ProgramContext())
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
+  def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta(" ~ set ~ ")").map { case varSet => InitializeDeltaMapping(varSet) }
+  def initializeGamma[$: P]: P[InitializeGammaMapping]      = P("InitGamma(" ~ set ~ ")").map { case varSet => InitializeGammaMapping(varSet) }
   def gammaResult[$: P]: P[GammaResult]                     = P("Gamma'").map(_ => GammaResult())
   def deltaResult[$: P]: P[DeltaResult]                     = P("Delta'").map(_ => DeltaResult())
-  def assignedVars[$: P] : P[AssignedVariables] = P("Assigned[" ~ HypraParser.progVar ~ "]").map { case id => AssignedVariables(id) }
+  def assignedVars[$: P]: P[AssignedVariables]              = P("Assigned[" ~ HypraParser.progVar ~ "]").map { case id => AssignedVariables(id) }
 
   def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma)
-  def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta)
+  def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta | initializeDelta)
 
-  def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck  | assignedVars | hyperCollectionResult | context | variablesInExpression)
+  def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck | assignedVars | hyperCollectionResult | context | allVariables | allParameters | variablesInExpression | assignedVars | setWithoutElement)
   def mapping[$: P]: P[Mapping]       = P(doubleMappingAccess | deltaTypeCheck | deriveHyperType | gammaResult | gamma | deltaCollectionResult)
   def doubleMapping[$: P]: P[Mapping] = P(deltaResult | deriveDeltaType | delta)
 
@@ -75,7 +77,10 @@ object Parser {
   def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveDeltaType(id, gamma, delta, context) }
   def setWithoutElement[$: P]: P[WithoutElement] = P("(" ~ set ~ ws ~ "\\" ~ element ~ ws ~ ")").map { case (set, elem) => WithoutElement(set, elem) }
   def variablesInExpression[$: P]: P[Variables]  = P("Vars[" ~ HypraParser.progVar ~ "]").map { case id => Variables(id) }
-  def condition[$: P]: P[Condition]              = P(equal | setEquals | mapEquals | inDoubleMapping | inSet | inMapping | arithCondition | boolCondition | negatedCondition )
+  def allVariables[$: P]: P[AllVariables]        = P("AllVariables").map(_ => AllVariables())
+  def allParameters[$: P]: P[AllParameters]      = P("AllParameters").map(_ => AllParameters())
+
+  def condition[$: P]: P[Condition] = P(equal | setEquals | mapEquals | inDoubleMapping | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
@@ -92,7 +97,7 @@ object Parser {
   def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "==" | "!=").!
 
   def inSet[$: P]: P[InSet]               = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
-  def inMapping[$: P]: P[InMapping]       = P(((doubleMappingAccess | mapping) ~ ws ~ "hasKey" ~ ws ~ element )).map { case (mapping, elem) => InMapping(elem, mapping) }
+  def inMapping[$: P]: P[InMapping]       = P(((doubleMappingAccess | mapping) ~ ws ~ "hasKey" ~ ws ~ element)).map { case (mapping, elem) => InMapping(elem, mapping) }
   def inDoubleMapping[$: P]: P[InMapping] = P(doubleMapping ~ ws ~ "hasKey" ~ ws ~ element).map { case (mapping, elem) => InMapping(elem, mapping) }
   def element[$: P]: P[Element]           = P(variable | hyperType)
   def equal[$: P]: P[Equal]               = P(element ~ ws ~ "==" ~ ws ~ element).map { case (lhs, rhs) => Equal(lhs, rhs) }

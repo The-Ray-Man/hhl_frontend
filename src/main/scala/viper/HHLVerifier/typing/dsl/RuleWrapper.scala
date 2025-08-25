@@ -14,12 +14,12 @@ abstract class RuleWrapper(rule: dsl.Rule) {
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
 
   def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression: Boolean): DerivationResult = {
-
     val appliedIndexedRule = applyIndexed.applyIndexed(ruleCheckContext.variables, rule)
-    val conditionHolds     = appliedIndexedRule.conditions.forall(condition => {println(condition);condition.check(context, expression)})
+    //  println("\n\n", rule)
+    val conditionHolds = appliedIndexedRule.conditions.forall(condition => { condition.check(context, expression) })
 
     if (conditionHolds) {
-      appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => println(conclusion); conclusion.apply(context, acc) }
+      appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, acc) }
     } else {
       result
     }

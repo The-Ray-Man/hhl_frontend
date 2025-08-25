@@ -19,6 +19,7 @@ import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.parsing.Parser
 import viper.HHLVerifier.typing.HyperTypeChecker
 import viper.HHLVerifier.generation.Generator
+import viper.HHLVerifier.typing.dsl.HyperTypeWithListArgs
 
 object DerivationTests {
 
@@ -141,6 +142,27 @@ object DerivationTests {
 
   }
 
+  def monoTest(): Unit = {
+    val infFlowPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val stmtPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
+    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val typeSystem    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
+// n -> MONOUP[n], j -> LOW, MONOUP[k], i -> LOW, ZERO,
+    typeSystem.allVariables = Set(Id("n"), Id("i"), Id("j"))
+    val gamma = HyperMapping(
+      Map(
+        "n" -> HyperTypeCollection(Set(HyperTypeWithListArgs(SimpleHyperType("MONOUP"), Seq(Id("n"))))),
+        "j" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))),
+        "i" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))
+      )
+    )
+
+    val expression = BinaryExpr(BinaryExpr(Id("i"), "+", Id("j")), "<", Id("n"))
+    runTest(typeSystem, expression, gamma, DeltaMapping(Map()), Some(HyperTypeCollection(Set(HyperTypeWithListArgs(SimpleHyperType("MONOUP"), Seq(Id("n")))))), None)
+  }
+
   def valueInfFlowTests(): Unit = {
     val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
     val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
@@ -218,6 +240,7 @@ object DerivationTests {
     valueTests()
     valueInfFlowTests()
     statementTests()
+    monoTest()
     println("all tests passed")
   }
 }

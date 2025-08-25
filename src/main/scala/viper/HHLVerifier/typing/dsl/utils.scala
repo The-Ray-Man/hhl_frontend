@@ -25,6 +25,8 @@ import viper.HHLVerifier.ast.Num
 import viper.HHLVerifier.ast.BoolLit
 import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.CombExpr
+import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
+import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
 
 object SpecificationUtil {
 
@@ -225,7 +227,10 @@ object ToIndexed {
       case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
       case Variables(content)                 => Variables(toIndexedVariable(mapping, content))
-      case AssignedVariables(stmt) => AssignedVariables(toIndexedVariable(mapping, stmt)) 
+      case AssignedVariables(stmt)            => AssignedVariables(toIndexedVariable(mapping, stmt))
+      case AllParameters()                    => AllParameters()
+      case AllVariables()                     => AllVariables()
+      case _                                  => throw new Exception("Unsupported set type for indexing: " + set.getClass.getSimpleName)
     }
   }
 
@@ -241,8 +246,10 @@ object ToIndexed {
         DeriveHyperType(toIndexedVariable(mapping, expr), gamma, delta, context)
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
-      case MappingAccess(subMapping, id) => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
-      case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case MappingAccess(subMapping, id)                 => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
+      case InitializeGammaMapping(toInitializeVariables) => InitializeGammaMapping(toIndexedVariable(mapping, toInitializeVariables))
+      case InitializeDeltaMapping(toInitializeVariables) => InitializeDeltaMapping(toIndexedVariable(mapping, toInitializeVariables))
+      case _: Mapping                                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -297,6 +304,9 @@ object applyIndexed {
       case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
       case Variables(content)                 => Variables(applyIndexed(mapping, content))
       case AssignedVariables(stmt)            => AssignedVariables(applyIndexed(mapping, stmt))
+      case AllParameters()                    => AllParameters()
+      case AllVariables()                     => AllVariables()
+      case _                                  => throw new Exception("Unsupported set type for indexing: " + set.getClass.getSimpleName)
     }
   }
 
@@ -312,8 +322,9 @@ object applyIndexed {
         DeriveHyperType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
-      case MappingAccess(subMapping, id) => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
-      case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case MappingAccess(subMapping, id)                 => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
+      case InitializeDeltaMapping(toInitializeVariables) => InitializeDeltaMapping(applyIndexed(mapping, toInitializeVariables))
+      case _: Mapping                                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -458,8 +469,12 @@ case class DeriveArgsUtils(var context: Context) {
           }
         }
       }
-      case Gamma() => context.gamma
-      case _       => throw new Exception("Unsupported mapping type for Gamma condition" + mapping.getClass.getSimpleName)
+      case Gamma()                        => context.gamma
+      case InitializeGammaMapping(varSet) => {
+        val variables = getVariableSet(varSet)
+        context.typeSystem.initializeVariables(variables)._1
+      }
+      case _ => throw new Exception("Unsupported mapping type for Gamma condition" + mapping.getClass.getSimpleName)
     }
 
   }
@@ -479,8 +494,40 @@ case class DeriveArgsUtils(var context: Context) {
           }
         }
       }
-      case Delta() => context.delta
-      case _       => throw new Exception("Unsupported mapping type for Delta condition" + mapping.getClass.getSimpleName)
+      case Delta()                        => context.delta
+      case InitializeDeltaMapping(varSet) => {
+        val variables = getVariableSet(varSet)
+        context.typeSystem.initializeVariables(variables)._2
+      }
+      case _ => throw new Exception("Unsupported mapping type for Delta condition" + mapping.getClass.getSimpleName)
+    }
+  }
+
+  def getVariableSet(varSet: Set): ScalaSet[Id] = {
+    varSet match {
+      case Variables(content) => {
+        val _ = context.varExprMapping.get(content) match {
+          case Some(expr) => return getVariables(expr)
+          case None       => {}
+        }
+        val _ = context.varStmtMapping.get(content) match {
+          case Some(stmt) => return getVariables(stmt)
+          case None       => {}
+        }
+        throw new Exception(s"Variable $content not found in variable mapping")
+      }
+      case AssignedVariables(stmt) => {
+        val statements = context.getStmtById(stmt)
+        getAssignedVariables(statements)
+      }
+      case WithoutElement(set, elem) => {
+        val variables = getVariableSet(set)
+        variables.excl(elem.asInstanceOf[Id])
+      }
+      case AllVariables() => {
+        context.typeSystem.allVariables
+      }
+      case _ => throw new Exception("Unsupported variable set type: " + varSet.getClass.getSimpleName)
     }
   }
 }

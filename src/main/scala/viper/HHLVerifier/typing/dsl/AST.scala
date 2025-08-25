@@ -32,7 +32,7 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
     )
 
     for ((htypeDecl, i) <- hypertypeDeclaration.zipWithIndex) {
-      if (hypertypeDeclaration.zipWithIndex.find{ case (decl, j) => i < j && structureEqual(decl.hty, htypeDecl.hty) }.isDefined) {
+      if (hypertypeDeclaration.zipWithIndex.find { case (decl, j) => i < j && structureEqual(decl.hty, htypeDecl.hty) }.isDefined) {
         throw new Exception("Duplicate hypertype declaration for type (" + htypeDecl.hty + ")")
       }
     }
@@ -56,13 +56,13 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
     StatementDerivationRule(renamedStmt, renamedRules)
   }
 
-  def structureEqual(htypFrom: Element, htypTo: Element ) : Boolean = {
-    (htypFrom, htypTo) match  {
-      case (SimpleHyperType(fromName), SimpleHyperType(toName)) => fromName == toName
+  def structureEqual(htypFrom: Element, htypTo: Element): Boolean = {
+    (htypFrom, htypTo) match {
+      case (SimpleHyperType(fromName), SimpleHyperType(toName))                               => fromName == toName
       case (HyperTypeWithListArgs(fromName, fromArgs), HyperTypeWithListArgs(toName, toArgs)) => fromName == toName && fromArgs.length == toArgs.length && fromArgs.zip(toArgs).forall(pair => structureEqual(pair._1, pair._2))
-      case (HyperTypeWithSetArgs(fromName, fromArgs), HyperTypeWithSetArgs(toName, toArgs)) => fromName == toName && fromArgs.size == toArgs.size && fromArgs.forall(fArg => toArgs.exists(tArg => structureEqual(fArg, tArg)))
-      case (Id(_), Id(_)) => true
-      case _ => false
+      case (HyperTypeWithSetArgs(fromName, fromArgs), HyperTypeWithSetArgs(toName, toArgs))   => fromName == toName && fromArgs.size == toArgs.size && fromArgs.forall(fArg => toArgs.exists(tArg => structureEqual(fArg, tArg)))
+      case (Id(_), Id(_))                                                                     => true
+      case _                                                                                  => false
     }
   }
 }
@@ -196,6 +196,18 @@ case class Variables(content: Id) extends Set {
   override def variables: immutable.Set[Id] = immutable.Set(content)
 }
 
+case class AllVariables() extends Set {
+  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+
+  override def isHyperTypeConclusion(): Boolean = false
+}
+
+case class AllParameters() extends Set {
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+}
+
 case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false
@@ -218,6 +230,20 @@ case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping, context: Se
 
   override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
 
+}
+
+case class InitializeDeltaMapping(toInitializeVariables: Set) extends Mapping with Derivation {
+
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty
+}
+
+case class InitializeGammaMapping(toInitializeVariables: Set) extends Mapping with Derivation {
+
+  override def isHyperTypeConclusion(): Boolean = true
+
+  override def variables: immutable.Set[Id] = immutable.Set.empty
 }
 
 case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
