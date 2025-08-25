@@ -225,6 +225,7 @@ object ToIndexed {
       case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
       case Variables(content)                 => Variables(toIndexedVariable(mapping, content))
+      case AssignedVariables(stmt) => AssignedVariables(toIndexedVariable(mapping, stmt)) 
     }
   }
 
@@ -295,6 +296,7 @@ object applyIndexed {
       case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
       case Variables(content)                 => Variables(applyIndexed(mapping, content))
+      case AssignedVariables(stmt)            => AssignedVariables(applyIndexed(mapping, stmt))
     }
   }
 

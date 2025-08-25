@@ -176,6 +176,12 @@ case class WithoutElement(set: Set, elem: Element) extends Set {
   override def variables: immutable.Set[Id] = set.variables ++ elem.variables
 }
 
+case class AssignedVariables(stmt: Id) extends Set {
+  override def isHyperTypeConclusion(): Boolean = false
+
+  override def variables: immutable.Set[Id] = immutable.Set(stmt)
+}
+
 case class ProgramContext() extends Set {
 
   override def isHyperTypeConclusion(): Boolean = false

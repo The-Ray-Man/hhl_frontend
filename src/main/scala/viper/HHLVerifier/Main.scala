@@ -85,7 +85,7 @@ object Main {
         new Logger("HyperType checking successful.").log()
         if (args.contains("--hypraToHypra")) {
           println("Translating HyperTypes to HypraAssume/Assert statements.")
-          parsedProgram = HyperTranslate.translateProgram(parsedProgram)
+          parsedProgram = HyperTranslate.translateProgram(hyperTypeSystem, parsedProgram)
         }
 
         // Symbol table

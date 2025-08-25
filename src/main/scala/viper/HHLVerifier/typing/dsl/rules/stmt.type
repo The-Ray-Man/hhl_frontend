@@ -10,16 +10,22 @@
     => H[e](Gamma, Delta) = Gamma'(var),
     !(x == var) => Gamma(x) = Gamma'(x),
     !(x == var) && Delta hasKey x => Delta(x) = Delta'(x),
-    !(Delta hasKey var) && D[e](Gamma, Delta) hasKey var => Delta'(var)(var) = D[e](Gamma, Delta)(var),
-    Delta hasKey var && !(Delta(var) hasKey var) => Delta'(var)(var) = D[e](Gamma, Delta)(var),
-    ZERO in Delta(var)(var) && ZERO in D[e](Gamma, Delta)(var) => ZERO addTo Delta'(var)(var),
-    ZERO in Delta(var)(var) && POS in D[e](Gamma, Delta)(var) => POS addTo Delta'(var)(var),
-    ZERO in Delta(var)(var) && NEG in D[e](Gamma, Delta)(var) => NEG addTo Delta'(var)(var),
-    POS in Delta(var)(var) && ZERO in D[e](Gamma, Delta)(var) => POS addTo Delta'(var)(var),
-    POS in Delta(var)(var) && POS in D[e](Gamma, Delta)(var) => POS addTo Delta'(var)(var),
-    NEG in Delta(var)(var) && ZERO in D[e](Gamma, Delta)(var) => NEG addTo Delta'(var)(var),
-    NEG in Delta(var)(var) && NEG in D[e](Gamma, Delta)(var) => NEG addTo Delta'(var)(var),
-    LOW in Delta(var)(var) && LOW in D[e](Gamma, Delta)(var) => LOW addTo Delta'(var)(var)
+    !(Delta hasKey var) => Delta'(var) = D[e](Gamma, Delta),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && POS in  D[e](Gamma, Delta)(var) => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && NEG in  D[e](Gamma, Delta)(var) => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && ZERO in D[e](Gamma, Delta)(var) => ZERO addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && POS in Delta(var)(x)  && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && POS in  D[e](Gamma, Delta)(var) => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && POS in Delta(var)(x)  && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && ZERO in D[e](Gamma, Delta)(var) => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && NEG in Delta(var)(x)  && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && NEG in  D[e](Gamma, Delta)(var) => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && NEG in Delta(var)(x)  && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && ZERO in D[e](Gamma, Delta)(var) => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && ZERO in D[e](Gamma, Delta)(x)   => ZERO addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && POS  in D[e](Gamma, Delta)(x)   => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && NEG  in D[e](Gamma, Delta)(x)   => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && POS  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && ZERO in D[e](Gamma, Delta)(x)   => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && POS  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && POS  in D[e](Gamma, Delta)(x)   => POS  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && NEG  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && ZERO in D[e](Gamma, Delta)(x)   => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && NEG  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && NEG  in D[e](Gamma, Delta)(x)   => NEG  addTo Delta'(var)(x),
+    Delta hasKey var && Delta(var) hasKey x  && LOW  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && LOW  in D[e](Gamma, Delta)(x)   => LOW  addTo Delta'(var)(x)
 ];
 
 (Gamma, Delta, Context) |- s1;s2 :: [
@@ -38,7 +44,9 @@
     FALSE in DH[s1](Gamma, Delta, Context)(x) && FALSE in DH[s2](Gamma, Delta, Context)(x) => FALSE addTo Gamma'(x),
     MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, Delta, Context)(y)(y) && POS in DD[s1](Gamma, Delta, Context)(y)(y) && LOW in DD[s2](Gamma, Delta, Context)(y)(y) && NEG in DD[s2](Gamma, Delta, Context)(y)(y) => MONOUP[x] addTo Gamma'(y),
     MONOUP[x] in H[b](Gamma, Delta) && ZERO in DD[s1](Gamma, Delta, Context)(y)(y) && NEG in DD[s2](Gamma, Delta, Context)(y)(y) => MONOUP[x] addTo Gamma'(y),
-    MONOUP[x] in H[b](Gamma, Delta) && POS in DD[s1](Gamma, Delta, Context)(y)(y) && ZERO in DD[s2](Gamma, Delta, Context)(y)(y) => MONOUP[x] addTo Gamma'(y)
+    MONOUP[x] in H[b](Gamma, Delta) && POS in DD[s1](Gamma, Delta, Context)(y)(y) && ZERO in DD[s2](Gamma, Delta, Context)(y)(y) => MONOUP[x] addTo Gamma'(y),
+    !(x in Assigned[s1]) && !(x in Assigned[s2]) => Gamma'(x) = Gamma(x),
+    !(x in Assigned[s1]) && !(x in Assigned[s2]) && Delta hasKey x => Delta'(x) = Delta(x)
 ];
 
 (Gamma, Delta, Context) |- havoc(x) :: []

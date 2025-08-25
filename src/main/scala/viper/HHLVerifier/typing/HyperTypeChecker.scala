@@ -34,6 +34,7 @@ import viper.HHLVerifier.ast.AssumeStmt
 import viper.HHLVerifier.ast.UseHintStmt
 import viper.HHLVerifier.typing.dsl.StatementDerivationResult
 import viper.HHLVerifier.typing.dsl.InitStmt
+import viper.HHLVerifier.generation.Generator.InvariantTracking.get
 
 object HyperTypeChecker {
 
@@ -103,7 +104,20 @@ object HyperTypeChecker {
       case PVarDecl(variable, _)                                                                                                                                                 => Set(variable)
       case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                            => getVariables(cond) ++ getVariables(body)
       case FoldStmt(t, id)                                                                                                                                                       => Set(id)
-      case HyperAssumeStmt(_) | AssumeStmt(_) | UnfoldStmt(_, _) | UseHintStmt(_) | HyperAssertStmt(_) | ProofVarDecl(_, _) | DeclareStmt(_, _) | FrameStmt(_, _) | ReuseStmt(_) => throw new Exception("Statement type not supported for variable extraction: " + stmt.getClass.getSimpleName)
+      case UnfoldStmt(_, id)  => Set(id)
+      case HyperAssumeStmt(_) | AssumeStmt(_) | UseHintStmt(_) | HyperAssertStmt(_) | ProofVarDecl(_, _) | DeclareStmt(_, _) | FrameStmt(_, _) | ReuseStmt(_) => throw new Exception("Statement type not supported for variable extraction: " + stmt.getClass.getSimpleName)
+    }
+  }
+
+  def getAssignedVariables(stmt: Stmt): Set[Id] = {
+    stmt match {
+      case CompositeStmt(stmts) => stmts.flatMap(getAssignedVariables).toSet
+      case AssignStmt(left, right) => Set(left)
+      case MultiAssignStmt(left, right) => left.toSet
+      case HavocStmt(id, hintDecl) => Set(id)
+      case IfElseStmt(cond, ifStmt, elseStmt) => getAssignedVariables(ifStmt) ++ getAssignedVariables(elseStmt)
+      case WhileLoopStmt(cond, body, inv, decr, rule) => getAssignedVariables(body)
+      case _ => Set.empty
     }
   }
 }

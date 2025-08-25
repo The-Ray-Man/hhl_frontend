@@ -4,6 +4,7 @@ import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
+import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
 
 trait Condition extends CollectVariables {
 
@@ -75,6 +76,12 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val indexedVar2     = context.varExprMapping.getOrElse(var2, var2).asInstanceOf[Id]
         val getDeltaMapping = DeriveArgsUtils(context).getDeltaMapping(mapping)
         getDeltaMapping.collection.getOrElse(indexedVar1.name, return false).mapping.getOrElse(indexedVar2.name, return false).hypertypes.contains(indexedElem.asInstanceOf[HyperType])
+      }
+      case AssignedVariables(stmt) => {
+        val actualStmt = context.varStmtMapping.getOrElse(stmt, throw new Exception("Could not index stmt"))
+        val changedVariables = getAssignedVariables(actualStmt)
+        val variable = elem.asInstanceOf[Id]
+        changedVariables.contains(variable)
       }
       case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())
     }

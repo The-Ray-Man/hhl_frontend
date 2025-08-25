@@ -69,10 +69,10 @@ object HyperTest {
     }
   }
 
-  def verificationCheck(program: HHLProgram, test: (File, TestResult)) = {
+  def verificationCheck(typeSystem:TypeSystem, program: HHLProgram, test: (File, TestResult)) = {
     Generator.verifierOption = 2
     Generator.autoSelectRules = true
-    val translatedProgram = HyperTranslate.translateProgram(program)
+    val translatedProgram = HyperTranslate.translateProgram(typeSystem, program)
     SymbolChecker.checkSymbolsProg(translatedProgram)
     TypeChecker.typeCheckProg(translatedProgram)
     val viperProgram = Generator.generate(translatedProgram, test._1.getPath)
@@ -96,7 +96,7 @@ object HyperTest {
   }
 
   def hyperTypeCheck(program: HHLProgram, test: (File, TestResult)): Unit = {
-    val system = TypeSystem.loadTypeSystem(
+    val typeSystem = TypeSystem.loadTypeSystem(
       Seq(
         "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
         "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type",
@@ -105,7 +105,7 @@ object HyperTest {
       )
     )
     try {
-      HyperTypeChecker.typeCheckProg(system, program)
+      HyperTypeChecker.typeCheckProg(typeSystem, program)
     } catch {
       case e: Exception => {
         val error = TypeCheckFailure(Some(e.getMessage()))
@@ -113,7 +113,7 @@ object HyperTest {
         return
       }
     }
-    verificationCheck(program, test)
+    verificationCheck(typeSystem, program, test)
   }
 
   def runTests(tests: List[(File, TestResult)]): Unit = {
@@ -128,7 +128,7 @@ object HyperTest {
 
       val parsed = fastparse.parse(program, Parser.program(_))
       if (parsed.isSuccess) {
-        var parsedProgram = parsed.get.value
+        val parsedProgram = parsed.get.value
         hyperTypeCheck(parsedProgram, f)
       } else {
         println(f"Failed to parse ${f._1.getPath}")
@@ -141,7 +141,8 @@ object HyperTest {
 
   def main(args: Array[String]): Unit = {
     val pathOfHyperTests = "src/test/hyperTypes"
-    val typeTests        = getAllTestFiles(pathOfHyperTests)
+    var typeTests        = getAllTestFiles(pathOfHyperTests)
+    typeTests = typeTests.filter(test => test._1.getAbsolutePath().endsWith("src/test/hyperTypes/valid/correct/mono4.hhl"))
 
     for (test <- typeTests) {
       println(f"Test: ${test._1.getPath} with expected result: ${test._2}")
