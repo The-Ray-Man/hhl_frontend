@@ -147,9 +147,9 @@ object PrettyPrinter {
 
   def formatHyperType(ty: typing.dsl.HyperType): String = {
     ty match {
-      case SimpleHyperType(name) => name
-      case HyperTypeWithSetArgs(name, setArgs) => s"$name{${setArgs.map(a => a.toString()).mkString(", ")}}"
-      case HyperTypeWithListArgs(name, listArgs) => s"$name[${listArgs.map(a => a.toString()).mkString(", ")}]"
+      case SimpleHyperType(name)                 => name
+      case HyperTypeWithSetArgs(name, setArgs)   => s"${name.toString()}{${setArgs.map(a => a.toString()).mkString(", ")}}"
+      case HyperTypeWithListArgs(name, listArgs) => s"${name.toString()}[${listArgs.map(a => a.toString()).mkString(", ")}]"
 
     }
   }

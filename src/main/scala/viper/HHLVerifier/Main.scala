@@ -35,7 +35,6 @@ object Main {
     //   sys.exit(1)
     // }
 
-
     val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/invalid/leak.hhl"
     // var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
@@ -63,11 +62,13 @@ object Main {
     val hyperTypeSystem = if (args.contains("--typeSystem")) {
       typing.dsl.TypeSystem.loadTypeSystem(Seq(args(args.indexOf("--typeSystem") + 1)))
     } else {
-      typing.dsl.TypeSystem.loadTypeSystem(Seq(
-      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
-      "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-      // "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
-    ))
+      typing.dsl.TypeSystem.loadTypeSystem(
+        Seq(
+          "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
+          "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+          // "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+        )
+      )
     }
 
     try {

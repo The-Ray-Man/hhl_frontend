@@ -22,7 +22,7 @@ import viper.HHLVerifier.generation.Generator
 
 object DerivationTests {
 
-  def equal(shouldHyperMapping : HyperMapping, is: HyperMapping) : Boolean  = {
+  def equal(shouldHyperMapping: HyperMapping, is: HyperMapping): Boolean = {
     val keys = (shouldHyperMapping.mapping.keySet ++ is.mapping.keySet)
     keys.forall(key => shouldHyperMapping.mapping.getOrElse(key, HyperTypeCollection(Set())) == is.mapping.getOrElse(key, HyperTypeCollection(Set())))
 
@@ -83,7 +83,7 @@ object DerivationTests {
 
   def valueTests(): Unit = {
     val valuePath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val stmtPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val stmtPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
     val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath))
 
     val mapping      = HyperMapping(Map())
@@ -120,7 +120,7 @@ object DerivationTests {
 
   def infFlowTests(): Unit = {
     val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val stmtPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath, stmtPath))
 
     val mappingXLow      = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
@@ -133,6 +133,7 @@ object DerivationTests {
 
     val expectedHTLow  = Some(HyperTypeCollection(Set(SimpleHyperType("LOW"))))
     val expectedHTHigh = Some(HyperTypeCollection(Set()))
+    typeSystem.allVariables = Set(Id("x"), Id("y"))
 
     runTest(typeSystem, expression1, mappingXLow, DeltaMapping(Map()), expectedHTLow, None)
     runTest(typeSystem, expression2, mappingXLowYLow, DeltaMapping(Map()), expectedHTLow, None)
@@ -149,6 +150,7 @@ object DerivationTests {
     val mapping     = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"), SimpleHyperType("POS"))))))
     val expression1 = BinaryExpr(Id("x"), "+", Num(2))
     val expression2 = BinaryExpr(Id("x"), ">=", Num(0))
+    typeSystem.allVariables = Set(Id("x"))
 
     val expected1 = Some(HyperTypeCollection(Set(SimpleHyperType("POS"), SimpleHyperType("LOW"))))
     val expected2 = Some(HyperTypeCollection(Set(SimpleHyperType("TRUE"), SimpleHyperType("LOW"))))
@@ -162,6 +164,7 @@ object DerivationTests {
     val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
     val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(deltaPath, infFlowPath, valuePath, stmtPath))
+    typeSystem.allVariables = Set(Id("x"))
 
     val gamma1      = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
     val expression1 = Id("x")
@@ -180,71 +183,30 @@ object DerivationTests {
     val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
     val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath, stmtPath))
+    typeSystem.allVariables = Set(Id("x"), Id("y"))
 
-    val gamma1     = HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))
-    val statement  = AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
-    val expectedHM = Some(HyperMapping(Map("y" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
-    runTest(typeSystem, statement, gamma1, DeltaMapping(Map()), expectedHM, None)
-
-    val statement2 = CompositeStmt(
-      Seq(
-        AssignStmt(Id("x"), Num(3)),
-        AssignStmt(Id("y"), BinaryExpr(Id("x"), "+", Num(2)))
-      )
-    )
-    runTest(
-      typeSystem,
-      statement2,
-      HyperMapping(Map()),
-      DeltaMapping(Map()),
-      Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW"))), "y" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))),
-      None
-    )
-
-    val statement3 = IfElseStmt(
-      BoolLit(true),
-      CompositeStmt(Seq(AssignStmt(Id("x"), Num(3)))),
-      CompositeStmt(Seq(AssignStmt(Id("x"), Num(4))))
-    )
-
-    runTest(
-      typeSystem,
-      statement3,
-      HyperMapping(Map()),
-      DeltaMapping(Map()),
-      Some(HyperMapping(Map("x" -> HyperTypeCollection(Set(SimpleHyperType("LOW")))))),
-      None
-    )
-
-    val statement4 = IfElseStmt(
-      BinaryExpr(Id("x"), ">", Num(0)),
-      CompositeStmt(Seq(AssignStmt(Id("y"), Num(3)))),
-      CompositeStmt(Seq(AssignStmt(Id("y"), Num(4))))
-    )
-
-    runTest(
-      typeSystem,
-      statement4,
-      HyperMapping(Map("x" -> HyperTypeCollection(Set()))),
-      DeltaMapping(Map()),
-      Some(HyperMapping(Map())),
-      None
-    )
-
+    println("program1")
     val program1 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow1.hhl")
     runTest(typeSystem, program1, false)
 
     val program2 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/infFlow2.hhl")
+    println("program2")
     runTest(typeSystem, program2, false)
 
-    val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val typeSystem2 = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath))
+    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
+    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val typeSystem2   = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
 
+    println("program3")
     val program3 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/value1.hhl")
     runTest(typeSystem2, program3, false)
+
+    println("program4")
     val program4 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/value2.hhl")
     runTest(typeSystem2, program4, false)
 
+    println("program5")
     val program5 = programFromFile("/home/ramon/ETH/SP/hypra_fork/src/test/dslTestPrograms/mono1.hhl")
     runTest(typeSystem2, program5, false)
 

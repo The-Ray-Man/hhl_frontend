@@ -32,6 +32,8 @@ import viper.HHLVerifier.ast.MethodCallStmt
 import viper.HHLVerifier.ast.FrameStmt
 import viper.HHLVerifier.ast.AssumeStmt
 import viper.HHLVerifier.ast.UseHintStmt
+import viper.HHLVerifier.typing.dsl.StatementDerivationResult
+import viper.HHLVerifier.typing.dsl.InitStmt
 
 object HyperTypeChecker {
 
@@ -47,19 +49,11 @@ object HyperTypeChecker {
   }
 
   def typeCheckMethod(system: TypeSystem, m: Method): Unit = {
-    // Type check the method body
+
     val pc = new HyperTypeCollection(Set())
 
-    val mapping = m.params
-      .map(p =>
-        (p.name -> {
-          HyperTypeCollection.fromSeq(p.hyperType.getOrElse(Seq()))
-        })
-      )
-      .toMap
-    val hyperMapping = new HyperMapping(mapping)
-    println("HyperMapping: " + hyperMapping)
-    val typecheckResult = system.deriveStatement(hyperMapping, DeltaMapping(Map.empty), m.body, pc)
+    val init            = system.initializeMethod(m)
+    val typecheckResult = system.deriveStatement(init.hyperTypeMapping, init.deltaMapping, m.body, pc)
 
     m.res.foreach(r => {
       val declaredRetType = HyperTypeCollection.fromSeq(r.hyperType.getOrElse(Seq()))
@@ -85,7 +79,13 @@ object HyperTypeChecker {
       case CompStmt(s1, s2)                         => Set(s1, s2)
       case dsl.AssignStmt(left, right)              => Set(left, right)
       case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
+      case InitStmt(variable)                       => Set(variable)
+      case dsl.HavocStmt(variable)                  => Set(variable)
     }
+  }
+
+  def getVariables(method: Method): Set[Id] = {
+    getVariables(method.body) ++ method.params.toSet ++ method.res.toSet
   }
 
   def getVariables(stmt: Stmt): Set[Id] = {
@@ -100,9 +100,10 @@ object HyperTypeChecker {
       case HavocStmt(id, hintDecl) => Set(id)
       case CompositeStmt(stmts)    =>
         stmts.flatMap(getVariables).toSet
-      case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                                             => getVariables(cond) ++ getVariables(body)
-      case FoldStmt(t, id)                                                                                                                                                                        => Set(id)
-      case HyperAssumeStmt(_) | AssumeStmt(_) | UnfoldStmt(_, _) | UseHintStmt(_) | HyperAssertStmt(_) | ProofVarDecl(_, _) | DeclareStmt(_, _) | PVarDecl(_, _) | FrameStmt(_, _) | ReuseStmt(_) => throw new Exception("Statement type not supported for variable extraction: " + stmt.getClass.getSimpleName)
+      case PVarDecl(variable, _)                                                                                                                                                 => Set(variable)
+      case WhileLoopStmt(cond, body, inv, decr, rule)                                                                                                                            => getVariables(cond) ++ getVariables(body)
+      case FoldStmt(t, id)                                                                                                                                                       => Set(id)
+      case HyperAssumeStmt(_) | AssumeStmt(_) | UnfoldStmt(_, _) | UseHintStmt(_) | HyperAssertStmt(_) | ProofVarDecl(_, _) | DeclareStmt(_, _) | FrameStmt(_, _) | ReuseStmt(_) => throw new Exception("Statement type not supported for variable extraction: " + stmt.getClass.getSimpleName)
     }
   }
 }

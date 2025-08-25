@@ -37,11 +37,7 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
   }
 
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
-    val variablesInExpression   = if (expression) getVariables(context.expr) else getVariables(context.statement)
-    val variablesInHyperMapping = context.gamma.mapping.keySet.map(Id(_))
-    val variablesInDeltaMapping = context.delta.collection.keySet.map(Id(_))
-    val allVariables            = variablesInExpression ++ variablesInHyperMapping ++ variablesInDeltaMapping
-    val allRuleContext          = orderedSubsets(allVariables.toSeq, numVars).map { subset =>
+    val allRuleContext = orderedSubsets(context.allVars.toSeq, numVars).map { subset =>
       val mapping = (subset.zipWithIndex.map { case (id, index) => Id(s"<$index>") -> id }.toMap)
       RuleCheckContext(mapping)
     }

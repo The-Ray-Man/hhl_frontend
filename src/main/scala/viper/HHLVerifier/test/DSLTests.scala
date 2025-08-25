@@ -121,13 +121,13 @@ object DSLTests {
     val res34 = fastparse.parse("Gamma", viper.HHLVerifier.typing.dsl.Parser.mapping(_))
     result("34", res34)
 
-    val res35 = fastparse.parse("x in Gamma", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    val res35 = fastparse.parse("Gamma hasKey x", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
     result("35", res35)
 
-    val res36 = fastparse.parse("LOW in D[e1](Gamma,Delta)(x)", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    val res36 = fastparse.parse("LOW in D[e1](Gamma, Delta)(x)", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("36", res36)
 
-    val res37 = fastparse.parse("x in D[e1](Gamma, Delta)", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
+    val res37 = fastparse.parse("D[e1](Gamma, Delta) hasKey x", viper.HHLVerifier.typing.dsl.Parser.inMapping(_))
     result("37", res37)
 
     val res38 = fastparse.parse("DH[s1](Gamma, Delta, Context)", viper.HHLVerifier.typing.dsl.Parser.mapping(_))
@@ -148,7 +148,7 @@ object DSLTests {
     val res43 = fastparse.parse("Gamma' = DH[s1](Gamma, Delta, Context)", viper.HHLVerifier.typing.dsl.Parser.mapEquals(_))
     result("43", res43)
 
-    val res44 = fastparse.parse("Delta' = Delta'", viper.HHLVerifier.typing.dsl.Parser.mapEquals(_))
+    val res44 = fastparse.parse("Delta' = Delta'", viper.HHLVerifier.typing.dsl.Parser.doubleMapEquals(_))
     result("44", res44)
 
     val res45 = fastparse.parse("Delta' = DD[s1](Gamma, Delta, Context)", viper.HHLVerifier.typing.dsl.Parser.conclusion(_))
@@ -181,7 +181,10 @@ object DSLTests {
     val res54 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("54", res54)
 
-    val res55 = fastparse.parse("DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x) => (DH[s1](Gamma, Delta, Context)(x) \\ LOW) addTo Gamma'(x)", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
+    val res55 = fastparse.parse(
+      "DH[s1](Gamma, Delta, Context)(x) = DH[s2](Gamma, Delta, Context)(x) => (DH[s1](Gamma, Delta, Context)(x) \\ LOW) addTo Gamma'(x)",
+      viper.HHLVerifier.typing.dsl.Parser.expressionRule(_)
+    )
     result("55", res55)
 
     val res56 = fastparse.parse("(DH[s1](Gamma, Delta, Context)(x) \\ LOW)", viper.HHLVerifier.typing.dsl.Parser.set(_))
@@ -189,19 +192,43 @@ object DSLTests {
 
     val res57 = fastparse.parse("Vars[x]", viper.HHLVerifier.typing.dsl.Parser.set(_))
     result("57", res57)
-    
+
     val res58 = fastparse.parse("x in Vars[e1]", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("58", res58)
 
     val res59 = fastparse.parse("POS in DD[s1](Gamma, Delta, Context)(y)(y)", viper.HHLVerifier.typing.dsl.Parser.inSet(_))
     result("59", res59)
 
+    val res60 = fastparse.parse("D[e](Gamma, Delta) = Delta'(var)", viper.HHLVerifier.typing.dsl.Parser.conclusion(_))
+    result("60", res60)
+
+    val res61 = fastparse.parse("!(Delta hasKey var)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    result("61", res61)
+
+    val res62 = fastparse.parse("Delta hasKey var", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    result("62", res62)
+
+    val res63 = fastparse.parse("POS in Delta(var)(var)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    result("63", res63)
+
+    val res64 = fastparse.parse("ZERO addTo Delta'(var)(var)", viper.HHLVerifier.typing.dsl.Parser.conclusion(_))
+    result("64", res64)
+    val res65 = fastparse.parse("ZERO in D[e](Gamma, Delta)(var)", viper.HHLVerifier.typing.dsl.Parser.condition(_))
+    result("65", res65)
+
+    val res66 = fastparse.parse("ZERO in Delta(var)(var) && ZERO in D[e](Gamma, Delta)(var) => ZERO addTo Delta'(x)(x)", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
+    result("66", res66)
+
+    val res69 = fastparse.parse("Delta'(var)(var)", viper.HHLVerifier.typing.dsl.Parser.set(_))
+    result("69", res69)
+
   }
   def loadingTypeSystemTest(filename: String): Unit = {
     println("testing:", filename)
-    val path = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+    val path     = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
     val stmtPath = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
-    val _    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
+    val _        = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
+    println("success", filename)
   }
 
   def main(args: Array[String]): Unit = {

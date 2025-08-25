@@ -14,7 +14,6 @@ import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
 import scala.collection.immutable.{Set => ScalaSet}
 
-
 case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], derivationRules: Seq[DerivationRule]) {
 
   def toTypeSystem(): TypeSystem = {
@@ -24,7 +23,9 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
       statementTypeSystem = StatementTypeSystem(
         assignRule = statementRules.find(rule => rule.statement.isInstanceOf[AssignStmt]).getOrElse(throw new Exception("No assign rule found")),
         branchRule = statementRules.find(rule => rule.statement.isInstanceOf[IfStmt]).getOrElse(throw new Exception("No branch rule found")),
-        compositionRule = statementRules.find(rule => rule.statement.isInstanceOf[CompStmt]).getOrElse(throw new Exception("No composition rule found"))
+        compositionRule = statementRules.find(rule => rule.statement.isInstanceOf[CompStmt]).getOrElse(throw new Exception("No composition rule found")),
+        initRule = statementRules.find(rule => rule.statement.isInstanceOf[InitStmt]).getOrElse(throw new Exception("No init rule found")),
+        havocRule = statementRules.find(rule => rule.statement.isInstanceOf[HavocStmt]).getOrElse(throw new Exception("No havoc rule found"))
       ),
       expressionTypeSystem = expressionRules,
       hyperTypeDeclaration = hypertypeDeclaration
@@ -32,19 +33,19 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
     typeSystem
   }
 
-  def renameVariables(rule: ExpressionDerivationRule) : ExpressionDerivationRule = {
-    val allVariables = typing.HyperTypeChecker.getVariables(rule.expr) ++ rule.rules.flatMap(_.variables).toSet
+  def renameVariables(rule: ExpressionDerivationRule): ExpressionDerivationRule = {
+    val allVariables     = typing.HyperTypeChecker.getVariables(rule.expr) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
-    val renamedRules = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
-    val renamedExpr = applyIndexed.applyIndexed(renamedVariables, rule.expr)
+    val renamedRules     = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
+    val renamedExpr      = applyIndexed.applyIndexed(renamedVariables, rule.expr)
     ExpressionDerivationRule(renamedExpr, renamedRules)
   }
 
-  def renameVariables(rule: StatementDerivationRule) : StatementDerivationRule = {
-    val allVariables = typing.HyperTypeChecker.getVariables(rule.statement) ++ rule.rules.flatMap(_.variables).toSet
+  def renameVariables(rule: StatementDerivationRule): StatementDerivationRule = {
+    val allVariables     = typing.HyperTypeChecker.getVariables(rule.statement) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
-    val renamedRules = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
-    val renamedStmt = applyIndexed.applyIndexed(renamedVariables, rule.statement)
+    val renamedRules     = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
+    val renamedStmt      = applyIndexed.applyIndexed(renamedVariables, rule.statement)
     StatementDerivationRule(renamedStmt, renamedRules)
   }
 }
@@ -63,9 +64,9 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     (expr, toCheckExpression) match {
       case (BinaryExpr(left, op, right), BinaryExpr(leftCheck, opCheck, rightCheck)) if op == opCheck => Some(matchHelper(Seq((left, leftCheck), (right, rightCheck))))
       case (UnaryExpr(op, inner), UnaryExpr(opCheck, innerCheck)) if op == opCheck                    => Some(matchHelper(Seq((inner, innerCheck))))
-      case (id@Id("VAR'n'"), Num(value))                                                                      => Some(Map(id -> Num(value)))
-      case (id@Id("VAR'var'"), Id(name))                                                                      => Some(Map(id -> Id(name)))
-      case (id@Id("VAR'b'"), BoolLit(name))                                                                   => Some(Map(id -> BoolLit(name)))
+      case (id @ Id("VAR'n'"), Num(value))                                                            => Some(Map(id -> Num(value)))
+      case (id @ Id("VAR'var'"), Id(name))                                                            => Some(Map(id -> Id(name)))
+      case (id @ Id("VAR'b'"), BoolLit(name))                                                         => Some(Map(id -> BoolLit(name)))
       case (ImpliesExpr(left, right), ImpliesExpr(leftCheck, rightCheck))                             => Some(matchHelper(Seq((left, leftCheck), (right, rightCheck))))
       case (_, MethodCallExpr(_, _))                                                                  => throw new Exception("Method calls are not supported in expression derivation rules")
       case (LookupExpr(dataStructure, index), LookupExpr(dataStructureCheck, indexCheck))             => Some(matchHelper(Seq((dataStructure, dataStructureCheck), (index, indexCheck))))
@@ -97,7 +98,7 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   }
 
   def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
-    val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping, new Cache())
+    val context     = ExpressionDerivationContext(typeSystem, expr, typeSystem.allVariables, gamma, delta, variableMapping, new Cache())
     val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
     wrappedRules
       .foldLeft(emptyResult) { (acc, rule) =>
@@ -126,7 +127,7 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
   }
 
   def derive(context: StatementDerivationContext): StatementDerivationResult = {
-    val emptyResult = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
+    val emptyResult   = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
     val derivedResult = wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
       rule.apply(context, acc, false).getStatementResult
     }
@@ -258,3 +259,5 @@ trait StmtPattern {}
 case class CompStmt(first: Id, second: Id)                       extends StmtPattern
 case class AssignStmt(variable: Id, value: Id)                   extends StmtPattern
 case class IfStmt(condition: Id, thenBranch: Id, elseBranch: Id) extends StmtPattern
+case class InitStmt(variable: Id)                                extends StmtPattern
+case class HavocStmt(variable: Id)                               extends StmtPattern

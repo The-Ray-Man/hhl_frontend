@@ -83,8 +83,8 @@ exp : MONODOWN[x] <=> forall <_s1>, <_s2> :: _s1[x] <= _s2[x] ==>  _s2[exp] <= _
 (Gamma, Delta) |- e1 < e2 :: [
     LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONOUP[x] addTo H,
     LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
     MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
     MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
 ];
@@ -93,8 +93,8 @@ exp : MONODOWN[x] <=> forall <_s1>, <_s2> :: _s1[x] <= _s2[x] ==>  _s2[exp] <= _
 (Gamma, Delta) |- e1 <= e2 :: [
     LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONOUP[x] addTo H,
     LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
     MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
     MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
 ];

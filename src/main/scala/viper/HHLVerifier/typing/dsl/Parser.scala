@@ -17,7 +17,7 @@ object Parser {
         Specification(declarations, rules.toSeq)
       }
 
-  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule)
+  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule | initDerivationRule)
 
   def hyperTypeDeclaration[$: P]: P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map { case (variable, hyperType, expression) =>
     HyperTypeDeclaration(variable, hyperType, expression)
@@ -28,7 +28,7 @@ object Parser {
     case (expr: Expr)     => expr
   }
 
-  def statement[$: P]: P[StmtPattern] = P((variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
+  def statement[$: P]: P[StmtPattern] = P(("havoc(" ~ variable ~ ")").map { case (varName) => HavocStmt(varName) } | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
 
   def statementDerivationRule[$: P]: P[StatementDerivationRule] = P(
     "(Gamma, Delta, Context)" ~/ ws ~/ "|-" ~/ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules
@@ -37,6 +37,10 @@ object Parser {
   def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
     "(Gamma, Delta)" ~/ ws ~/ "|-" ~/ ws ~ expression ~ ws ~ "::" ~/ ws ~ expressionRules
   ).map { case (expr, rules) => ExpressionDerivationRule(expr, rules) }
+
+  def initDerivationRule[$: P]: P[StatementDerivationRule] = P(
+    "|-" ~ ws ~ "init(" ~ HypraParser.progVar ~ ")" ~ ws ~ "::" ~/ ws ~ expressionRules
+  ).map { case (variable, rules) => StatementDerivationRule(InitStmt(variable), rules) }
 
   def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
 
@@ -55,21 +59,22 @@ object Parser {
   def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma)
   def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta)
 
-  def mapping[$: P]: P[Mapping] = P(deltaResult | deriveHyperType |deriveDeltaType | deltaTypeCheck | gammaResult | gamma | delta | deltaCollectionResult)
+  def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck | hyperCollectionResult | context | variablesInExpression)
+  def mapping[$: P]: P[Mapping]       = P(doubleMappingAccess | deltaTypeCheck | deriveHyperType | gammaResult | gamma | deltaCollectionResult)
+  def doubleMapping[$: P]: P[Mapping] = P(deltaResult | deriveDeltaType | delta)
 
   def mappingAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
+  def doubleMappingAccess[$: P]: P[Mapping] = P(doubleMapping ~ "(" ~ variable ~ ")").map(x => MappingAccess(x._1, x._2))
 
-  def mappingDoubleAccess[$: P] : P[MappingAccess] = P(mapping ~ "(" ~ variable ~")(" ~ variable ~")").map {case (mapping, var1, var2) => MappingAccess(MappingAccess(mapping, var1), var2)}
-
-  def set[$: P]: P[Set] = P(setWithoutElement | mappingDoubleAccess | mappingAccess | hyperTypeCheck | hyperCollectionResult | context | variablesInExpression)
+  def mappingDoubleAccess[$: P]: P[MappingAccess] = P(mapping ~ "(" ~ variable ~ ")(" ~ variable ~ ")").map { case (mapping, var1, var2) => MappingAccess(MappingAccess(mapping, var1), var2) }
 
   def hyperTypeCheck[$: P]: P[HyperTypeCheck]    = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
   def deltaTypeCheck[$: P]: P[DeltaTypeCheck]    = P("D" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => DeltaTypeCheck(id, gamma, delta) }
   def deriveHyperType[$: P]: P[DeriveHyperType]  = P("DH" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveHyperType(id, gamma, delta, context) }
   def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveDeltaType(id, gamma, delta, context) }
   def setWithoutElement[$: P]: P[WithoutElement] = P("(" ~ set ~ ws ~ "\\" ~ element ~ ws ~ ")").map { case (set, elem) => WithoutElement(set, elem) }
-  def variablesInExpression[$ :P] : P[Variables] = P("Vars[" ~ HypraParser.progVar ~ "]").map { case id => Variables(id) }
-  def condition[$: P]: P[Condition]              = P(equal | setEquals | mapEquals | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
+  def variablesInExpression[$: P]: P[Variables]  = P("Vars[" ~ HypraParser.progVar ~ "]").map { case id => Variables(id) }
+  def condition[$: P]: P[Condition]              = P(equal | setEquals | mapEquals | inDoubleMapping | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)
@@ -85,10 +90,11 @@ object Parser {
 
   def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "==" | "!=").!
 
-  def inSet[$: P]: P[InSet]         = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
-  def inMapping[$: P]: P[InMapping] = P(element ~ ws ~ "in" ~ ws ~ mapping).map { case (elem, mapping) => InMapping(elem, mapping) }
-  def element[$: P]: P[Element]     = P(variable | hyperType)
-  def equal[$: P]: P[Equal]         = P(element ~ ws ~ "==" ~ ws ~ element).map { case (lhs, rhs) => Equal(lhs, rhs) }
+  def inSet[$: P]: P[InSet]               = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
+  def inMapping[$: P]: P[InMapping]       = P(mapping ~ ws ~ "hasKey" ~ ws ~ element).map { case (mapping, elem) => InMapping(elem, mapping) }
+  def inDoubleMapping[$: P]: P[InMapping] = P(doubleMapping ~ ws ~ "hasKey" ~ ws ~ element).map { case (mapping, elem) => InMapping(elem, mapping) }
+  def element[$: P]: P[Element]           = P(variable | hyperType)
+  def equal[$: P]: P[Equal]               = P(element ~ ws ~ "==" ~ ws ~ element).map { case (lhs, rhs) => Equal(lhs, rhs) }
 
   def variable[_: P]: P[Id] = {
     import fastparse.NoWhitespace._
@@ -104,11 +110,12 @@ object Parser {
     HyperTypeWithListArgs(name, args.toSeq)
   }
 
-  def conclusion[$: P]: P[Conclusion] = P(mapEquals | addToSet | extendSet | setEquals)
-  def extendSet[$: P]: P[ExtendSet] = P(set ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => ExtendSet(elem, set) }
-  def addToSet[$: P]: P[AddToSet]     = P(element ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => AddToSet(elem, set) }
-  def setEquals[$: P]: P[SetEquals]   = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
-  def mapEquals[$: P]: P[MapEquals]   = P(mapping ~ ws ~ "=" ~ ws ~ mapping).map { case (map1, map2) => MapEquals(map1, map2) }
+  def conclusion[$: P]: P[Conclusion]     = P(doubleMapEquals | mapEquals | addToSet | extendSet | setEquals)
+  def extendSet[$: P]: P[ExtendSet]       = P(set ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => ExtendSet(elem, set) }
+  def addToSet[$: P]: P[AddToSet]         = P(element ~ ws ~ "addTo" ~ ws ~ set).map { case (elem, set) => AddToSet(elem, set) }
+  def setEquals[$: P]: P[SetEquals]       = P(set ~ ws ~ "=" ~ ws ~ set).map { case (set1, set2) => SetEquals(set1, set2) }
+  def mapEquals[$: P]: P[MapEquals]       = P(mapping ~ ws ~ "=" ~ ws ~ mapping).map { case (map1, map2) => MapEquals(map1, map2) }
+  def doubleMapEquals[$: P]: P[MapEquals] = P(doubleMapping ~ ws ~ "=" ~ ws ~ doubleMapping).map { case (map1, map2) => MapEquals(map1, map2) }
 
   def ws[$: P]: P[Unit]               = P(CharsWhileIn(" \r\n\t").rep)
   def newlineSeparator[$: P]: P[Unit] = P(CharsWhileIn(" \t").? ~ ("\r\n" | "\n").rep(1))

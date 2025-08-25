@@ -224,7 +224,7 @@ object ToIndexed {
       case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
       case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
-      case Variables(content) => Variables(toIndexedVariable(mapping, content))
+      case Variables(content)                 => Variables(toIndexedVariable(mapping, content))
     }
   }
 
@@ -241,7 +241,7 @@ object ToIndexed {
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
       case MappingAccess(subMapping, id) => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
-      case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -291,7 +291,7 @@ object applyIndexed {
   def applyIndexed(mapping: Map[Id, Id], set: Set): Set = {
     set match {
       case HyperCollectionResult()            => HyperCollectionResult()
-      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), applyIndexed(mapping,gamma), applyIndexed(mapping,delta))
+      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta))
       case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
       case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
       case Variables(content)                 => Variables(applyIndexed(mapping, content))
@@ -311,7 +311,7 @@ object applyIndexed {
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
       case MappingAccess(subMapping, id) => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
-      case _: Mapping => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
+      case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
@@ -328,7 +328,7 @@ object applyIndexed {
       case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => applyIndexed(mapping, arg)))
     }
   }
-  def applyIndexed(mapping: Map[Id, Id], expr: Expr) : Expr = {
+  def applyIndexed(mapping: Map[Id, Id], expr: Expr): Expr = {
     expr match {
       case BinaryExpr(left, op, right) =>
         BinaryExpr(applyIndexed(mapping, left), op, applyIndexed(mapping, right))
@@ -356,9 +356,11 @@ object applyIndexed {
 
   def applyIndexed(mapping: Map[Id, Id], stmt: StmtPattern): StmtPattern = {
     stmt match {
-      case AssignStmt(variable, value) => AssignStmt(applyIndexed(mapping, variable), applyIndexed(mapping, value))
-      case CompStmt(first, second) => CompStmt(applyIndexed(mapping, first), applyIndexed(mapping, second))
+      case AssignStmt(variable, value)               => AssignStmt(applyIndexed(mapping, variable), applyIndexed(mapping, value))
+      case CompStmt(first, second)                   => CompStmt(applyIndexed(mapping, first), applyIndexed(mapping, second))
       case IfStmt(condition, thenBranch, elseBranch) => IfStmt(applyIndexed(mapping, condition), applyIndexed(mapping, thenBranch), applyIndexed(mapping, elseBranch))
+      case InitStmt(variable)                        => InitStmt(applyIndexed(mapping, variable))
+      case HavocStmt(variable)                       => HavocStmt(applyIndexed(mapping, variable))
     }
   }
 }
@@ -398,6 +400,16 @@ case class DeriveArgsUtils(var context: Context) {
     }
   }
 
+  def getDeltaTypes(set: Set): HyperTypeCollection = {
+    set match {
+      case MappingAccess(mapping, id) => {
+        val idIndexed       = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+        val deltaCollection = getDeltaCollection(mapping)
+        deltaCollection.mapping.getOrElse(idIndexed.name, throw new Exception(s"Index $idIndexed not found in delta mapping"))
+      }
+    }
+  }
+
   def getDeltaCollection(mapping: Mapping): DeltaCollection = {
     mapping match {
       case DeltaTypeCheck(id, gammaArg, deltaArg) => {
@@ -419,6 +431,11 @@ case class DeriveArgsUtils(var context: Context) {
         val deltaMapping   = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
         deltaMapping.collection.getOrElse(indexId.name, throw new Exception(s"Index $indexId not found in delta mapping"))
       }
+      case MappingAccess(Delta(), id) => {
+        val indexedId = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
+        context.delta.collection.getOrElse(indexedId.name, throw new Exception(s"Index $indexedId not found in delta mapping"))
+      }
+
       case _ => throw new Exception("Unsupported mapping type for DeltaCollection retrieval: " + mapping.getClass.getSimpleName)
     }
   }

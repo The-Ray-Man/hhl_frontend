@@ -2,6 +2,7 @@ package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.ast.{Id, Expr}
 import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.management.PrettyPrinter
 
 trait Element extends CollectVariables {}
 
@@ -18,6 +19,9 @@ case class SimpleHyperType(name: String) extends HyperType {
   }
 
   override def variables: ScalaSet[Id] = ScalaSet.empty[Id]
+
+  override def toString: String = name
+
 }
 case class HyperTypeWithSetArgs(name: SimpleHyperType, args: ScalaSet[Element]) extends HyperType {
 
@@ -27,6 +31,10 @@ case class HyperTypeWithSetArgs(name: SimpleHyperType, args: ScalaSet[Element]) 
   }
 
   override def variables: ScalaSet[Id] = args.flatMap(_.variables)
+
+  override def toString: String = {
+    s"${name.toString()}{${args.map(a => a.toString()).mkString(", ")}}"
+  }
 }
 case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) extends HyperType {
 
@@ -36,4 +44,8 @@ case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) exte
   }
 
   override def variables: ScalaSet[Id] = args.flatMap(_.variables).toSet
+
+  override def toString: String = {
+    s"${name.toString()}[${args.map(a => a.toString()).mkString(", ")}]"
+  }
 }
