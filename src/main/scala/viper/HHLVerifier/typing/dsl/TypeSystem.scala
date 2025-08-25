@@ -131,9 +131,25 @@ case class TypeSystem(
           deltaMapping = newDelta
         )
       }
+      case UnfoldStmt(htyp, id) => {
+        val typeCollection = gamma.get(id.name)
+        if (!typeCollection.hypertypes.contains(htyp)) {
+          throw new Exception(s"${id} may not have hyper type ${htyp}")
+        }
+        else {
+          StatementDerivationResult(
+            hyperTypeMapping = gamma,
+            deltaMapping = delta
+          )
+        }
+      }                                                                                                                                                                            
+      case FoldStmt(htyp, id) => {
+        StatementDerivationResult(
+          hyperTypeMapping = HyperMapping(gamma.mapping.updated(id.name, gamma.mapping.getOrElse(id.name, HyperTypeCollection(Set())).add(htyp))),
+          deltaMapping = delta
+        )
+      }                                                                                                                                                                                        
       case MultiAssignStmt(_, _)                                                                                                                                                                                 => throw new Exception("MultiAssignStmt is not yet supported in the type system")
-      case UnfoldStmt(_, _)                                                                                                                                                                                      => throw new Exception("Fold statements are not yet supported in the type system")
-      case FoldStmt(_, _)                                                                                                                                                                                        => throw new Exception("Fold statements are not yet supported in the type system")
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }

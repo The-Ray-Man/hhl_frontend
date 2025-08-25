@@ -348,7 +348,7 @@ object Soundness {
   }
 
   /** Convert an (Id, HyperType) pair to a concrete AST expression. */
-  private def buildExpression(id: Id, ht: HyperType): Expr = {
+  def buildExpression(id: Id, ht: HyperType): Expr = {
     val candidates: Seq[(HyperTypeDeclaration, Map[Id, Id])] =
       currentTypeSystem.hyperTypeDeclaration
         .map(decl => decl -> getMapping(decl.hty, ht))

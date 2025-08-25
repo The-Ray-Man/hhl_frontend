@@ -30,6 +30,13 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
       expressionTypeSystem = expressionRules,
       hyperTypeDeclaration = hypertypeDeclaration
     )
+
+    for ((htypeDecl, i) <- hypertypeDeclaration.zipWithIndex) {
+      if (hypertypeDeclaration.zipWithIndex.find{ case (decl, j) => i < j && structureEqual(decl.hty, htypeDecl.hty) }.isDefined) {
+        throw new Exception("Duplicate hypertype declaration for type (" + htypeDecl.hty + ")")
+      }
+    }
+
     typeSystem
   }
 
@@ -47,6 +54,16 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
     val renamedRules     = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
     val renamedStmt      = applyIndexed.applyIndexed(renamedVariables, rule.statement)
     StatementDerivationRule(renamedStmt, renamedRules)
+  }
+
+  def structureEqual(htypFrom: Element, htypTo: Element ) : Boolean = {
+    (htypFrom, htypTo) match  {
+      case (SimpleHyperType(fromName), SimpleHyperType(toName)) => fromName == toName
+      case (HyperTypeWithListArgs(fromName, fromArgs), HyperTypeWithListArgs(toName, toArgs)) => fromName == toName && fromArgs.length == toArgs.length && fromArgs.zip(toArgs).forall(pair => structureEqual(pair._1, pair._2))
+      case (HyperTypeWithSetArgs(fromName, fromArgs), HyperTypeWithSetArgs(toName, toArgs)) => fromName == toName && fromArgs.size == toArgs.size && fromArgs.forall(fArg => toArgs.exists(tArg => structureEqual(fArg, tArg)))
+      case (Id(_), Id(_)) => true
+      case _ => false
+    }
   }
 }
 

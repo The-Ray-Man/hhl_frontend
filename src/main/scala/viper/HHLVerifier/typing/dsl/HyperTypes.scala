@@ -8,7 +8,10 @@ trait Element extends CollectVariables {}
 
 abstract class HyperType extends Element {
   override def equals(obj: Any): Boolean
-  def semantics(id: Id): Expr = throw new Exception("Semantics not defined for HyperType: " + this.getClass.getSimpleName)
+  def semantics(ts: TypeSystem, id:Id) : Expr = {
+     Soundness.currentTypeSystem = ts
+     Soundness.buildExpression(id, this)
+  } 
 }
 
 case class SimpleHyperType(name: String) extends HyperType {
@@ -21,6 +24,7 @@ case class SimpleHyperType(name: String) extends HyperType {
   override def variables: ScalaSet[Id] = ScalaSet.empty[Id]
 
   override def toString: String = name
+
 
 }
 case class HyperTypeWithSetArgs(name: SimpleHyperType, args: ScalaSet[Element]) extends HyperType {

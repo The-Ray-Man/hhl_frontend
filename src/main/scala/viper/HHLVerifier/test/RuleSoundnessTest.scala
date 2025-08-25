@@ -23,7 +23,7 @@ object RuleSoundnessTests {
 
     HyperTypeChecker.typeCheckProg(typeSystem, program)
     println("hypertypecheck done")
-    val programTranslated = HyperTranslate.translateProgram(program)
+    val programTranslated = HyperTranslate.translateProgram(typeSystem, program)
     println("hypertranslate done")
     SymbolChecker.checkSymbolsProg(programTranslated)
     println("symbol check done")

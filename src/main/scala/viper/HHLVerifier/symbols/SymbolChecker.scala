@@ -245,13 +245,11 @@ object SymbolChecker {
         (varsInArgs, Seq.empty)
 
       case FoldStmt(ty, variable) => {
-        val newSymbols = null
-        (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
+        (checkSymbolsExpr(variable, false, false), Seq.empty)
       }
 
       case UnfoldStmt(ty, variable) => {
-        val newSymbols = null
-        (checkSymbolsExpr(variable, false, false) ++ newSymbols, Seq.empty)
+        (checkSymbolsExpr(variable, false, false), Seq.empty)
       }
 
       case stmt => throw new Logger("Statement " + stmt + " is of unexpected type " + stmt.getClass()).addTitle("Symbol Checker Error").addOffset((stmt.offsetLeft, stmt.offsetRight))
