@@ -63,13 +63,10 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val indexedSet   = derivedGamma.get(indexedId.name)
         indexedSet.hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
-      case Variables(content) => {
+      case varSet : Variables => {
         val variable          = indexedElem.asInstanceOf[Id]
-        var existingVariables = getVariables(context.getExprById(content))
-        if (context.isInstanceOf[StatementDerivationContext]) {
-          existingVariables ++= getVariables(context.getStmtById(content))
-        }
-        existingVariables.contains(variable)
+        val variableSet = DeriveArgsUtils(context).getVariableSet(varSet)
+        variableSet.contains(variable)
       }
       case MappingAccess(MappingAccess(mapping, var1), var2) => {
         val indexedVar1     = context.varExprMapping.getOrElse(var1, var1).asInstanceOf[Id]
