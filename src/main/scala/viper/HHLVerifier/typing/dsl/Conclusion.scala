@@ -205,9 +205,9 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
 
   def findMappingType(mapping: Mapping): String = {
     mapping match {
-      case DeriveHyperType(_, _, _, _) | Gamma() | GammaResult()                                                                                                           => "HyperMapping"
-      case DeltaTypeCheck(_, _, _) | MappingAccess(DeriveDeltaType(_, _, _, _), _) | MappingAccess(Delta(), _) | DeltaCollectionResult() | MappingAccess(DeltaResult(), _) => "DeltaCollection"
-      case DeriveDeltaType(_, _, _, _) | Delta() | DeltaResult()                                                                                                           => "DeltaMapping"
+      case DeriveHyperType(_, _, _) | Gamma() | GammaResult()                                                                                                           => "HyperMapping"
+      case DeltaTypeCheck(_, _, _) | MappingAccess(DeriveDeltaType(_, _, _), _) | MappingAccess(Delta(), _) | DeltaCollectionResult() | MappingAccess(DeltaResult(), _) => "DeltaCollection"
+      case DeriveDeltaType(_, _, _) | Delta() | DeltaResult()                                                                                                           => "DeltaMapping"
     }
   }
 
@@ -228,7 +228,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
       deltaMapping = result.getStatementResult.deltaMapping,
-          appliedRules = result.getStatementResult.appliedRules
+      appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -237,7 +237,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
       deltaMapping = derivedDeltaMapping,
-          appliedRules = result.getStatementResult.appliedRules
+      appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -247,7 +247,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     ExpressionDerivationResult(
       hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
       deltaCollection = deltaType,
-          appliedRules = result.getExpressionResult.appliedRules
+      appliedRules = result.getExpressionResult.appliedRules
     )
   }
 
@@ -271,7 +271,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
       deltaMapping = DeltaMapping(newDeltaMapping),
-        appliedRules = result.getStatementResult.appliedRules
+      appliedRules = result.getStatementResult.appliedRules
     )
 
   }

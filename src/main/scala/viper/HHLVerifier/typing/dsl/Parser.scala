@@ -17,7 +17,7 @@ object Parser {
         Specification(declarations, rules.toSeq)
       }
 
-  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule  | methodInitDerivationRule)
+  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule | methodInitDerivationRule)
 
   def hyperTypeDeclaration[$: P]: P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map { case (variable, hyperType, expression) =>
     HyperTypeDeclaration(variable, hyperType, expression)
@@ -28,10 +28,10 @@ object Parser {
     case (expr: Expr)     => expr
   }
 
-  def statement[$: P]: P[StmtPattern] = P(("havoc " ~ variable ).map { case (varName) => HavocStmt(varName) } | (("init".!).map(_=> InitStmt() )) | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
+  def statement[$: P]: P[StmtPattern] = P(("havoc " ~ variable).map { case (varName) => HavocStmt(varName) } | (("init".!).map(_ => InitStmt())) | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
 
   def statementDerivationRule[$: P]: P[StatementDerivationRule] = P(
-    "(Gamma, Delta, Context)" ~ ws ~ "|-" ~ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules
+    "(Gamma, Delta)" ~ ws ~ "|-" ~ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules
   ).map { case (statement, rules) => StatementDerivationRule(statement, rules) }
 
   def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
@@ -50,7 +50,6 @@ object Parser {
 
   def hyperCollectionResult[$: P]: P[HyperCollectionResult] = P("H").map(_ => HyperCollectionResult())
   def deltaCollectionResult[$: P]: P[DeltaCollectionResult] = P("D").map(_ => DeltaCollectionResult())
-  def context[$: P]: P[ProgramContext]                      = P("Context").map(_ => ProgramContext())
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
   def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta").map { case varSet => InitializeDeltaMapping() }
@@ -62,7 +61,7 @@ object Parser {
   def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma)
   def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta | initializeDelta)
 
-  def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck | assignedVars | hyperCollectionResult | context | allVariables | allParameters | variablesInExpression | assignedVars | setWithoutElement)
+  def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck | assignedVars | hyperCollectionResult | allVariables | allParameters | variablesInExpression | assignedVars | setWithoutElement)
   def mapping[$: P]: P[Mapping]       = P(doubleMappingAccess | deltaTypeCheck | deriveHyperType | gammaResult | gamma | deltaCollectionResult)
   def doubleMapping[$: P]: P[Mapping] = P(deltaResult | deriveDeltaType | delta)
 
@@ -73,8 +72,8 @@ object Parser {
 
   def hyperTypeCheck[$: P]: P[HyperTypeCheck]    = P("H" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => HyperTypeCheck(id, gamma, delta) }
   def deltaTypeCheck[$: P]: P[DeltaTypeCheck]    = P("D" ~ "[" ~ HypraParser.progVar ~ "](" ~ gamma ~ "," ~ delta ~ ")").map { case (id, gamma, delta) => DeltaTypeCheck(id, gamma, delta) }
-  def deriveHyperType[$: P]: P[DeriveHyperType]  = P("DH" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveHyperType(id, gamma, delta, context) }
-  def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ "," ~ set ~ ")").map { case (id, gamma, delta, context) => DeriveDeltaType(id, gamma, delta, context) }
+  def deriveHyperType[$: P]: P[DeriveHyperType]  = P("DH" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ ")").map { case (id, gamma, delta) => DeriveHyperType(id, gamma, delta) }
+  def deriveDeltaType[$: P]: P[DeriveDeltaType]  = P("DD" ~ "[" ~ HypraParser.progVar ~ "](" ~ hyperTypeMapping ~ "," ~ deltaTypeMapping ~ ")").map { case (id, gamma, delta) => DeriveDeltaType(id, gamma, delta) }
   def setWithoutElement[$: P]: P[WithoutElement] = P("(" ~ set ~ ws ~ "\\" ~ element ~ ws ~ ")").map { case (set, elem) => WithoutElement(set, elem) }
   def variablesInExpression[$: P]: P[Variables]  = P("Vars[" ~ HypraParser.progVar ~ "]").map { case id => Variables(id) }
   def allVariables[$: P]: P[AllVariables]        = P("AllVariables").map(_ => AllVariables())

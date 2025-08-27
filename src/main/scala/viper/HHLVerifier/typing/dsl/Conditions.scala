@@ -63,8 +63,8 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val indexedSet   = derivedGamma.get(indexedId.name)
         indexedSet.hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
-      case varSet : Variables => {
-        val variable          = indexedElem.asInstanceOf[Id]
+      case varSet: Variables => {
+        val variable    = indexedElem.asInstanceOf[Id]
         val variableSet = DeriveArgsUtils(context).getVariableSet(varSet)
         variableSet.contains(variable)
       }

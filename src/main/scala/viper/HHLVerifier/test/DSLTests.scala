@@ -259,7 +259,7 @@ object DSLTests {
     println("testing:", filename)
     val path     = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
     val stmtPath = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
-    val ts        = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
+    val ts       = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
     println("success", filename)
   }
 

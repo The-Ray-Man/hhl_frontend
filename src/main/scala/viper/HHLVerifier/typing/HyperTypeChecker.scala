@@ -81,13 +81,13 @@ object HyperTypeChecker {
       case CompStmt(s1, s2)                         => Set(s1, s2)
       case dsl.AssignStmt(left, right)              => Set(left, right)
       case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
-      case InitStmt()                       => Set.empty
+      case InitStmt()                               => Set.empty
       case dsl.HavocStmt(variable)                  => Set(variable)
-      case MethodInitStmt(variable)                  => Set(variable)
+      case MethodInitStmt(variable)                 => Set(variable)
     }
   }
 
-  def getParameter(method: Method) : Set[Id] = {
+  def getParameter(method: Method): Set[Id] = {
     method.params.toSet
   }
 

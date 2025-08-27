@@ -1,0 +1,22 @@
+
+
+method foo(x: Int) returns (o : Int[MONOUP[x]]) {
+
+    o := 5
+
+    if (x < 0) {
+        o := o - 1
+    } else {
+        o := o + 1
+    }
+}
+
+
+method bar(y: Int[LOW]) returns (o : Int[MONODOWN[y]]) {
+
+    var k : Int
+    k := foo(y)
+
+    o := 0 - k
+
+}

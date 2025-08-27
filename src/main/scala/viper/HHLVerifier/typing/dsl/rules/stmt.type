@@ -7,13 +7,13 @@
     !(x in AllParameters) => NULL addTo Gamma'(x)
 ];
 
-(Gamma, Delta, Context) |- init :: [
+(Gamma, Delta) |- init :: [
     => Gamma'(x) = Gamma(x),
     => ZERO addTo Delta'(x)(x),
     => LOW addTo Delta'(x)(x)
 ];
 
-(Gamma, Delta, Context) |- var := e :: [
+(Gamma, Delta) |- var := e :: [
     => H[e](Gamma, Delta) = Gamma'(var),
     !(x == var) => Gamma(x) addTo Gamma'(x),
     !(x == var) && Delta hasKey x => Delta(x) = Delta'(x),
@@ -35,49 +35,49 @@
     Delta hasKey var && Delta(var) hasKey x  && LOW  in Delta(var)(x) && D[e](Gamma, Delta) hasKey x    && LOW  in D[e](Gamma, Delta)(x)   => LOW  addTo Delta'(var)(x)
 ];
 
-(Gamma, Delta, Context) |- s1;s2 :: [
-    => Gamma' = DH[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context),
-    => Delta' = DD[s2](DH[s1](Gamma, Delta, Context), DD[s1](Gamma, Delta, Context), Context)
+(Gamma, Delta) |- s1;s2 :: [
+    => Gamma' = DH[s2](DH[s1](Gamma, Delta), DD[s1](Gamma, Delta)),
+    => Delta' = DD[s2](DH[s1](Gamma, Delta), DD[s1](Gamma, Delta))
 ];
 
-(Gamma, Delta, Context) |- if b then s1 else s2 end :: [
-    LOW in H[b](Gamma, Delta) && LOW in DH[s1](Gamma, InitDelta, Context)(x) && LOW in DH[s2](Gamma, InitDelta, Context)(x) => LOW addTo Gamma'(x),
-    LOW in H[b](Gamma, Delta) && MONOUP[y] in DH[s1](Gamma, InitDelta, Context)(x) && MONOUP[y] in DH[s2](Gamma, InitDelta, Context)(x) => MONOUP[y] addTo Gamma'(x),
-    LOW in H[b](Gamma, Delta) && MONODOWN[y] in DH[s1](Gamma, InitDelta, Context)(x) && MONODOWN[y] in DH[s2](Gamma, InitDelta, Context)(x) => MONODOWN[y] addTo Gamma'(x),
+(Gamma, Delta) |- if b then s1 else s2 end :: [
+    LOW in H[b](Gamma, Delta) && LOW in DH[s1](Gamma, InitDelta)(x) && LOW in DH[s2](Gamma, InitDelta)(x) => LOW addTo Gamma'(x),
+    LOW in H[b](Gamma, Delta) && MONOUP[y] in DH[s1](Gamma, InitDelta)(x) && MONOUP[y] in DH[s2](Gamma, InitDelta)(x) => MONOUP[y] addTo Gamma'(x),
+    LOW in H[b](Gamma, Delta) && MONODOWN[y] in DH[s1](Gamma, InitDelta)(x) && MONODOWN[y] in DH[s2](Gamma, InitDelta)(x) => MONODOWN[y] addTo Gamma'(x),
 
 
-    TRUE in H[b](Gamma, Delta) => Gamma' = DH[s1](Gamma, InitDelta, Context) && Delta' = DD[s1](Gamma, InitDelta, Context),
-    FALSE in H[b](Gamma, Delta) => Gamma' = DH[s2](Gamma, InitDelta, Context) && Delta' = DD[s2](Gamma, InitDelta, Context),
-    POS in DH[s1](Gamma, InitDelta, Context)(x) && POS in DH[s2](Gamma, InitDelta, Context)(x) => POS addTo Gamma'(x),
-    NEG in DH[s1](Gamma, InitDelta, Context)(x) && NEG in DH[s2](Gamma, InitDelta, Context)(x) => NEG addTo Gamma'(x),
-    ZERO in DH[s1](Gamma, InitDelta, Context)(x) && ZERO in DH[s2](Gamma, InitDelta, Context)(x) => ZERO addTo Gamma'(x),
-    TRUE in DH[s1](Gamma, InitDelta, Context)(x) && TRUE in DH[s2](Gamma, InitDelta, Context)(x) => TRUE addTo Gamma'(x),
-    FALSE in DH[s1](Gamma, InitDelta, Context)(x) && FALSE in DH[s2](Gamma, InitDelta, Context)(x) => FALSE addTo Gamma'(x),
-    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && POS in DD[s1](Gamma, InitDelta, Context)(y)(y)  && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONOUP[x] addTo Gamma'(y),
-    MONOUP[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONOUP[x] addTo Gamma'(y),
-    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && POS in DD[s1](Gamma, InitDelta, Context)(y)(y)  && !(x in Assigned[s2]) => MONOUP[x] addTo Gamma'(y),
+    TRUE in H[b](Gamma, Delta) => Gamma' = DH[s1](Gamma, InitDelta) && Delta' = DD[s1](Gamma, InitDelta),
+    FALSE in H[b](Gamma, Delta) => Gamma' = DH[s2](Gamma, InitDelta) && Delta' = DD[s2](Gamma, InitDelta),
+    POS in DH[s1](Gamma, InitDelta)(x) && POS in DH[s2](Gamma, InitDelta)(x) => POS addTo Gamma'(x),
+    NEG in DH[s1](Gamma, InitDelta)(x) && NEG in DH[s2](Gamma, InitDelta)(x) => NEG addTo Gamma'(x),
+    ZERO in DH[s1](Gamma, InitDelta)(x) && ZERO in DH[s2](Gamma, InitDelta)(x) => ZERO addTo Gamma'(x),
+    TRUE in DH[s1](Gamma, InitDelta)(x) && TRUE in DH[s2](Gamma, InitDelta)(x) => TRUE addTo Gamma'(x),
+    FALSE in DH[s1](Gamma, InitDelta)(x) && FALSE in DH[s2](Gamma, InitDelta)(x) => FALSE addTo Gamma'(x),
+    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && POS in DD[s1](Gamma, InitDelta)(y)(y)  && LOW in DD[s2](Gamma, InitDelta)(y)(y) && NEG in DD[s2](Gamma, InitDelta)(y)(y)  => MONOUP[x] addTo Gamma'(y),
+    MONOUP[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta)(y)(y) && NEG in DD[s2](Gamma, InitDelta)(y)(y)  => MONOUP[x] addTo Gamma'(y),
+    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && POS in DD[s1](Gamma, InitDelta)(y)(y)  && !(x in Assigned[s2]) => MONOUP[x] addTo Gamma'(y),
     
-    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s1](Gamma, InitDelta, Context)(y)(y)  && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && POS in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
-    MONOUP[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && POS in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
-    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s1](Gamma, InitDelta, Context)(y)(y)  && !(x in Assigned[s2]) => MONODOWN[x] addTo Gamma'(y),
+    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && NEG in DD[s1](Gamma, InitDelta)(y)(y)  && LOW in DD[s2](Gamma, InitDelta)(y)(y) && POS in DD[s2](Gamma, InitDelta)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
+    MONOUP[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta)(y)(y) && POS in DD[s2](Gamma, InitDelta)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
+    MONOUP[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && NEG in DD[s1](Gamma, InitDelta)(y)(y)  && !(x in Assigned[s2]) => MONODOWN[x] addTo Gamma'(y),
 
-    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && POS in DD[s1](Gamma, InitDelta, Context)(y)(y)  && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
-    MONODOWN[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
-    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && POS in DD[s1](Gamma, InitDelta, Context)(y)(y)  && !(x in Assigned[s2]) => MONODOWN[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && POS in DD[s1](Gamma, InitDelta)(y)(y)  && LOW in DD[s2](Gamma, InitDelta)(y)(y) && NEG in DD[s2](Gamma, InitDelta)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta)(y)(y) && NEG in DD[s2](Gamma, InitDelta)(y)(y)  => MONODOWN[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && POS in DD[s1](Gamma, InitDelta)(y)(y)  && !(x in Assigned[s2]) => MONODOWN[x] addTo Gamma'(y),
     
-    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s1](Gamma, InitDelta, Context)(y)(y)  && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && POS in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONOUP[x] addTo Gamma'(y),
-    MONODOWN[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta, Context)(y)(y) && POS in DD[s2](Gamma, InitDelta, Context)(y)(y)  => MONOUP[x] addTo Gamma'(y),
-    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta, Context)(y)(y) && NEG in DD[s1](Gamma, InitDelta, Context)(y)(y)  && !(x in Assigned[s2]) => MONOUP[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && NEG in DD[s1](Gamma, InitDelta)(y)(y)  && LOW in DD[s2](Gamma, InitDelta)(y)(y) && POS in DD[s2](Gamma, InitDelta)(y)(y)  => MONOUP[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && !(x in Assigned[s1]) && LOW in DD[s2](Gamma, InitDelta)(y)(y) && POS in DD[s2](Gamma, InitDelta)(y)(y)  => MONOUP[x] addTo Gamma'(y),
+    MONODOWN[x] in H[b](Gamma, Delta) && LOW in DD[s1](Gamma, InitDelta)(y)(y) && NEG in DD[s1](Gamma, InitDelta)(y)(y)  && !(x in Assigned[s2]) => MONOUP[x] addTo Gamma'(y),
 
     !(x in Assigned[s1]) && !(x in Assigned[s2]) => Gamma'(x) = Gamma(x),
     !(x in Assigned[s1]) && !(x in Assigned[s2]) && Delta hasKey x => Delta'(x) = Delta(x),
 
-    LOW in H[b](Gamma, Delta) && LOW  in DD[s1](Gamma, InitDelta, Context)(x)(y) && LOW  in DD[s2](Gamma, InitDelta, Context)(x)(y) => LOW addTo Delta'(x)(y),
-    LOW in H[b](Gamma, Delta) && POS  in DD[s1](Gamma, InitDelta, Context)(x)(y) && POS  in DD[s2](Gamma, InitDelta, Context)(x)(y) => POS addTo Delta'(x)(y),
-    LOW in H[b](Gamma, Delta) && ZERO in DD[s1](Gamma, InitDelta, Context)(x)(y) && ZERO in DD[s2](Gamma, InitDelta, Context)(x)(y) => ZERO addTo Delta'(x)(y),
-    LOW in H[b](Gamma, Delta) && NEG  in DD[s1](Gamma, InitDelta, Context)(x)(y) && NEG  in DD[s2](Gamma, InitDelta, Context)(x)(y) => NEG addTo Delta'(x)(y)
+    LOW in H[b](Gamma, Delta) && LOW  in DD[s1](Gamma, InitDelta)(x)(y) && LOW  in DD[s2](Gamma, InitDelta)(x)(y) => LOW addTo Delta'(x)(y),
+    LOW in H[b](Gamma, Delta) && POS  in DD[s1](Gamma, InitDelta)(x)(y) && POS  in DD[s2](Gamma, InitDelta)(x)(y) => POS addTo Delta'(x)(y),
+    LOW in H[b](Gamma, Delta) && ZERO in DD[s1](Gamma, InitDelta)(x)(y) && ZERO in DD[s2](Gamma, InitDelta)(x)(y) => ZERO addTo Delta'(x)(y),
+    LOW in H[b](Gamma, Delta) && NEG  in DD[s1](Gamma, InitDelta)(x)(y) && NEG  in DD[s2](Gamma, InitDelta)(x)(y) => NEG addTo Delta'(x)(y)
 ];
 
-(Gamma, Delta, Context) |- havoc x :: [
+(Gamma, Delta) |- havoc x :: [
     !(y == x) => Gamma'(y) = Gamma(y) && Delta'(y) = Delta(y)
 ]

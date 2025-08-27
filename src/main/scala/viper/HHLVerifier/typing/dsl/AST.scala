@@ -217,19 +217,19 @@ case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set 
 
 }
 
-case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping with Derivation {
+case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables ++ context.variables
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
 
 }
 
-case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping, context: Set) extends Mapping with Derivation {
+case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables ++ gamma.variables ++ delta.variables
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
 
 }
 
@@ -309,6 +309,6 @@ trait StmtPattern {}
 case class CompStmt(first: Id, second: Id)                       extends StmtPattern
 case class AssignStmt(variable: Id, value: Id)                   extends StmtPattern
 case class IfStmt(condition: Id, thenBranch: Id, elseBranch: Id) extends StmtPattern
-case class InitStmt()                                extends StmtPattern
+case class InitStmt()                                            extends StmtPattern
 case class HavocStmt(variable: Id)                               extends StmtPattern
 case class MethodInitStmt(variable: Id)                          extends StmtPattern

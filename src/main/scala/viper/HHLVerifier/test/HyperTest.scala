@@ -73,6 +73,9 @@ object HyperTest {
     Generator.verifierOption = 2
     Generator.autoSelectRules = true
     val translatedProgram = HyperTranslate.translateProgram(typeSystem, program)
+    TypeChecker.reset()
+    SymbolChecker.reset()
+    Generator.reset()
     SymbolChecker.checkSymbolsProg(translatedProgram)
     TypeChecker.typeCheckProg(translatedProgram)
     val viperProgram = Generator.generate(translatedProgram, test._1.getPath)
@@ -130,6 +133,8 @@ object HyperTest {
       val parsed = fastparse.parse(program, Parser.program(_))
       if (parsed.isSuccess) {
         val parsedProgram = parsed.get.value
+        SymbolChecker.checkSymbolsProg(parsedProgram)
+        TypeChecker.typeCheckProg(parsedProgram)
         hyperTypeCheck(parsedProgram, f)
       } else {
         println(f"Failed to parse ${f._1.getPath}")
@@ -143,7 +148,7 @@ object HyperTest {
   def main(args: Array[String]): Unit = {
     val pathOfHyperTests = "src/test/hyperTypes"
     var typeTests        = getAllTestFiles(pathOfHyperTests)
-    typeTests = typeTests.filter(test => (test._1.getAbsolutePath().endsWith("/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/test.hhl") )) // Temporary ignore while loops
+    typeTests = typeTests.filter(test => (test._1.getAbsolutePath().endsWith("/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/method1.hhl"))) // Temporary ignore while loops
 
     typeTests = typeTests.filter(test => !(test._1.getAbsolutePath().endsWith("est/hyperTypes/invalid/While2.hhl") || test._1.getAbsolutePath().endsWith("est/hyperTypes/invalid/WhileIfElse.hhl"))) // Temporary ignore while loops
 

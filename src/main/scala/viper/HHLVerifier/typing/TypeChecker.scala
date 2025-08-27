@@ -8,6 +8,7 @@ import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, A
 import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.dsl.Element
+import viper.HHLVerifier.typing.dsl.SimpleHyperType
 
 object TypeChecker {
   val boolOp        = List("==", "!=", "&&", "||", "forall", "exists", "==>")
@@ -149,20 +150,11 @@ object TypeChecker {
         })
         if (!res) throw new Logger("The types of the arguments in the call to method " + name + " do not match with the types of the method parameters").addTitle("Type Checker Error").addOffset((call.offsetLeft, call.offsetRight))
       case fold @ FoldStmt(hty, id) => {
-        hty match {
-          case _: dsl.SimpleHyperType => {}
-          case _                      => {}
-        }
+        typeCheckElement(fold, hty, false)
         typeCheckExprWithChecks(fold, id, false)
       }
       case unfold @ UnfoldStmt(hty, id) => {
-        hty match {
-          case _ @dsl.SimpleHyperType(_)              => {}
-          case _ @dsl.HyperTypeWithListArgs(ty, args) => {
-            args.foreach(a => typeCheckElement(unfold, a, false))
-          }
-          case _ => {}
-        }
+        typeCheckElement(unfold, hty, false)
         typeCheckExprWithChecks(unfold, id, false)
 
       }
@@ -355,8 +347,16 @@ object TypeChecker {
 
   def typeCheckElement(s: Stmt, e: Element, hyperAssertionExpected: Boolean): Boolean = {
     e match {
-      case id @ Id(name) => typeCheckExpr(id, hyperAssertionExpected)
-      case _             => true
+      case id @ Id(name)                       => typeCheckExpr(id, hyperAssertionExpected)
+      case htyp: SimpleHyperType               => false
+      case dsl.HyperTypeWithListArgs(ty, args) => {
+        args.foreach(a => typeCheckElement(s, a, hyperAssertionExpected))
+        typeCheckElement(s, ty, hyperAssertionExpected)
+      }
+      case dsl.HyperTypeWithSetArgs(ty, args) => {
+        args.foreach(a => typeCheckElement(s, a, hyperAssertionExpected))
+        typeCheckElement(s, ty, hyperAssertionExpected)
+      }
     }
   }
 

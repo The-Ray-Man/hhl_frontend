@@ -206,8 +206,6 @@ object Soundness {
     }
   }
 
-
-
   // -------- Rule translation ------------------------------------------------
 
   /** Translate rules into (preconditions, postconditions, assertion statements).
