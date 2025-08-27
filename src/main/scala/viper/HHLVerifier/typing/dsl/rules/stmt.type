@@ -78,4 +78,6 @@
     LOW in H[b](Gamma, Delta) && NEG  in DD[s1](Gamma, InitDelta, Context)(x)(y) && NEG  in DD[s2](Gamma, InitDelta, Context)(x)(y) => NEG addTo Delta'(x)(y)
 ];
 
-(Gamma, Delta, Context) |- havoc(x) :: []
+(Gamma, Delta, Context) |- havoc x :: [
+    !(y == x) => Gamma'(y) = Gamma(y) && Delta'(y) = Delta(y)
+]

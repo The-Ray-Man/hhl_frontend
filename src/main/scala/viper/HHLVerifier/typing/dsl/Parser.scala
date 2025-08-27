@@ -28,7 +28,7 @@ object Parser {
     case (expr: Expr)     => expr
   }
 
-  def statement[$: P]: P[StmtPattern] = P(("havoc(" ~ variable ~ ")").map { case (varName) => HavocStmt(varName) } | (("init".!).map(_=> InitStmt() )) | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
+  def statement[$: P]: P[StmtPattern] = P(("havoc " ~ variable ).map { case (varName) => HavocStmt(varName) } | (("init".!).map(_=> InitStmt() )) | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
 
   def statementDerivationRule[$: P]: P[StatementDerivationRule] = P(
     "(Gamma, Delta, Context)" ~ ws ~ "|-" ~ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules

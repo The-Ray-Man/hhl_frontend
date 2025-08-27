@@ -3,6 +3,7 @@ package viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl.SpecificationUtil
 import viper.HHLVerifier.typing.dsl.HyperTypeDeclaration
 import viper.HHLVerifier.typing.dsl
+import viper.HHLVerifier.typing.dsl.{HavocStmt => HavocStmtPattern}
 import viper.HHLVerifier.typing.HyperTypeCollection
 import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.ast.Expr
@@ -167,9 +168,15 @@ case class TypeSystem(
           deltaMapping = delta
         )
       }
+      case HavocStmt(id, _) => {
+        val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.havocRule.statement).getOrElse(throw new Exception(s"Statement $s does not match havoc pattern"))
+        val context                      = StatementDerivationContext(this, s, allVariables, gamma, delta, pc, stmtMatching, exprMatching, new Cache())
+        val derivedResult                = statementTypeSystem.havocRule.derive(context)
+        derivedResult
+      }
       case MultiAssignStmt(_, _)                                                                                                                                                                                 => throw new Exception("MultiAssignStmt is not yet supported in the type system")
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
-      case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
+      case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }
     println(s"{${gamma.toString()}} {${delta.toString()}}} |- ${s.toString()} :: {${res.hyperTypeMapping.toString()}} {${res.deltaMapping.toString()}}| ${res.appliedRules.mkString(", ")}")
     res
@@ -190,6 +197,7 @@ case class TypeSystem(
           Some(Map(s1 -> stmtsCheck.head, s2 -> CompositeStmt(stmtsCheck.tail)), Map.empty)
         }
       }
+      case (HavocStmtPattern(variable), HavocStmt(id, _)) => Some((Map.empty, Map(variable -> id)))
       case _ => None
     }
   }
