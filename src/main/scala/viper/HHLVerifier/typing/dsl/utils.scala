@@ -27,6 +27,7 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.CombExpr
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
+import buildinfo.BuildInfo.name
 
 object SpecificationUtil {
 
@@ -59,7 +60,7 @@ object SpecificationUtil {
         dupplicatedRule match {
           case None        => expressionRules += rule.asInstanceOf[ExpressionDerivationRule]
           case Some(value) => {
-            val combinedRule = combineExpressionDerivationRules(value, rule.asInstanceOf[ExpressionDerivationRule]).getOrElse(throw new Exception("123"))
+            val combinedRule = combineExpressionDerivationRules(value, rule.asInstanceOf[ExpressionDerivationRule]).getOrElse(throw new Exception("This should never happen"))
             expressionRules -= value
             expressionRules += combinedRule
           }
@@ -69,7 +70,7 @@ object SpecificationUtil {
         dupplicatedRule match {
           case None        => statementRules += rule.asInstanceOf[StatementDerivationRule]
           case Some(value) => {
-            val combinedRule = combineStatementDerivationRules(value, rule.asInstanceOf[StatementDerivationRule]).getOrElse(throw new Exception("123"))
+            val combinedRule = combineStatementDerivationRules(value, rule.asInstanceOf[StatementDerivationRule]).getOrElse(throw new Exception("This should never happen"))
             statementRules -= value
             statementRules += combinedRule
           }
@@ -247,8 +248,8 @@ object ToIndexed {
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta, context)
       case MappingAccess(subMapping, id)                 => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
-      case InitializeGammaMapping(toInitializeVariables) => InitializeGammaMapping(toIndexedVariable(mapping, toInitializeVariables))
-      case InitializeDeltaMapping(toInitializeVariables) => InitializeDeltaMapping(toIndexedVariable(mapping, toInitializeVariables))
+      case InitializeGammaMapping() => InitializeGammaMapping()
+      case InitializeDeltaMapping() => InitializeDeltaMapping()
       case _: Mapping                                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
@@ -256,7 +257,8 @@ object ToIndexed {
   def toIndexedVariable(mapping: Map[Id, Int], rule: Rule): Rule = {
     Rule(
       conditions = rule.conditions.map(cond => toIndexedVariable(mapping, cond)),
-      conclusions = rule.conclusions.map(concl => toIndexedVariable(mapping, concl))
+      conclusions = rule.conclusions.map(concl => toIndexedVariable(mapping, concl)),
+      name  = rule.name
     )
   }
 }
@@ -266,7 +268,8 @@ object applyIndexed {
   def applyIndexed(mapping: Map[Id, Id], wrapper: Rule): Rule = {
     Rule(
       conditions = wrapper.conditions.map(cond => applyIndexed(mapping, cond)),
-      conclusions = wrapper.conclusions.map(concl => applyIndexed(mapping, concl))
+      conclusions = wrapper.conclusions.map(concl => applyIndexed(mapping, concl)),
+      name  = wrapper.name
     )
   }
 
@@ -323,7 +326,7 @@ object applyIndexed {
       case DeriveDeltaType(expr, gamma, delta, context) =>
         DeriveDeltaType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta), context)
       case MappingAccess(subMapping, id)                 => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
-      case InitializeDeltaMapping(toInitializeVariables) => InitializeDeltaMapping(applyIndexed(mapping, toInitializeVariables))
+      case InitializeDeltaMapping() => InitializeDeltaMapping()
       case _: Mapping                                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
@@ -372,8 +375,9 @@ object applyIndexed {
       case AssignStmt(variable, value)               => AssignStmt(applyIndexed(mapping, variable), applyIndexed(mapping, value))
       case CompStmt(first, second)                   => CompStmt(applyIndexed(mapping, first), applyIndexed(mapping, second))
       case IfStmt(condition, thenBranch, elseBranch) => IfStmt(applyIndexed(mapping, condition), applyIndexed(mapping, thenBranch), applyIndexed(mapping, elseBranch))
-      case InitStmt(variable)                        => InitStmt(applyIndexed(mapping, variable))
+      case InitStmt()                        => InitStmt()
       case HavocStmt(variable)                       => HavocStmt(applyIndexed(mapping, variable))
+      case MethodInitStmt(variable) => MethodInitStmt(applyIndexed(mapping, variable))
     }
   }
 }
@@ -470,9 +474,8 @@ case class DeriveArgsUtils(var context: Context) {
         }
       }
       case Gamma()                        => context.gamma
-      case InitializeGammaMapping(varSet) => {
-        val variables = getVariableSet(varSet)
-        context.typeSystem.initializeVariables(variables)._1
+      case InitializeGammaMapping() => {
+        context.typeSystem.init(context.gamma, context.delta).getStatementResult.hyperTypeMapping
       }
       case _ => throw new Exception("Unsupported mapping type for Gamma condition" + mapping.getClass.getSimpleName)
     }
@@ -495,9 +498,9 @@ case class DeriveArgsUtils(var context: Context) {
         }
       }
       case Delta()                        => context.delta
-      case InitializeDeltaMapping(varSet) => {
-        val variables = getVariableSet(varSet)
-        context.typeSystem.initializeVariables(variables)._2
+      case InitializeDeltaMapping() => {
+        context.typeSystem.init(context.gamma, context.delta).getStatementResult.deltaMapping
+
       }
       case _ => throw new Exception("Unsupported mapping type for Delta condition" + mapping.getClass.getSimpleName)
     }
@@ -527,6 +530,7 @@ case class DeriveArgsUtils(var context: Context) {
       case AllVariables() => {
         context.typeSystem.allVariables
       }
+      case AllParameters() => context.typeSystem.allParams
       case _ => throw new Exception("Unsupported variable set type: " + varSet.getClass.getSimpleName)
     }
   }

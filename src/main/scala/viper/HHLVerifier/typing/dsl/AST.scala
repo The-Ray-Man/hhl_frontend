@@ -25,7 +25,8 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
         branchRule = statementRules.find(rule => rule.statement.isInstanceOf[IfStmt]).getOrElse(throw new Exception("No branch rule found")),
         compositionRule = statementRules.find(rule => rule.statement.isInstanceOf[CompStmt]).getOrElse(throw new Exception("No composition rule found")),
         initRule = statementRules.find(rule => rule.statement.isInstanceOf[InitStmt]).getOrElse(throw new Exception("No init rule found")),
-        havocRule = statementRules.find(rule => rule.statement.isInstanceOf[HavocStmt]).getOrElse(throw new Exception("No havoc rule found"))
+        havocRule = statementRules.find(rule => rule.statement.isInstanceOf[HavocStmt]).getOrElse(throw new Exception("No havoc rule found")),
+        methodInitRule = statementRules.find(rule => rule.statement.isInstanceOf[MethodInitStmt]).getOrElse(throw new Exception("No method init rule found"))
       ),
       expressionTypeSystem = expressionRules,
       hyperTypeDeclaration = hypertypeDeclaration
@@ -152,7 +153,7 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
   }
 }
 
-case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion]) extends CollectVariables {
+case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion], name: RuleName = RuleName.empty) extends CollectVariables {
   override def variables: ScalaSet[Id] = conditions.flatMap(_.variables).toSet ++ conclusions.flatMap(_.variables).toSet
 }
 
@@ -212,7 +213,7 @@ case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set 
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
 
 }
 
@@ -220,7 +221,7 @@ case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping, context: Se
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables ++ context.variables
 
 }
 
@@ -228,18 +229,18 @@ case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping, context: Se
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ context.variables ++ gamma.variables ++ delta.variables
 
 }
 
-case class InitializeDeltaMapping(toInitializeVariables: Set) extends Mapping with Derivation {
+case class InitializeDeltaMapping() extends Mapping with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = false
 
   override def variables: immutable.Set[Id] = immutable.Set.empty
 }
 
-case class InitializeGammaMapping(toInitializeVariables: Set) extends Mapping with Derivation {
+case class InitializeGammaMapping() extends Mapping with Derivation {
 
   override def isHyperTypeConclusion(): Boolean = true
 
@@ -250,7 +251,7 @@ case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapp
 
   override def isHyperTypeConclusion(): Boolean = false
 
-  override def variables: immutable.Set[Id] = immutable.Set(expr)
+  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
 }
 
 case class HyperCollectionResult() extends Set {
@@ -261,7 +262,7 @@ case class HyperCollectionResult() extends Set {
 case class MappingAccess(mapping: Mapping, id: Id) extends Set with Mapping {
 
   override def isHyperTypeConclusion(): Boolean = mapping.isHyperTypeConclusion()
-  override def variables: immutable.Set[Id]     = scala.collection.immutable.Set(id)
+  override def variables: immutable.Set[Id]     = scala.collection.immutable.Set(id) ++ mapping.variables
 }
 
 case class DeltaCollectionResult() extends Mapping {
@@ -308,5 +309,6 @@ trait StmtPattern {}
 case class CompStmt(first: Id, second: Id)                       extends StmtPattern
 case class AssignStmt(variable: Id, value: Id)                   extends StmtPattern
 case class IfStmt(condition: Id, thenBranch: Id, elseBranch: Id) extends StmtPattern
-case class InitStmt(variable: Id)                                extends StmtPattern
+case class InitStmt()                                extends StmtPattern
 case class HavocStmt(variable: Id)                               extends StmtPattern
+case class MethodInitStmt(variable: Id)                          extends StmtPattern

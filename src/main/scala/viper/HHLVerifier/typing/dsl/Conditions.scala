@@ -80,6 +80,10 @@ case class InSet(elem: Element, set: Set) extends Condition {
         val variable         = elem.asInstanceOf[Id]
         changedVariables.contains(variable)
       }
+      case AllParameters() => {
+        val vars = context.typeSystem.allParams
+        vars.contains(indexedElem.asInstanceOf[Id])
+      }
       case _: Set => throw new Exception("Not implemented yet " + set.getClass().getSimpleName())
     }
 

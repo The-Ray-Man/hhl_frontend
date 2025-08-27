@@ -22,7 +22,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
       case HyperCollectionResult() => {
         ExpressionDerivationResult(
           hyperTypeCollection = result.getExpressionResult.hyperTypeCollection.add(elementIndexed.asInstanceOf[HyperType]),
-          deltaCollection = result.getExpressionResult.deltaCollection
+          deltaCollection = result.getExpressionResult.deltaCollection,
+          appliedRules = result.getExpressionResult.appliedRules
         )
       }
       case MappingAccess(DeltaCollectionResult(), variable) => {
@@ -30,7 +31,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
         val newDeltaCollection = result.getExpressionResult.deltaCollection.add(variableLookup.name, elementIndexed.asInstanceOf[HyperType])
         ExpressionDerivationResult(
           hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
-          deltaCollection = newDeltaCollection
+          deltaCollection = newDeltaCollection,
+          appliedRules = result.getExpressionResult.appliedRules
         )
       }
       case MappingAccess(GammaResult(), variable) => {
@@ -39,7 +41,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
         val newHyperTypeCollection = hyperTypes.add(elementIndexed.asInstanceOf[HyperType])
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
-          deltaMapping = result.getStatementResult.deltaMapping
+          deltaMapping = result.getStatementResult.deltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
         )
       }
       case MappingAccess(MappingAccess(DeltaResult(), var1), var2) => {
@@ -55,7 +58,8 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
         val updatedDeltaMapping = DeltaMapping(deltaMapping.collection.updated(variableLookup2.name, updatedDeltaCollection))
         StatementDerivationResult(
           hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-          deltaMapping = updatedDeltaMapping
+          deltaMapping = updatedDeltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
         )
       }
       case _: Set => throw new Exception("Not implemented yet: " + set.getClass.getSimpleName)
@@ -80,7 +84,8 @@ case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
         val toAddSet = utils.getHyperTypeCollection(toAdd)
         ExpressionDerivationResult(
           hyperTypeCollection = result.getExpressionResult.hyperTypeCollection.extend(toAddSet),
-          deltaCollection = result.getExpressionResult.deltaCollection
+          deltaCollection = result.getExpressionResult.deltaCollection,
+          appliedRules = result.getExpressionResult.appliedRules
         )
       }
       case MappingAccess(DeltaCollectionResult(), variable) => {
@@ -88,7 +93,8 @@ case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
         val toAddSet       = utils.getHyperTypeCollection(toAdd)
         ExpressionDerivationResult(
           hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
-          deltaCollection = result.getExpressionResult.deltaCollection.extend(variableLookup.name, toAddSet)
+          deltaCollection = result.getExpressionResult.deltaCollection.extend(variableLookup.name, toAddSet),
+          appliedRules = result.getExpressionResult.appliedRules
         )
       }
       case MappingAccess(GammaResult(), variable) => {
@@ -98,7 +104,8 @@ case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
         val newHyperTypeCollection = hyperTypes.extend(toAddSet)
         StatementDerivationResult(
           hyperTypeMapping = HyperMapping(result.getStatementResult.hyperTypeMapping.mapping.updated(variableLookup.name, newHyperTypeCollection)),
-          deltaMapping = result.getStatementResult.deltaMapping
+          deltaMapping = result.getStatementResult.deltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
         )
       }
     }
@@ -120,7 +127,8 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
         val hyperTypes = context.gamma.get(name)
         ExpressionDerivationResult(
           hyperTypeCollection = hyperTypes,
-          deltaCollection = result.getExpressionResult.deltaCollection
+          deltaCollection = result.getExpressionResult.deltaCollection,
+          appliedRules = result.getExpressionResult.appliedRules
         )
       }
       case _ => throw new Exception("Expected Id for index in MappingAccess")
@@ -133,7 +141,8 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
     val updatedMapping      = result.getStatementResult.hyperTypeMapping.set(indexedVariable.name, hyperTypeCollection)
     StatementDerivationResult(
       hyperTypeMapping = updatedMapping,
-      deltaMapping = context.delta
+      deltaMapping = result.getStatementResult.deltaMapping,
+      appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -148,14 +157,16 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
         val updatedDeltaMapping    = DeltaMapping(delta.collection.updated(indexedVar2.name, DeltaCollection(updatedDeltaCollection)))
         StatementDerivationResult(
           hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-          deltaMapping = updatedDeltaMapping
+          deltaMapping = updatedDeltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
         )
       }
       case None => {
         val updatedDeltaMapping = DeltaMapping(delta.collection.updated(indexedVar2.name, DeltaCollection(Map(indexedVar1.name -> deltaCollection))))
         StatementDerivationResult(
           hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-          deltaMapping = updatedDeltaMapping
+          deltaMapping = updatedDeltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
         )
       }
     }
@@ -216,7 +227,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     val derivedHyperMapping = DeriveArgsUtils(context).getHyperMapping(deriveHyperType)
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
-      deltaMapping = result.getStatementResult.deltaMapping
+      deltaMapping = result.getStatementResult.deltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -224,7 +236,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     val derivedDeltaMapping = DeriveArgsUtils(context).getDeltaMapping(deriveDeltaType)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-      deltaMapping = derivedDeltaMapping
+      deltaMapping = derivedDeltaMapping,
+          appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -233,7 +246,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     val deltaType       = context.delta.collection.getOrElse(indexedVariable.name, throw new Exception("Variable " + indexedVariable.name + " not found in Delta mapping"))
     ExpressionDerivationResult(
       hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
-      deltaCollection = deltaType
+      deltaCollection = deltaType,
+          appliedRules = result.getExpressionResult.appliedRules
     )
   }
 
@@ -241,11 +255,12 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     val indexedResultVar = context.applyIndexed(resultVar).asInstanceOf[Id]
     val indexedLookupVar = context.applyIndexed(lookupVar).asInstanceOf[Id]
     val deltaCollection  = context.delta.collection.getOrElse(indexedLookupVar.name, throw new Exception("Variable " + indexedLookupVar.name + " not found in Delta mapping"))
-    val newDeltaMapping  = context.delta.collection.updated(indexedResultVar.name, deltaCollection)
+    val newDeltaMapping  = result.getStatementResult.deltaMapping.collection.updated(indexedResultVar.name, deltaCollection)
 
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-      deltaMapping = DeltaMapping(newDeltaMapping)
+      deltaMapping = DeltaMapping(newDeltaMapping),
+      appliedRules = result.getStatementResult.appliedRules
     )
   }
 
@@ -255,7 +270,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     val newDeltaMapping = context.delta.collection.updated(indexedVariable.name, deltaMapping)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
-      deltaMapping = DeltaMapping(newDeltaMapping)
+      deltaMapping = DeltaMapping(newDeltaMapping),
+        appliedRules = result.getStatementResult.appliedRules
     )
 
   }

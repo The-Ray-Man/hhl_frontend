@@ -32,6 +32,10 @@ import viper.HHLVerifier.ast.FoldStmt
 import viper.HHLVerifier.ast.AssertStmt
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.typing.HyperTypeChecker.getParameter
+
+
+
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,
@@ -40,6 +44,7 @@ case class TypeSystem(
 ) {
 
   var allVariables: ScalaSet[Id] = Set.empty
+  var allParams: ScalaSet[Id] = Set.empty
 
   def checkSoundness(): Boolean = {
     false
@@ -48,7 +53,31 @@ case class TypeSystem(
   def initializeMethod(method: ast.Method): StatementDerivationResult = {
     val allVars = getVariables(method)
     allVariables = allVars
-    val (hyperTypeMapping, deltaMapping) = initializeVariables(allVars)
+    allParams = getParameter(method)
+     
+    val result = allVariables
+      .map(v => {
+        val emptyContext = StatementDerivationContext(
+          typeSystem = this,
+          stmt = null,
+          allVars = allVariables,
+          gamma = new HyperMapping(Map.empty),
+          delta = DeltaMapping(Map.empty),
+          pc = HyperTypeCollection(Set()),
+          varStmtMapping = Map.empty,
+          varExprMapping = Map(statementTypeSystem.methodInitRule.statement.asInstanceOf[MethodInitStmt].variable -> v),
+          cache = new Cache()
+        )
+        val res            = statementTypeSystem.methodInitRule.derive(emptyContext)
+        val htypesFromDecl = v.hyperType.getOrElse(Seq()).toSet
+        val htypesFromInit = res.hyperTypeMapping.get(v.name).hypertypes
+        val deltaTypes     = res.deltaMapping.collection.getOrElse(v.name, DeltaCollection(Map()))
+        (v.name -> HyperTypeCollection(htypesFromDecl ++ htypesFromInit), (v.name -> deltaTypes))
+      })
+      .toSeq
+
+    val hyperTypeMapping = HyperMapping(result.map(_._1).toMap)
+    val deltaMapping     = DeltaMapping(result.map(_._2).toMap)
 
     val hyperTypeMappingWithDecl = method.params.foldLeft(hyperTypeMapping) { case (agg, param) =>
       val declaredTypes = param.hyperType.getOrElse(Seq()).toSet
@@ -62,33 +91,6 @@ case class TypeSystem(
     )
   }
 
-  def initializeVariables(variables: ScalaSet[Id]): (HyperMapping, DeltaMapping) = {
-    val result = variables
-      .map(v => {
-        val emptyContext = StatementDerivationContext(
-          typeSystem = this,
-          stmt = null,
-          allVars = variables,
-          gamma = new HyperMapping(Map.empty),
-          delta = DeltaMapping(Map.empty),
-          pc = HyperTypeCollection(Set()),
-          varStmtMapping = Map.empty,
-          varExprMapping = Map(statementTypeSystem.initRule.statement.asInstanceOf[InitStmt].variable -> v),
-          cache = new Cache()
-        )
-        val res            = statementTypeSystem.initRule.derive(emptyContext)
-        val htypesFromDecl = v.hyperType.getOrElse(Seq()).toSet
-        val htypesFromInit = res.hyperTypeMapping.get(v.name).hypertypes
-        val deltaTypes     = res.deltaMapping.collection.getOrElse(v.name, DeltaCollection(Map()))
-        (v.name -> HyperTypeCollection(htypesFromDecl ++ htypesFromInit), (v.name -> deltaTypes))
-      })
-      .toSeq
-
-    val hyperTypeMapping = HyperMapping(result.map(_._1).toMap)
-    val deltaMapping     = DeltaMapping(result.map(_._2).toMap)
-    (hyperTypeMapping, deltaMapping)
-  }
-
   def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
     println("start with:", expr)
     val applicableRules = expressionTypeSystem.map(rule => (rule, rule.isApplicableTo(expr))).filter(_._2.isDefined).map(rule => (rule._1, rule._2.get))
@@ -97,8 +99,13 @@ case class TypeSystem(
     }
     val rule   = applicableRules.head
     val result = rule._1.derive(this, gamma, delta, expr, rule._2)
-    println(s"{${gamma.toString()}} {${delta.toString()}} |- ${expr.toString()} :: {${result.hyperTypeCollection.toString()}} {${result.deltaCollection.toString()}}")
+    println(s"{${gamma.toString()}} {${delta.toString()}} |- ${expr.toString()} :: {${result.hyperTypeCollection.toString()}} {${result.deltaCollection.toString()}} | ${result.appliedRules.mkString(", ")}")
     result
+  }
+
+  def init(gamma: HyperMapping, delta: DeltaMapping) : StatementDerivationResult = {
+    val context = StatementDerivationContext(this, null, allVariables, gamma, delta, HyperTypeCollection(Set()), Map.empty, Map.empty, new Cache())
+    statementTypeSystem.initRule.derive(context)
   }
 
   def deriveStatement(gamma: HyperMapping, delta: DeltaMapping, s: Stmt, pc: HyperTypeCollection): StatementDerivationResult = {
@@ -164,7 +171,7 @@ case class TypeSystem(
       case MethodCallStmt(_, _)                                                                                                                                                                                  => throw new Exception("Method calls are not yet supported in the type system")
       case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | HavocStmt(_, _) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }
-    println(s"{${gamma.toString()}} {${delta.toString()}}} |- ${s.toString()} :: {${res.hyperTypeMapping.toString()}} {${res.deltaMapping.toString()}}")
+    println(s"{${gamma.toString()}} {${delta.toString()}}} |- ${s.toString()} :: {${res.hyperTypeMapping.toString()}} {${res.deltaMapping.toString()}}| ${res.appliedRules.mkString(", ")}")
     res
   }
 
@@ -188,7 +195,7 @@ case class TypeSystem(
   }
 }
 
-case class StatementTypeSystem(assignRule: StatementDerivationRule, compositionRule: StatementDerivationRule, branchRule: StatementDerivationRule, initRule: StatementDerivationRule, havocRule: StatementDerivationRule) {}
+case class StatementTypeSystem(assignRule: StatementDerivationRule, compositionRule: StatementDerivationRule, branchRule: StatementDerivationRule, initRule: StatementDerivationRule,methodInitRule: StatementDerivationRule, havocRule: StatementDerivationRule) {}
 
 object TypeSystem {
   def loadTypeSystem(paths: Seq[String]): TypeSystem = {
@@ -196,11 +203,19 @@ object TypeSystem {
       val fileContent = scala.io.Source.fromFile(path).getLines().mkString("\n")
       val res         = fastparse.parse(fileContent, viper.HHLVerifier.typing.dsl.Parser.specification(_))
       res match {
-        case fastparse.Parsed.Success(value, _) => value
+        case fastparse.Parsed.Success(value, _) => nameRules(value, path)
         case failure: fastparse.Parsed.Failure  => throw new Exception(s"Failed to parse type system: ${failure.msg}")
       }
     })
 
     SpecificationUtil.combineSpecifications(specifications).toTypeSystem()
+  }
+
+  def nameRules(spec: Specification, filepath: String) : Specification = {
+
+    spec.copy(derivationRules = spec.derivationRules.map(rule => rule match {
+      case ExpressionDerivationRule(expr, rules) => ExpressionDerivationRule(expr, rules.zipWithIndex.map {case (Rule(cond, conc, _), index) => Rule(cond, conc, RuleName.create(filepath, rule, index)) })
+      case StatementDerivationRule(statement, rules) => StatementDerivationRule(statement, rules.zipWithIndex.map {case (Rule(cond, conc, _), index) => Rule(cond, conc, RuleName.create(filepath, rule, index)) })
+    }))
   }
 }

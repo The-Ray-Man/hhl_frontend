@@ -35,6 +35,7 @@ import viper.HHLVerifier.ast.UseHintStmt
 import viper.HHLVerifier.typing.dsl.StatementDerivationResult
 import viper.HHLVerifier.typing.dsl.InitStmt
 import viper.HHLVerifier.generation.Generator.InvariantTracking.get
+import viper.HHLVerifier.typing.dsl.MethodInitStmt
 
 object HyperTypeChecker {
 
@@ -80,9 +81,14 @@ object HyperTypeChecker {
       case CompStmt(s1, s2)                         => Set(s1, s2)
       case dsl.AssignStmt(left, right)              => Set(left, right)
       case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
-      case InitStmt(variable)                       => Set(variable)
+      case InitStmt()                       => Set.empty
       case dsl.HavocStmt(variable)                  => Set(variable)
+      case MethodInitStmt(variable)                  => Set(variable)
     }
+  }
+
+  def getParameter(method: Method) : Set[Id] = {
+    method.params.toSet
   }
 
   def getVariables(method: Method): Set[Id] = {

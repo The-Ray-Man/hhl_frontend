@@ -19,7 +19,11 @@ abstract class RuleWrapper(rule: dsl.Rule) {
     val conditionHolds = appliedIndexedRule.conditions.forall(condition => { condition.check(context, expression) })
 
     if (conditionHolds) {
-      appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, acc) }
+      val res = appliedIndexedRule.conclusions.foldLeft(result) { case (acc, conclusion) => conclusion.apply(context, acc) }
+      res match {
+        case exprRes: ExpressionDerivationResult => ExpressionDerivationResult(exprRes.hyperTypeCollection, exprRes.deltaCollection, exprRes.appliedRules.appended(rule.name))
+        case stmtRes: StatementDerivationResult => StatementDerivationResult(stmtRes.hyperTypeMapping, stmtRes.deltaMapping, stmtRes.appliedRules.appended(rule.name))
+      }
     } else {
       result
     }

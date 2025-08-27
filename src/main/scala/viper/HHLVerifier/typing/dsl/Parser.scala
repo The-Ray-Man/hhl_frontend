@@ -17,7 +17,7 @@ object Parser {
         Specification(declarations, rules.toSeq)
       }
 
-  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule | initDerivationRule)
+  def derivationRule[$: P]: P[DerivationRule] = P(statementDerivationRule | expressionDerivationRule  | methodInitDerivationRule)
 
   def hyperTypeDeclaration[$: P]: P[HyperTypeDeclaration] = P(variable ~ ws ~ ":" ~ hyperType ~ ws ~ "<=>" ~ expression).map { case (variable, hyperType, expression) =>
     HyperTypeDeclaration(variable, hyperType, expression)
@@ -28,19 +28,19 @@ object Parser {
     case (expr: Expr)     => expr
   }
 
-  def statement[$: P]: P[StmtPattern] = P(("havoc(" ~ variable ~ ")").map { case (varName) => HavocStmt(varName) } | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
+  def statement[$: P]: P[StmtPattern] = P(("havoc(" ~ variable ~ ")").map { case (varName) => HavocStmt(varName) } | (("init".!).map(_=> InitStmt() )) | (variable ~ ":=" ~ variable).map { case (varName, expr) => AssignStmt(varName, expr) } | (variable ~ ";" ~ variable).map { case (firstStmt, secondStmt) => CompStmt(firstStmt, secondStmt) } | ("if" ~ ws ~ variable ~ ws ~ "then" ~ ws ~ variable ~ ws ~ "else" ~ ws ~ variable ~ ws ~ "end").map { case (condition, thenBranch, elseBranch) => IfStmt(condition, thenBranch, elseBranch) })
 
   def statementDerivationRule[$: P]: P[StatementDerivationRule] = P(
-    "(Gamma, Delta, Context)" ~/ ws ~/ "|-" ~/ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules
+    "(Gamma, Delta, Context)" ~ ws ~ "|-" ~ ws ~ statement ~ ws ~ "::" ~ ws ~ expressionRules
   ).map { case (statement, rules) => StatementDerivationRule(statement, rules) }
 
   def expressionDerivationRule[$: P]: P[ExpressionDerivationRule] = P(
-    "(Gamma, Delta)" ~/ ws ~/ "|-" ~/ ws ~ expression ~ ws ~ "::" ~/ ws ~ expressionRules
+    "(Gamma, Delta)" ~ ws ~ "|-" ~ ws ~ expression ~ ws ~ "::" ~ ws ~ expressionRules
   ).map { case (expr, rules) => ExpressionDerivationRule(expr, rules) }
 
-  def initDerivationRule[$: P]: P[StatementDerivationRule] = P(
-    "|-" ~ ws ~ "init(" ~ HypraParser.progVar ~ ")" ~ ws ~ "::" ~/ ws ~ expressionRules
-  ).map { case (variable, rules) => StatementDerivationRule(InitStmt(variable), rules) }
+  def methodInitDerivationRule[$: P]: P[StatementDerivationRule] = P(
+    "|-" ~ ws ~ "methodInit(" ~ HypraParser.progVar ~ ")" ~ ws ~ "::" ~ ws ~ expressionRules
+  ).map { case (variable, rules) => StatementDerivationRule(MethodInitStmt(variable), rules) }
 
   def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
 
@@ -53,8 +53,8 @@ object Parser {
   def context[$: P]: P[ProgramContext]                      = P("Context").map(_ => ProgramContext())
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
-  def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta(" ~ set ~ ")").map { case varSet => InitializeDeltaMapping(varSet) }
-  def initializeGamma[$: P]: P[InitializeGammaMapping]      = P("InitGamma(" ~ set ~ ")").map { case varSet => InitializeGammaMapping(varSet) }
+  def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta").map { case varSet => InitializeDeltaMapping() }
+  def initializeGamma[$: P]: P[InitializeGammaMapping]      = P("InitGamma").map { case varSet => InitializeGammaMapping() }
   def gammaResult[$: P]: P[GammaResult]                     = P("Gamma'").map(_ => GammaResult())
   def deltaResult[$: P]: P[DeltaResult]                     = P("Delta'").map(_ => DeltaResult())
   def assignedVars[$: P]: P[AssignedVariables]              = P("Assigned[" ~ HypraParser.progVar ~ "]").map { case id => AssignedVariables(id) }

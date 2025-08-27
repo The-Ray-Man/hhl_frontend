@@ -7,6 +7,7 @@ import viper.HHLVerifier.typing.TypeChecker
 import viper.HHLVerifier.generation.Generator
 import viper.HHLVerifier.management.{PrettyPrinter, ViperRunner}
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
+import viper.HHLVerifier.typing.dsl.RuleName.humanReadableRuleName
 
 object Soundness {
   // Current type system (used by expression builders)
@@ -205,58 +206,7 @@ object Soundness {
     }
   }
 
-  // -------- Human-readable rule names --------------------------------------
 
-  private def humanReadableRuleName(dr: DerivationRule): String = dr match {
-    case er: ExpressionDerivationRule =>
-      val suffix = er.expr match {
-        case BinaryExpr(_, op, _) => binaryOpLabel(op)
-        case UnaryExpr(op, _)     => unaryOpLabel(op)
-        case ImpliesExpr(_, _)    => "implies"
-        case Id(name)             =>
-          name match {
-            case "var" => "variable"
-            case "n"   => "num"
-            case "b"   => "bool"
-          }
-        case LookupExpr(_, _)   => "lookup"
-        case LengthExpr(_)      => "length"
-        case CombExpr(_, _, op) => combOpLabel(op)
-        case _                  => throw new Exception("No typing rules considered for this expression head.")
-      }
-      s"expr_${suffix}_"
-    case _: StatementDerivationRule => "StatementRule" // not used here
-  }
-
-  private def binaryOpLabel(op: String): String = op match {
-    case "+"   => "plus"
-    case "-"   => "minus"
-    case "*"   => "times"
-    case "/"   => "div"
-    case "%"   => "modulo"
-    case "<"   => "lessThan"
-    case "<="  => "lessThanOrEqual"
-    case ">"   => "greaterThan"
-    case ">="  => "greaterThanOrEqual"
-    case "=="  => "equal"
-    case "!="  => "notEqual"
-    case "&&"  => "and"
-    case "||"  => "or"
-    case "==>" => "implies"
-  }
-
-  private def unaryOpLabel(op: String): String = op match {
-    case "!" => "not"
-    case "-" => "negate"
-  }
-
-  private def combOpLabel(op: String): String = op match {
-    case "++"           => "concat"
-    case "setminus"     => "setminus"
-    case "union"        => "union"
-    case "in"           => "contains"
-    case "intersection" => "intersection"
-  }
 
   // -------- Rule translation ------------------------------------------------
 

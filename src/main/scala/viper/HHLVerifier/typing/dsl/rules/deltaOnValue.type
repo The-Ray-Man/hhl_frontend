@@ -39,7 +39,9 @@
     x in Vars[e1]    && D[e1](Gamma, Delta) hasKey x && !(x in Vars[e2]) && POS  in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta) => POS addTo D(x),
 
     x in Vars[e1]    && D[e1](Gamma, Delta) hasKey x && !(x in Vars[e2]) && ZERO in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta) => ZERO addTo D(x),
+
     x in Vars[e1]    && D[e1](Gamma, Delta) hasKey x && !(x in Vars[e2]) && ZERO in D[e1](Gamma, Delta)(x)  && POS in H[e2](Gamma, Delta) => NEG addTo D(x),
+
     x in Vars[e1]    && D[e1](Gamma, Delta) hasKey x && !(x in Vars[e2]) && ZERO in D[e1](Gamma, Delta)(x)  && NEG in H[e2](Gamma, Delta) => POS addTo D(x),
 
     x in Vars[e1]    && D[e1](Gamma, Delta) hasKey x && !(x in Vars[e2]) && NEG in D[e1](Gamma, Delta)(x)  && ZERO in H[e2](Gamma, Delta) => NEG addTo D(x),

@@ -60,18 +60,22 @@ case class StatementDerivationContext(val typeSystem: TypeSystem, val stmt: Stmt
 trait DerivationResult {
   def getExpressionResult: ExpressionDerivationResult
   def getStatementResult: StatementDerivationResult
+  def appliedRules: Seq[RuleName]
 }
 
-case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection) extends DerivationResult {
+case class ExpressionDerivationResult(val hyperTypeCollection: HyperTypeCollection, val deltaCollection: DeltaCollection, val appliedRules: Seq[RuleName] = Seq.empty) extends DerivationResult {
+
 
   override def getExpressionResult: ExpressionDerivationResult = this
 
   override def getStatementResult: StatementDerivationResult = throw new Exception("ExpressionDerivationResult does not have a statement result")
 
+
 }
 
-case class StatementDerivationResult(val hyperTypeMapping: HyperMapping, val deltaMapping: DeltaMapping) extends DerivationResult {
+case class StatementDerivationResult(val hyperTypeMapping: HyperMapping, val deltaMapping: DeltaMapping, val appliedRules : Seq[RuleName] = Seq.empty) extends DerivationResult {
   override def getExpressionResult: ExpressionDerivationResult = throw new Exception("StatementDerivationResult does not have an expression result")
 
   override def getStatementResult: StatementDerivationResult = this
+
 }

@@ -234,13 +234,31 @@ object DerivationTests {
 
   }
 
+  def test() : Unit = {
+    
+    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
+    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
+    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
+    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val typeSystem   = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
+    typeSystem.allVariables = Set(Id("o"))
+    val delta = DeltaMapping(Map("o" -> DeltaCollection(Map("o" -> HyperTypeCollection(Set(SimpleHyperType("ZERO"), SimpleHyperType("LOW")))))))
+    val stmt = AssignStmt(Id("o"), BinaryExpr(Id("o"), "-", Num(1)))
+    val gamma = HyperMapping(Map("o" -> HyperTypeCollection(Set(SimpleHyperType("LOW"), SimpleHyperType("ZERO")))))
+    val result = typeSystem.deriveStatement(gamma, delta, stmt, HyperTypeCollection(Set()))
+    println(s"Result for statement $stmt: $result")
+
+  }
+
   def main(args: Array[String]): Unit = {
-    deltaTests()
-    infFlowTests()
-    valueTests()
-    valueInfFlowTests()
-    statementTests()
-    monoTest()
+    test()
+    // deltaTests()
+    // infFlowTests()
+    // valueTests()
+    // valueInfFlowTests()
+    // statementTests()
+    // monoTest()
     println("all tests passed")
   }
 }
