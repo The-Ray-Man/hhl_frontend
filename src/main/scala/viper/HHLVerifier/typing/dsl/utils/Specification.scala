@@ -60,7 +60,7 @@ object SpecificationUtil {
     canBeCombined(rule1, rule2) match {
       case None                => None
       case Some(mappingIdtoId) => {
-        val adaptedRules = rule2.rules.map(rule => applyIndexed.applyIndexed(mappingIdtoId, rule))
+        val adaptedRules = rule2.rules.map(rule => Substitution.apply(mappingIdtoId, rule))
         val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
         Some(ExpressionDerivationRule(rule1.expr, allRules))
       }
@@ -71,7 +71,7 @@ object SpecificationUtil {
     canBeCombined(rule1, rule2) match {
       case None                => None
       case Some(mappingIdtoId) => {
-        val adaptedRules = rule2.rules.map(rule => applyIndexed.applyIndexed(mappingIdtoId, rule))
+        val adaptedRules = rule2.rules.map(rule => Substitution.apply(mappingIdtoId, rule))
         val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
         Some(StatementDerivationRule(rule1.statement, allRules))
       }

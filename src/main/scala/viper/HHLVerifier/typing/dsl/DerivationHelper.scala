@@ -22,9 +22,9 @@ abstract class Context {
   def addToExpressionCache(result: ExpressionDerivationResult): Unit = {
     cache.add(gamma, delta, expr, result)
   }
-  def applyIndexed(elem: Element): Element = {
+  def apply(elem: Element): Element = {
     val mapping = varExprMapping.filter { case (k, v) => v.isInstanceOf[Id] }.map { case (k, v) => (k, v.asInstanceOf[Id]) }
-    utils.applyIndexed.applyIndexed(mapping, elem)
+    utils.Substitution.apply(mapping, elem)
   }
 }
 

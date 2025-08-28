@@ -42,7 +42,7 @@ case class Equal(lhs: Element, rhs: Element) extends Condition {
 case class InSet(elem: Element, set: Set) extends Condition {
 
   override def check(context: Context, expression: Boolean): Boolean = {
-    val indexedElem = context.applyIndexed(elem)
+    val indexedElem = context.apply(elem)
     set match {
       case _: HyperTypeCheck => {
         val derivedCollection = DeriveArgsUtils(context).getHyperTypeCollection(set)
@@ -96,7 +96,7 @@ case class InSet(elem: Element, set: Set) extends Condition {
 case class InMapping(elem: Element, mapping: Mapping) extends Condition {
 
   override def check(context: Context, expression: Boolean): Boolean = {
-    val indexedElem = context.applyIndexed(elem)
+    val indexedElem = context.apply(elem)
     (indexedElem, mapping) match {
       case (Id(name), Delta())         => context.delta.collection.contains(name)
       case (Id(name), Gamma())         => context.gamma.mapping.contains(name)

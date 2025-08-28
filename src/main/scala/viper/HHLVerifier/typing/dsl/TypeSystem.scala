@@ -1,6 +1,6 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.typing.dsl.utils.{SpecificationUtil, applyIndexed}
+import viper.HHLVerifier.typing.dsl.utils.{SpecificationUtil, Substitution}
 import viper.HHLVerifier.typing.dsl.ast.{HyperTypeDeclaration, ExpressionDerivationRule, MethodInitStmt, AssignStmt, CompStmt, IfStmt, Specification, StatementDerivationRule, Rule}
 import viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl.ast.{HavocStmt => HavocStmtPattern, StmtPattern}
@@ -124,7 +124,7 @@ case class TypeSystem(
       val returnTypes = expr.method.res.map(id => HyperTypeCollection(id.hyperType.getOrElse(Seq()).toSet))
       returnTypes.map(rt =>
         ExpressionDerivationResult(
-          hyperTypeCollection = applyIndexed.applyIndexed(renameMapping, rt),
+          hyperTypeCollection = Substitution.apply(renameMapping, rt),
           deltaCollection = DeltaCollection(Map())
         )
       )

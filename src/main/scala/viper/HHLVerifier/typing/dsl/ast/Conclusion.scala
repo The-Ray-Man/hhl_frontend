@@ -15,7 +15,7 @@ trait Conclusion extends CollectVariables {
 case class AddToSet(elem: Element, set: Set) extends Conclusion {
 
   def apply(context: Context, result: DerivationResult): DerivationResult = {
-    val elementIndexed = context.applyIndexed(elem)
+    val elementIndexed = context.apply(elem)
     set match {
       case HyperCollectionResult() => {
         ExpressionDerivationResult(
@@ -141,8 +141,8 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
   }
 
   def setDeltaCollection(context: Context, var1: Id, var2: Id, other: Set, result: DerivationResult): DerivationResult = {
-    val indexedVar1     = context.applyIndexed(var1).asInstanceOf[Id]
-    val indexedVar2     = context.applyIndexed(var2).asInstanceOf[Id]
+    val indexedVar1     = context.apply(var1).asInstanceOf[Id]
+    val indexedVar2     = context.apply(var2).asInstanceOf[Id]
     val deltaCollection = DeriveArgsUtils(context).getDeltaTypes(other)
     val delta           = context.delta
     delta.collection.get(indexedVar2.name) match {
@@ -227,7 +227,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   def deltaResultEqualsDeltaLookup(context: Context, variable: Id, result: DerivationResult): DerivationResult = {
-    val indexedVariable = context.applyIndexed(variable).asInstanceOf[Id]
+    val indexedVariable = context.apply(variable).asInstanceOf[Id]
     val deltaType       = context.delta.collection.getOrElse(indexedVariable.name, throw new Exception("Variable " + indexedVariable.name + " not found in Delta mapping"))
     ExpressionDerivationResult(
       hyperTypeCollection = result.getExpressionResult.hyperTypeCollection,
@@ -237,8 +237,8 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   def deltaResultEqualsDeltaLookup(context: Context, resultVar: Id, lookupVar: Id, result: DerivationResult): DerivationResult = {
-    val indexedResultVar = context.applyIndexed(resultVar).asInstanceOf[Id]
-    val indexedLookupVar = context.applyIndexed(lookupVar).asInstanceOf[Id]
+    val indexedResultVar = context.apply(resultVar).asInstanceOf[Id]
+    val indexedLookupVar = context.apply(lookupVar).asInstanceOf[Id]
     val deltaCollection  = context.delta.collection.getOrElse(indexedLookupVar.name, throw new Exception("Variable " + indexedLookupVar.name + " not found in Delta mapping"))
     val newDeltaMapping  = result.getStatementResult.deltaMapping.collection.updated(indexedResultVar.name, deltaCollection)
 
@@ -250,7 +250,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   def deltaResultEqualsDeltaTypeCheck(context: Context, variable: Id, deltaTypeCheck: DeltaTypeCheck, result: DerivationResult): DerivationResult = {
-    val indexedVariable = context.applyIndexed(variable).asInstanceOf[Id]
+    val indexedVariable = context.apply(variable).asInstanceOf[Id]
     val deltaMapping    = DeriveArgsUtils(context).getDeltaCollection(deltaTypeCheck)
     val newDeltaMapping = context.delta.collection.updated(indexedVariable.name, deltaMapping)
     StatementDerivationResult(

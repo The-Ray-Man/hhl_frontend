@@ -12,230 +12,93 @@ import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
 
+object Substitution {
 
-object ToIndexed {
-
-  def toIndexedVariable(mapping: Map[Id, Int], variable: Id): Id = {
-    mapping.get(variable) match {
-      case Some(index) => Id(s"<$index>")
-      case None        => variable
-    }
-  }
-  def toIndexedVariable(mapping: Map[Id, Int], expr: Expr): Expr = {
-    expr match {
-      case id: Id                      => toIndexedVariable(mapping, id)
-      case BinaryExpr(left, op, right) =>
-        BinaryExpr(toIndexedVariable(mapping, left), op, toIndexedVariable(mapping, right))
-      case UnaryExpr(op, expr) =>
-        UnaryExpr(op, toIndexedVariable(mapping, expr))
-      case ImpliesExpr(left, right) =>
-        ImpliesExpr(toIndexedVariable(mapping, left), toIndexedVariable(mapping, right))
-      case LengthExpr(id)        => LengthExpr(toIndexedVariable(mapping, id))
-      case LookupExpr(id, index) => LookupExpr(toIndexedVariable(mapping, id), toIndexedVariable(mapping, index))
-      case _                     => throw new Exception(s"Unsupported expression type for indexing: $expr")
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], elem: Element): Element = {
-    elem match {
-      case hty: HyperType   => toIndexedVariable(mapping, hty)
-      case ident @ Id(name) => toIndexedVariable(mapping, ident)
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], hty: HyperType): HyperType = {
-    hty match {
-      case SimpleHyperType(name)                      => hty
-      case htList @ HyperTypeWithListArgs(name, args) => toIndexedVariable(mapping, htList)
-      case htSet @ HyperTypeWithSetArgs(name, args)   => toIndexedVariable(mapping, htSet)
-    }
-  }
-  def toIndexedVariable(mapping: Map[Id, Int], hty: HyperTypeWithListArgs): HyperTypeWithListArgs = {
-    HyperTypeWithListArgs(hty.name, hty.args.map(arg => toIndexedVariable(mapping, arg)))
-  }
-  def toIndexedVariable(mapping: Map[Id, Int], hty: HyperTypeWithSetArgs): HyperTypeWithSetArgs = {
-    HyperTypeWithSetArgs(hty.name, hty.args.map(arg => toIndexedVariable(mapping, arg)))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], conclusion: Conclusion): Conclusion = {
-    conclusion match {
-      case AddToSet(elem, set)           => AddToSet(toIndexedVariable(mapping, elem), toIndexedVariable(mapping, set))
-      case SetEquals(set1, set2)         => SetEquals(toIndexedVariable(mapping, set1), toIndexedVariable(mapping, set2))
-      case MapEquals(mapping1, mapping2) => MapEquals(toIndexedVariable(mapping, mapping1), toIndexedVariable(mapping, mapping2))
-      case ExtendSet(toAdd, toExtend)    => ExtendSet(toIndexedVariable(mapping, toAdd), toIndexedVariable(mapping, toExtend))
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], condition: Condition): Condition = {
-    condition match {
-      case equalCond: Equal          => toIndexedVariable(mapping, equalCond)
-      case arithCond: ArithCondition => toIndexedVariable(mapping, arithCond)
-      case boolCond: BoolCondition   => toIndexedVariable(mapping, boolCond)
-      case inSetCond: InSet          => toIndexedVariable(mapping, inSetCond)
-      case inMapping: InMapping      => toIndexedVariable(mapping, inMapping)
-      case mapEquals: MapEquals      => toIndexedVariable(mapping, mapEquals)
-      case setEquals: SetEquals      => toIndexedVariable(mapping, setEquals)
-      case notOperator: NotOperator  => NotOperator(toIndexedVariable(mapping, notOperator.condition))
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], equalCond: Equal): Equal = {
-    Equal(toIndexedVariable(mapping, equalCond.lhs), toIndexedVariable(mapping, equalCond.rhs))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], setEquals: SetEquals): SetEquals = {
-    SetEquals(toIndexedVariable(mapping, setEquals.set1), toIndexedVariable(mapping, setEquals.set2))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], mapEquals: MapEquals): MapEquals = {
-    MapEquals(toIndexedVariable(mapping, mapEquals.mapping1), toIndexedVariable(mapping, mapEquals.mapping2))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], arithCond: ArithCondition): ArithCondition = {
-    ArithCondition(toIndexedVariable(mapping, arithCond.variable), arithCond.op, arithCond.right)
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], boolCond: BoolCondition): BoolCondition = {
-    BoolCondition(toIndexedVariable(mapping, boolCond.variable))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], inMapping: InMapping): InMapping = {
-    InMapping(toIndexedVariable(mapping, inMapping.elem), toIndexedVariable(mapping, inMapping.mapping))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], inSet: InSet): InSet = {
-    InSet(toIndexedVariable(mapping, inSet.elem), toIndexedVariable(mapping, inSet.set))
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], set: Set): Set = {
-    set match {
-      case HyperCollectionResult()            => HyperCollectionResult()
-      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
-      case MappingAccess(subExpr, id)         => MappingAccess(toIndexedVariable(mapping, subExpr), toIndexedVariable(mapping, id))
-      case WithoutElement(set, elem)          => WithoutElement(toIndexedVariable(mapping, set), toIndexedVariable(mapping, elem))
-      case Variables(content)                 => Variables(toIndexedVariable(mapping, content))
-      case AssignedVariables(stmt)            => AssignedVariables(toIndexedVariable(mapping, stmt))
-      case AllParameters()                    => AllParameters()
-      case AllVariables()                     => AllVariables()
-      case _                                  => throw new Exception("Unsupported set type for indexing: " + set.getClass.getSimpleName)
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], map: Mapping): Mapping = {
-    map match {
-      case Gamma()                             => Gamma()
-      case Delta()                             => Delta()
-      case DeltaCollectionResult()             => DeltaCollectionResult()
-      case DeltaTypeCheck(expr, gamma, delta)  => DeltaTypeCheck(toIndexedVariable(mapping, expr), gamma, delta)
-      case GammaResult()                       => GammaResult()
-      case DeltaResult()                       => DeltaResult()
-      case DeriveHyperType(expr, gamma, delta) =>
-        DeriveHyperType(toIndexedVariable(mapping, expr), gamma, delta)
-      case DeriveDeltaType(expr, gamma, delta) =>
-        DeriveDeltaType(toIndexedVariable(mapping, expr), gamma, delta)
-      case MappingAccess(subMapping, id) => MappingAccess(toIndexedVariable(mapping, subMapping), toIndexedVariable(mapping, id))
-      case InitializeGammaMapping()      => InitializeGammaMapping()
-      case InitializeDeltaMapping()      => InitializeDeltaMapping()
-      case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
-    }
-  }
-
-  def toIndexedVariable(mapping: Map[Id, Int], rule: Rule): Rule = {
+  def apply(mapping: Map[Id, Id], wrapper: Rule): Rule = {
     Rule(
-      conditions = rule.conditions.map(cond => toIndexedVariable(mapping, cond)),
-      conclusions = rule.conclusions.map(concl => toIndexedVariable(mapping, concl)),
-      name = rule.name
-    )
-  }
-}
-
-object applyIndexed {
-
-  def applyIndexed(mapping: Map[Id, Id], wrapper: Rule): Rule = {
-    Rule(
-      conditions = wrapper.conditions.map(cond => applyIndexed(mapping, cond)),
-      conclusions = wrapper.conclusions.map(concl => applyIndexed(mapping, concl)),
+      conditions = wrapper.conditions.map(cond => apply(mapping, cond)),
+      conclusions = wrapper.conclusions.map(concl => apply(mapping, concl)),
       name = wrapper.name
     )
   }
 
-  def applyIndexed(mapping: Map[Id, Id], cond: Condition): Condition = {
+  def apply(mapping: Map[Id, Id], cond: Condition): Condition = {
     cond match {
-      case euqalCond: Equal          => Equal(applyIndexed(mapping, euqalCond.lhs), applyIndexed(mapping, euqalCond.rhs))
-      case arithCond: ArithCondition => ArithCondition(applyIndexed(mapping, arithCond.variable), arithCond.op, arithCond.right)
-      case boolCond: BoolCondition   => BoolCondition(applyIndexed(mapping, boolCond.variable))
-      case inSetCond: InSet          => InSet(applyIndexed(mapping, inSetCond.elem), applyIndexed(mapping, inSetCond.set))
-      case notOperator: NotOperator  => NotOperator(applyIndexed(mapping, notOperator.condition))
-      case setEquals: SetEquals      => SetEquals(applyIndexed(mapping, setEquals.set1), applyIndexed(mapping, setEquals.set2))
-      case mapEquals: MapEquals      => MapEquals(applyIndexed(mapping, mapEquals.mapping1), applyIndexed(mapping, mapEquals.mapping2))
-      case inMappingCond: InMapping  => InMapping(applyIndexed(mapping, inMappingCond.elem), applyIndexed(mapping, inMappingCond.mapping))
+      case euqalCond: Equal          => Equal(apply(mapping, euqalCond.lhs), apply(mapping, euqalCond.rhs))
+      case arithCond: ArithCondition => ArithCondition(apply(mapping, arithCond.variable), arithCond.op, arithCond.right)
+      case boolCond: BoolCondition   => BoolCondition(apply(mapping, boolCond.variable))
+      case inSetCond: InSet          => InSet(apply(mapping, inSetCond.elem), apply(mapping, inSetCond.set))
+      case notOperator: NotOperator  => NotOperator(apply(mapping, notOperator.condition))
+      case setEquals: SetEquals      => SetEquals(apply(mapping, setEquals.set1), apply(mapping, setEquals.set2))
+      case mapEquals: MapEquals      => MapEquals(apply(mapping, mapEquals.mapping1), apply(mapping, mapEquals.mapping2))
+      case inMappingCond: InMapping  => InMapping(apply(mapping, inMappingCond.elem), apply(mapping, inMappingCond.mapping))
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], conclusion: Conclusion): Conclusion = {
+  def apply(mapping: Map[Id, Id], conclusion: Conclusion): Conclusion = {
     conclusion match {
-      case AddToSet(elem, set)           => AddToSet(applyIndexed(mapping, elem), applyIndexed(mapping, set))
-      case SetEquals(set1, set2)         => SetEquals(applyIndexed(mapping, set1), applyIndexed(mapping, set2))
-      case MapEquals(mapping1, mapping2) => MapEquals(applyIndexed(mapping, mapping1), applyIndexed(mapping, mapping2))
-      case ExtendSet(toAdd, toExtend)    => ExtendSet(applyIndexed(mapping, toAdd), applyIndexed(mapping, toExtend))
+      case AddToSet(elem, set)           => AddToSet(apply(mapping, elem), apply(mapping, set))
+      case SetEquals(set1, set2)         => SetEquals(apply(mapping, set1), apply(mapping, set2))
+      case MapEquals(mapping1, mapping2) => MapEquals(apply(mapping, mapping1), apply(mapping, mapping2))
+      case ExtendSet(toAdd, toExtend)    => ExtendSet(apply(mapping, toAdd), apply(mapping, toExtend))
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], variable: Id): Id = {
+  def apply(mapping: Map[Id, Id], variable: Id): Id = {
     mapping.getOrElse(variable, variable)
   }
 
-  def applyIndexed(mapping: Map[Id, Id], set: Set): Set = {
+  def apply(mapping: Map[Id, Id], set: Set): Set = {
     set match {
       case HyperCollectionResult()            => HyperCollectionResult()
-      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta))
-      case MappingAccess(subMapping, id)      => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
-      case WithoutElement(set, elem)          => WithoutElement(applyIndexed(mapping, set), applyIndexed(mapping, elem))
-      case Variables(content)                 => Variables(applyIndexed(mapping, content))
-      case AssignedVariables(stmt)            => AssignedVariables(applyIndexed(mapping, stmt))
+      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
+      case MappingAccess(subMapping, id)      => MappingAccess(apply(mapping, subMapping), apply(mapping, id))
+      case WithoutElement(set, elem)          => WithoutElement(apply(mapping, set), apply(mapping, elem))
+      case Variables(content)                 => Variables(apply(mapping, content))
+      case AssignedVariables(stmt)            => AssignedVariables(apply(mapping, stmt))
       case AllParameters()                    => AllParameters()
       case AllVariables()                     => AllVariables()
       case _                                  => throw new Exception("Unsupported set type for indexing: " + set.getClass.getSimpleName)
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], map: Mapping): Mapping = {
+  def apply(mapping: Map[Id, Id], map: Mapping): Mapping = {
     map match {
       case Gamma()                             => Gamma()
       case Delta()                             => Delta()
       case DeltaCollectionResult()             => DeltaCollectionResult()
-      case DeltaTypeCheck(expr, gamma, delta)  => DeltaTypeCheck(applyIndexed(mapping, expr), gamma, delta)
+      case DeltaTypeCheck(expr, gamma, delta)  => DeltaTypeCheck(apply(mapping, expr), gamma, delta)
       case GammaResult()                       => GammaResult()
       case DeltaResult()                       => DeltaResult()
       case DeriveHyperType(expr, gamma, delta) =>
-        DeriveHyperType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta))
+        DeriveHyperType(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
       case DeriveDeltaType(expr, gamma, delta) =>
-        DeriveDeltaType(applyIndexed(mapping, expr), applyIndexed(mapping, gamma), applyIndexed(mapping, delta))
-      case MappingAccess(subMapping, id) => MappingAccess(applyIndexed(mapping, subMapping), applyIndexed(mapping, id))
+        DeriveDeltaType(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
+      case MappingAccess(subMapping, id) => MappingAccess(apply(mapping, subMapping), apply(mapping, id))
       case InitializeDeltaMapping()      => InitializeDeltaMapping()
       case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], elem: Element): Element = {
+  def apply(mapping: Map[Id, Id], elem: Element): Element = {
     elem match {
       case id @ Id(name)  => mapping.getOrElse(id, id)
-      case hty: HyperType => applyIndexed(mapping, hty)
+      case hty: HyperType => apply(mapping, hty)
     }
   }
-  def applyIndexed(mapping: Map[Id, Id], hty: HyperType): HyperType = {
+  def apply(mapping: Map[Id, Id], hty: HyperType): HyperType = {
     hty match {
       case SimpleHyperType(name)             => hty
-      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => applyIndexed(mapping, arg)))
-      case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => applyIndexed(mapping, arg)))
+      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => apply(mapping, arg)))
+      case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => apply(mapping, arg)))
     }
   }
-  def applyIndexed(mapping: Map[Id, Id], expr: Expr): Expr = {
+  def apply(mapping: Map[Id, Id], expr: Expr): Expr = {
     expr match {
       case BinaryExpr(left, op, right) =>
-        BinaryExpr(applyIndexed(mapping, left), op, applyIndexed(mapping, right))
+        BinaryExpr(apply(mapping, left), op, apply(mapping, right))
       case UnaryExpr(op, inner) =>
-        UnaryExpr(op, applyIndexed(mapping, inner))
+        UnaryExpr(op, apply(mapping, inner))
       case Id(name) =>
         mapping.getOrElse(Id(name), Id(name))
       case Num(value) =>
@@ -243,32 +106,32 @@ object applyIndexed {
       case BoolLit(value) =>
         BoolLit(value)
       case ImpliesExpr(left, right) =>
-        ImpliesExpr(applyIndexed(mapping, left), applyIndexed(mapping, right))
+        ImpliesExpr(apply(mapping, left), apply(mapping, right))
       case MethodCallExpr(methodName, args) =>
-        MethodCallExpr(methodName, args.map(arg => applyIndexed(mapping, arg).asInstanceOf[Id]))
+        MethodCallExpr(methodName, args.map(arg => apply(mapping, arg).asInstanceOf[Id]))
       case LookupExpr(dataStructure, index) =>
-        LookupExpr(applyIndexed(mapping, dataStructure), applyIndexed(mapping, index))
+        LookupExpr(apply(mapping, dataStructure), apply(mapping, index))
       case LengthExpr(dataStructure) =>
-        LengthExpr(applyIndexed(mapping, dataStructure))
+        LengthExpr(apply(mapping, dataStructure))
       case CombExpr(lhs, rhs, op) =>
-        CombExpr(applyIndexed(mapping, lhs), applyIndexed(mapping, rhs), op)
+        CombExpr(apply(mapping, lhs), apply(mapping, rhs), op)
       case _ => throw new Exception(s"Unsupported expression type for indexing: $expr")
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], stmt: StmtPattern): StmtPattern = {
+  def apply(mapping: Map[Id, Id], stmt: StmtPattern): StmtPattern = {
     stmt match {
-      case AssignStmt(variable, value)               => AssignStmt(applyIndexed(mapping, variable), applyIndexed(mapping, value))
-      case CompStmt(first, second)                   => CompStmt(applyIndexed(mapping, first), applyIndexed(mapping, second))
-      case IfStmt(condition, thenBranch, elseBranch) => IfStmt(applyIndexed(mapping, condition), applyIndexed(mapping, thenBranch), applyIndexed(mapping, elseBranch))
+      case AssignStmt(variable, value)               => AssignStmt(apply(mapping, variable), apply(mapping, value))
+      case CompStmt(first, second)                   => CompStmt(apply(mapping, first), apply(mapping, second))
+      case IfStmt(condition, thenBranch, elseBranch) => IfStmt(apply(mapping, condition), apply(mapping, thenBranch), apply(mapping, elseBranch))
       case InitStmt()                                => InitStmt()
-      case HavocStmt(variable)                       => HavocStmt(applyIndexed(mapping, variable))
-      case MethodInitStmt(variable)                  => MethodInitStmt(applyIndexed(mapping, variable))
+      case HavocStmt(variable)                       => HavocStmt(apply(mapping, variable))
+      case MethodInitStmt(variable)                  => MethodInitStmt(apply(mapping, variable))
     }
   }
 
-  def applyIndexed(mapping: Map[Id, Id], collection: HyperTypeCollection): HyperTypeCollection = {
-    HyperTypeCollection(collection.hypertypes.map(ht => applyIndexed(mapping, ht)))
+  def apply(mapping: Map[Id, Id], collection: HyperTypeCollection): HyperTypeCollection = {
+    HyperTypeCollection(collection.hypertypes.map(ht => apply(mapping, ht)))
   }
 }
 

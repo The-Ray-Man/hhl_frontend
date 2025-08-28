@@ -3,7 +3,7 @@ package viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl.ast.{Rule}
-import viper.HHLVerifier.typing.dsl.utils.applyIndexed
+import viper.HHLVerifier.typing.dsl.utils.Substitution
 
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
@@ -11,7 +11,7 @@ abstract class RuleWrapper(rule: Rule) {
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
 
   def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression: Boolean): DerivationResult = {
-    val appliedIndexedRule = applyIndexed.applyIndexed(ruleCheckContext.variables, rule)
+    val appliedIndexedRule = Substitution.apply(ruleCheckContext.variables, rule)
     //  println("\n\n", rule)
     val conditionHolds = appliedIndexedRule.conditions.forall(condition => { condition.check(context, expression) })
 
