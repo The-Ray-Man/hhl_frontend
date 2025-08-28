@@ -28,10 +28,10 @@ object HyperTypeCollection {
   }
 }
 
+/** `HyperTypeCollection` is a wrapper for a set of hypertypes */
 case class HyperTypeCollection(
     val hypertypes: Set[HyperType] = Set.empty[HyperType]
 ) {
-
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: HyperTypeCollection => {
@@ -41,18 +41,22 @@ case class HyperTypeCollection(
     }
   }
 
+  /** returns true if and only if `this` is a subset of `other` */
   def isSubTypeOf(other: HyperTypeCollection): Boolean = {
     this.hypertypes.forall(other.hypertypes.contains)
   }
 
+  /** Creates a new `HyperTypeCollection`, where `ty` is added to `this` */
   def add(ty: HyperType): HyperTypeCollection = {
     new HyperTypeCollection(this.hypertypes + ty)
   }
 
+  /** Creates a new `HyperTypeCollection`, where all the types in `other` are added to `this` */
   def extend(other: HyperTypeCollection): HyperTypeCollection = {
     new HyperTypeCollection(this.hypertypes ++ other.hypertypes)
   }
 
+  /** Creates a new `HyperTypeCollection`, where `ty` is removed (if it exists) from `this` */
   def without(ty: HyperType): HyperTypeCollection = {
     new HyperTypeCollection(this.hypertypes - ty)
   }
