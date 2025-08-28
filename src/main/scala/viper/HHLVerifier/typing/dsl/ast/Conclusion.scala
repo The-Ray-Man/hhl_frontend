@@ -5,7 +5,7 @@ import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.dsl.Parser.set
 import viper.HHLVerifier.typing.dsl.Parser.mapping
 import viper.HHLVerifier.typing.dsl.{Context, DerivationResult, Element, ExpressionDerivationResult, HyperType, StatementDerivationResult}
-import viper.HHLVerifier.typing.dsl.utils.DeriveArgsUtils
+import viper.HHLVerifier.typing.dsl.utils.EvaluateCollection
 import viper.HHLVerifier.typing.dsl.{CollectVariables, HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection}
 
 trait Conclusion extends CollectVariables {
@@ -72,7 +72,7 @@ case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
   override def variables: ScalaSet[Id] = toAdd.variables ++ toExtend.variables
 
   def apply(context: Context, result: DerivationResult): DerivationResult = {
-    val utils = DeriveArgsUtils(context)
+    val utils = EvaluateCollection(context)
     toExtend match {
       case HyperCollectionResult() => {
         val toAddSet = utils.getHyperTypeCollection(toAdd)
@@ -109,7 +109,7 @@ case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
 case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
 
   override def check(context: Context, expression: Boolean): Boolean = {
-    val utils  = DeriveArgsUtils(context)
+    val utils  = EvaluateCollection(context)
     val setLhs = utils.getHyperTypeCollection(set1)
     val setRhs = utils.getHyperTypeCollection(set2)
     setLhs == setRhs
@@ -130,7 +130,7 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
   }
 
   def setHyperMapping(context: Context, variable: Id, collection: Set, result: DerivationResult): DerivationResult = {
-    val hyperTypeCollection = DeriveArgsUtils(context).getHyperTypeCollection(collection)
+    val hyperTypeCollection = EvaluateCollection(context).getHyperTypeCollection(collection)
     val indexedVariable     = context.varExprMapping.getOrElse(variable, variable).asInstanceOf[Id]
     val updatedMapping      = result.getStatementResult.hyperTypeMapping.set(indexedVariable.name, hyperTypeCollection)
     StatementDerivationResult(
@@ -143,7 +143,7 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
   def setDeltaCollection(context: Context, var1: Id, var2: Id, other: Set, result: DerivationResult): DerivationResult = {
     val indexedVar1     = context.apply(var1).asInstanceOf[Id]
     val indexedVar2     = context.apply(var2).asInstanceOf[Id]
-    val deltaCollection = DeriveArgsUtils(context).getDeltaTypes(other)
+    val deltaCollection = EvaluateCollection(context).getDeltaTypes(other)
     val delta           = context.delta
     delta.collection.get(indexedVar2.name) match {
       case Some(dc) => {
@@ -200,7 +200,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
     if (mapping1Type != mapping2Type) {
       return false
     }
-    val utils = DeriveArgsUtils(context)
+    val utils = EvaluateCollection(context)
     mapping1Type match {
       case "HyperMapping"    => utils.getHyperMapping(mapping1) == utils.getHyperMapping(mapping2)
       case "DeltaCollection" => utils.getDeltaCollection(mapping1) == utils.getDeltaCollection(mapping2)
@@ -209,7 +209,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   def gammaResultEqualsDeriveHyperType(context: Context, deriveHyperType: DeriveHyperType, result: DerivationResult): DerivationResult = {
-    val derivedHyperMapping = DeriveArgsUtils(context).getHyperMapping(deriveHyperType)
+    val derivedHyperMapping = EvaluateCollection(context).getHyperMapping(deriveHyperType)
     StatementDerivationResult(
       hyperTypeMapping = derivedHyperMapping,
       deltaMapping = result.getStatementResult.deltaMapping,
@@ -218,7 +218,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   def deltaResultEqualsDeriveDeltaType(context: Context, deriveDeltaType: DeriveDeltaType, result: DerivationResult): DerivationResult = {
-    val derivedDeltaMapping = DeriveArgsUtils(context).getDeltaMapping(deriveDeltaType)
+    val derivedDeltaMapping = EvaluateCollection(context).getDeltaMapping(deriveDeltaType)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,
       deltaMapping = derivedDeltaMapping,
@@ -251,7 +251,7 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
 
   def deltaResultEqualsDeltaTypeCheck(context: Context, variable: Id, deltaTypeCheck: DeltaTypeCheck, result: DerivationResult): DerivationResult = {
     val indexedVariable = context.apply(variable).asInstanceOf[Id]
-    val deltaMapping    = DeriveArgsUtils(context).getDeltaCollection(deltaTypeCheck)
+    val deltaMapping    = EvaluateCollection(context).getDeltaCollection(deltaTypeCheck)
     val newDeltaMapping = context.delta.collection.updated(indexedVariable.name, deltaMapping)
     StatementDerivationResult(
       hyperTypeMapping = result.getStatementResult.hyperTypeMapping,

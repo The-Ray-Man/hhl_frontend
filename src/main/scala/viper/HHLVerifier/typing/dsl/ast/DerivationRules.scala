@@ -19,7 +19,6 @@ import viper.HHLVerifier.typing.dsl.utils.{Cache, Substitution}
 import viper.HHLVerifier.typing.HyperTypeChecker
 import viper.HHLVerifier.typing.dsl.{TypeSystem, StatementTypeSystem, Element, HyperType, SimpleHyperType, HyperTypeWithListArgs, HyperTypeWithSetArgs, RuleWrapper, EmptyWrapper, ForanyVariableWrapper, StatementDerivationContext, StatementDerivationResult, ExpressionDerivationResult, ExpressionDerivationContext, RuleName}
 
-
 /** A `Specification` is the abstract syntax tree returned by the parser.
   *
   * @param hypertypeDeclaration

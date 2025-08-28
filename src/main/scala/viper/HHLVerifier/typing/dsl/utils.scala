@@ -24,4 +24,3 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
 import viper.HHLVerifier.typing.dsl.ast._
 import buildinfo.BuildInfo.name
-

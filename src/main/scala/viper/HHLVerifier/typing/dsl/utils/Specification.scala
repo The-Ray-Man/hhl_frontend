@@ -1,9 +1,8 @@
 package viper.HHLVerifier.typing.dsl.utils
 
 import viper.HHLVerifier.typing.dsl.ast.{ExpressionDerivationRule, Specification, DerivationRule, StatementDerivationRule}
-import viper.HHLVerifier.ast.{Id,BinaryExpr,ImpliesExpr,LengthExpr,LookupExpr,UnaryExpr }
+import viper.HHLVerifier.ast.{Id, BinaryExpr, ImpliesExpr, LengthExpr, LookupExpr, UnaryExpr}
 import viper.HHLVerifier.typing.dsl.ast.{AssignStmt, IfStmt, CompStmt}
-
 
 object SpecificationUtil {
 

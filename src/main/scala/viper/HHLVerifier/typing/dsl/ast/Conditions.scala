@@ -5,7 +5,7 @@ import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
-import viper.HHLVerifier.typing.dsl.utils.DeriveArgsUtils
+import viper.HHLVerifier.typing.dsl.utils.EvaluateCollection
 
 trait Condition extends CollectVariables {
 
@@ -45,11 +45,11 @@ case class InSet(elem: Element, set: Set) extends Condition {
     val indexedElem = context.apply(elem)
     set match {
       case _: HyperTypeCheck => {
-        val derivedCollection = DeriveArgsUtils(context).getHyperTypeCollection(set)
+        val derivedCollection = EvaluateCollection(context).getHyperTypeCollection(set)
         derivedCollection.hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
       case MappingAccess(d: DeltaTypeCheck, id) => {
-        val derivedDeltaCollection = DeriveArgsUtils(context).getDeltaCollection(d)
+        val derivedDeltaCollection = EvaluateCollection(context).getDeltaCollection(d)
         val indexedId              = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         val indexedSet             = derivedDeltaCollection.mapping.getOrElse(indexedId.name, throw new Exception(s"Variable $indexedId not found in delta mapping"))
         indexedSet.hypertypes.contains(indexedElem.asInstanceOf[HyperType])
@@ -59,20 +59,20 @@ case class InSet(elem: Element, set: Set) extends Condition {
         context.gamma.mapping.getOrElse(indexedValue.name, return false).hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
       case MappingAccess(d: DeriveHyperType, id) => {
-        val derivedGamma = DeriveArgsUtils(context).getHyperMapping(d)
+        val derivedGamma = EvaluateCollection(context).getHyperMapping(d)
         val indexedId    = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
         val indexedSet   = derivedGamma.get(indexedId.name)
         indexedSet.hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
       case varSet: Variables => {
         val variable    = indexedElem.asInstanceOf[Id]
-        val variableSet = DeriveArgsUtils(context).getVariableSet(varSet)
+        val variableSet = EvaluateCollection(context).getVariableSet(varSet)
         variableSet.contains(variable)
       }
       case MappingAccess(MappingAccess(mapping, var1), var2) => {
         val indexedVar1     = context.varExprMapping.getOrElse(var1, var1).asInstanceOf[Id]
         val indexedVar2     = context.varExprMapping.getOrElse(var2, var2).asInstanceOf[Id]
-        val getDeltaMapping = DeriveArgsUtils(context).getDeltaMapping(mapping)
+        val getDeltaMapping = EvaluateCollection(context).getDeltaMapping(mapping)
         getDeltaMapping.collection.getOrElse(indexedVar1.name, return false).mapping.getOrElse(indexedVar2.name, return false).hypertypes.contains(indexedElem.asInstanceOf[HyperType])
       }
       case AssignedVariables(stmt) => {
@@ -102,12 +102,12 @@ case class InMapping(elem: Element, mapping: Mapping) extends Condition {
       case (Id(name), Gamma())         => context.gamma.mapping.contains(name)
       case (id: Id, d: DeltaTypeCheck) => {
         val indexedId         = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
-        val derivedCollection = DeriveArgsUtils(context).getDeltaCollection(d)
+        val derivedCollection = EvaluateCollection(context).getDeltaCollection(d)
         derivedCollection.mapping.contains(indexedId.name)
       }
       case (id: Id, d: MappingAccess) => {
         val indexedId         = context.varExprMapping.getOrElse(id, id).asInstanceOf[Id]
-        val derivedCollection = DeriveArgsUtils(context).getDeltaCollection(d)
+        val derivedCollection = EvaluateCollection(context).getDeltaCollection(d)
         derivedCollection.mapping.contains(indexedId.name)
       }
       case (_, _) => throw new Exception("Unsupported mapping type for InMapping condition")
