@@ -1,6 +1,6 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.typing.dsl.{SpecificationUtil, applyIndexed}
+import viper.HHLVerifier.typing.dsl.utils.{SpecificationUtil, applyIndexed}
 import viper.HHLVerifier.typing.dsl.ast.{HyperTypeDeclaration, ExpressionDerivationRule, MethodInitStmt, AssignStmt, CompStmt, IfStmt, Specification, StatementDerivationRule, Rule}
 import viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl.ast.{HavocStmt => HavocStmtPattern, StmtPattern}
@@ -30,6 +30,7 @@ import viper.HHLVerifier.ast.AssertStmt
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getParameter
+import viper.HHLVerifier.typing.dsl.utils.Cache
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,

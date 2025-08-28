@@ -3,6 +3,7 @@ package viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl.ast.{Rule}
+import viper.HHLVerifier.typing.dsl.utils.applyIndexed
 
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 

@@ -14,10 +14,11 @@ import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.dsl.ast.Mapping
-import viper.HHLVerifier.typing.dsl.{HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection, Cache, CollectVariables}
+import viper.HHLVerifier.typing.dsl.{HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection, CollectVariables}
+import viper.HHLVerifier.typing.dsl.utils.{Cache, applyIndexed, ToIndexed}
 import viper.HHLVerifier.typing.HyperTypeChecker
-import viper.HHLVerifier.typing.dsl.{TypeSystem, StatementTypeSystem, Element, HyperType, SimpleHyperType, HyperTypeWithListArgs, HyperTypeWithSetArgs, RuleWrapper, ToIndexed, EmptyWrapper, ForanyVariableWrapper, StatementDerivationContext, StatementDerivationResult, ExpressionDerivationResult, ExpressionDerivationContext, RuleName}
-import viper.HHLVerifier.typing.dsl.applyIndexed
+import viper.HHLVerifier.typing.dsl.{TypeSystem, StatementTypeSystem, Element, HyperType, SimpleHyperType, HyperTypeWithListArgs, HyperTypeWithSetArgs, RuleWrapper, EmptyWrapper, ForanyVariableWrapper, StatementDerivationContext, StatementDerivationResult, ExpressionDerivationResult, ExpressionDerivationContext, RuleName}
+
 
 /** A `Specification` is the abstract syntax tree returned by the parser.
   *

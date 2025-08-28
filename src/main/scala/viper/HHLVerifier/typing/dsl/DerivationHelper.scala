@@ -4,6 +4,7 @@ import viper.HHLVerifier.ast.{Expr, Stmt, Id}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl
+import viper.HHLVerifier.typing.dsl.utils.Cache
 
 abstract class Context {
   var cache: Cache
@@ -23,7 +24,7 @@ abstract class Context {
   }
   def applyIndexed(elem: Element): Element = {
     val mapping = varExprMapping.filter { case (k, v) => v.isInstanceOf[Id] }.map { case (k, v) => (k, v.asInstanceOf[Id]) }
-    dsl.applyIndexed.applyIndexed(mapping, elem)
+    utils.applyIndexed.applyIndexed(mapping, elem)
   }
 }
 

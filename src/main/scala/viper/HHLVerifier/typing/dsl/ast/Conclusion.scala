@@ -4,7 +4,8 @@ import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.dsl.Parser.set
 import viper.HHLVerifier.typing.dsl.Parser.mapping
-import viper.HHLVerifier.typing.dsl.{Context, DerivationResult, Element, ExpressionDerivationResult, HyperType, StatementDerivationResult, DeriveArgsUtils}
+import viper.HHLVerifier.typing.dsl.{Context, DerivationResult, Element, ExpressionDerivationResult, HyperType, StatementDerivationResult}
+import viper.HHLVerifier.typing.dsl.utils.DeriveArgsUtils
 import viper.HHLVerifier.typing.dsl.{CollectVariables, HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection}
 
 trait Conclusion extends CollectVariables {

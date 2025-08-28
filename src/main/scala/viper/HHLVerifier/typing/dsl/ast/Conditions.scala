@@ -5,6 +5,7 @@ import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
+import viper.HHLVerifier.typing.dsl.utils.DeriveArgsUtils
 
 trait Condition extends CollectVariables {
 
