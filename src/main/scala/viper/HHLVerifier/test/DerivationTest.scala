@@ -2,14 +2,14 @@ package viper.HHLVerifier.test
 
 import viper.HHLVerifier.ast.BinaryExpr
 import viper.HHLVerifier.ast.Num
-import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.dsl.HyperMapping
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.typing.HyperTypeCollection
+import viper.HHLVerifier.typing.dsl.HyperTypeCollection
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.typing.dsl.SimpleHyperType
 import viper.HHLVerifier.ast.BoolLit
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.DeltaCollection
+import viper.HHLVerifier.typing.dsl.DeltaMapping
+import viper.HHLVerifier.typing.dsl.DeltaCollection
 import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.ast.AssignStmt
 import viper.HHLVerifier.ast.Stmt
@@ -42,7 +42,7 @@ object DerivationTests {
   }
 
   def runTest(typeSystem: TypeSystem, stmt: Stmt, gamma: HyperMapping, delta: DeltaMapping, expectedM: Option[HyperMapping], expectedDM: Option[DeltaMapping]) = {
-    val result = typeSystem.deriveStatement(gamma, delta, stmt, HyperTypeCollection(Set()))
+    val result = typeSystem.deriveStatement(gamma, delta, stmt)
 
     println(s"$stmt |- {${result.hyperTypeMapping}} {${result.deltaMapping}}")
     if (expectedM.isDefined && !equal(expectedM.get, result.hyperTypeMapping)) {
@@ -246,7 +246,7 @@ object DerivationTests {
     val delta  = DeltaMapping(Map("o" -> DeltaCollection(Map("o" -> HyperTypeCollection(Set(SimpleHyperType("ZERO"), SimpleHyperType("LOW")))))))
     val stmt   = AssignStmt(Id("o"), BinaryExpr(Id("o"), "-", Num(1)))
     val gamma  = HyperMapping(Map("o" -> HyperTypeCollection(Set(SimpleHyperType("LOW"), SimpleHyperType("ZERO")))))
-    val result = typeSystem.deriveStatement(gamma, delta, stmt, HyperTypeCollection(Set()))
+    val result = typeSystem.deriveStatement(gamma, delta, stmt)
     println(s"Result for statement $stmt: $result")
 
   }

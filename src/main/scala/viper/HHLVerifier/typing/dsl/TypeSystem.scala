@@ -1,15 +1,11 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.typing.dsl.SpecificationUtil
-import viper.HHLVerifier.typing.dsl.HyperTypeDeclaration
+import viper.HHLVerifier.typing.dsl.{SpecificationUtil, applyIndexed}
+import viper.HHLVerifier.typing.dsl.ast.{HyperTypeDeclaration, ExpressionDerivationRule, MethodInitStmt, AssignStmt, CompStmt, IfStmt, Specification, StatementDerivationRule, Rule}
 import viper.HHLVerifier.typing.dsl
-import viper.HHLVerifier.typing.dsl.{HavocStmt => HavocStmtPattern}
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.DeltaCollection
+import viper.HHLVerifier.typing.dsl.ast.{HavocStmt => HavocStmtPattern, StmtPattern}
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.DeltaMapping
 import viper.HHLVerifier.typing.dsl.ExpressionDerivationResult
 import viper.HHLVerifier.ast.Stmt
 import viper.HHLVerifier.ast.FrameStmt
@@ -37,7 +33,7 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getParameter
 
 case class TypeSystem(
     statementTypeSystem: StatementTypeSystem = null,
-    expressionTypeSystem: Seq[dsl.ExpressionDerivationRule] = null,
+    expressionTypeSystem: Seq[ExpressionDerivationRule] = null,
     hyperTypeDeclaration: Seq[HyperTypeDeclaration] = Seq.empty[HyperTypeDeclaration]
 ) {
 

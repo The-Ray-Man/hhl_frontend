@@ -5,11 +5,11 @@ import viper.HHLVerifier.ast.{AssertStmt, AssertVar, AssertVarDecl, Assertion, A
 import viper.HHLVerifier.typing.{BoolType, IntType, MapType, SeqType, SetType, StateType, StmtBlockType, Type, UnknownType}
 import viper.HHLVerifier.ast.UnfoldStmt
 import viper.HHLVerifier.typing.Type
-import viper.HHLVerifier.typing.HyperTypeCollection
+import viper.HHLVerifier.typing.dsl.HyperTypeCollection
 import viper.HHLVerifier.ast.FoldStmt
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.DeltaCollection
-import viper.HHLVerifier.typing.HyperMapping
+import viper.HHLVerifier.typing.dsl.DeltaMapping
+import viper.HHLVerifier.typing.dsl.DeltaCollection
+import viper.HHLVerifier.typing.dsl.HyperMapping
 import viper.HHLVerifier.ast.HHLProgram
 import viper.HHLVerifier.ast.Method
 import viper.HHLVerifier.typing.dsl.SimpleHyperType

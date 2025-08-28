@@ -1,4 +1,4 @@
-package viper.HHLVerifier.typing.dsl
+package viper.HHLVerifier.typing.dsl.ast
 
 import viper.HHLVerifier.typing
 import scala.collection.immutable
@@ -13,9 +13,29 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.ast.LengthExpr
 import scala.collection.immutable.{Set => ScalaSet}
+import viper.HHLVerifier.typing.dsl.ast.Mapping
+import viper.HHLVerifier.typing.dsl.{HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection, Cache, CollectVariables}
+import viper.HHLVerifier.typing.HyperTypeChecker
+import viper.HHLVerifier.typing.dsl.{TypeSystem, StatementTypeSystem, Element, HyperType, SimpleHyperType, HyperTypeWithListArgs, HyperTypeWithSetArgs, RuleWrapper, ToIndexed, EmptyWrapper, ForanyVariableWrapper, StatementDerivationContext, StatementDerivationResult, ExpressionDerivationResult, ExpressionDerivationContext, RuleName}
+import viper.HHLVerifier.typing.dsl.applyIndexed
 
+/** A `Specification` is the abstract syntax tree returned by the parser.
+  *
+  * @param hypertypeDeclaration
+  *   This contains the semantic declaration of the hypertypes.
+  * @param derivationRules
+  *   This contains the rules for deriving the types for expressions as well as statements.
+  */
 case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], derivationRules: Seq[DerivationRule]) {
 
+  /** Converts the specification to a type system.
+    *
+    * @return
+    *   The typesystem defined by the specification.
+    * @throws Exception
+    *   - if a hypertype has multiple declarations (even if they are the same) or
+    *   - if not all statement derivation rules are defined
+    */
   def toTypeSystem(): TypeSystem = {
     val expressionRules = derivationRules.filter(_.isInstanceOf[ExpressionDerivationRule]).map(rule => renameVariables(rule.asInstanceOf[ExpressionDerivationRule]))
     val statementRules  = derivationRules.filter(_.isInstanceOf[StatementDerivationRule]).map(rule => renameVariables(rule.asInstanceOf[StatementDerivationRule]))
@@ -41,22 +61,34 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
     typeSystem
   }
 
+  /** Renames the placeholder variables to unique names. This is used to avoid naming conflicts.
+    *
+    * @param rule
+    * @return
+    */
   def renameVariables(rule: ExpressionDerivationRule): ExpressionDerivationRule = {
-    val allVariables     = typing.HyperTypeChecker.getVariables(rule.expr) ++ rule.rules.flatMap(_.variables).toSet
+    val allVariables     = HyperTypeChecker.getVariables(rule.expr) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
     val renamedRules     = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
     val renamedExpr      = applyIndexed.applyIndexed(renamedVariables, rule.expr)
     ExpressionDerivationRule(renamedExpr, renamedRules)
   }
 
+  /** Renames the placeholder variables to unique names. This is used to avoid naming conflicts.
+    *
+    * @param rule
+    * @return
+    */
   def renameVariables(rule: StatementDerivationRule): StatementDerivationRule = {
-    val allVariables     = typing.HyperTypeChecker.getVariables(rule.statement) ++ rule.rules.flatMap(_.variables).toSet
+    val allVariables     = HyperTypeChecker.getVariables(rule.statement) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
     val renamedRules     = rule.rules.map(rule => applyIndexed.applyIndexed(renamedVariables, rule))
     val renamedStmt      = applyIndexed.applyIndexed(renamedVariables, rule.statement)
     StatementDerivationRule(renamedStmt, renamedRules)
   }
 
+  /** Checks if two `Element`s are structurally equal. Two elements are equal iff one can rename the placeholder variables such that they match exactly.
+    */
   def structureEqual(htypFrom: Element, htypTo: Element): Boolean = {
     (htypFrom, htypTo) match {
       case (SimpleHyperType(fromName), SimpleHyperType(toName))                               => fromName == toName
@@ -68,6 +100,15 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
   }
 }
 
+/** Contains a hypertype declaration.
+  *
+  * @param variable
+  *   The variable used as a placeholder.
+  * @param hty
+  *   The hypertype one wants to declare.
+  * @param definition
+  *   The definition of the hypertype.
+  */
 case class HyperTypeDeclaration(variable: Id, hty: HyperType, definition: Expr) {}
 
 trait DerivationRule
@@ -115,9 +156,9 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     }
   }
 
-  def derive(typeSystem: TypeSystem, gamma: typing.HyperMapping, delta: typing.DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
+  def derive(typeSystem: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
     val context     = ExpressionDerivationContext(typeSystem, expr, typeSystem.allVariables, gamma, delta, variableMapping, new Cache())
-    val emptyResult = ExpressionDerivationResult(typing.HyperTypeCollection(Set.empty), typing.DeltaCollection(Map.empty))
+    val emptyResult = ExpressionDerivationResult(HyperTypeCollection(Set.empty), DeltaCollection(Map.empty))
     wrappedRules
       .foldLeft(emptyResult) { (acc, rule) =>
         rule.apply(context, acc, true).getExpressionResult
@@ -133,7 +174,7 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
 
   def wrapRule(rule: Rule): RuleWrapper = {
     val allVariables        = rule.conditions.flatMap(_.variables).toSet ++ rule.conclusions.flatMap(_.variables).toSet
-    val capturedVariables   = typing.HyperTypeChecker.getVariables(statement).toSet
+    val capturedVariables   = HyperTypeChecker.getVariables(statement).toSet
     val freeVariables       = allVariables -- capturedVariables
     val freeVariableMapping = freeVariables.zipWithIndex.toMap
     val indexedRule         = ToIndexed.toIndexedVariable(freeVariableMapping, rule)
@@ -145,7 +186,7 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
   }
 
   def derive(context: StatementDerivationContext): StatementDerivationResult = {
-    val emptyResult   = StatementDerivationResult(typing.HyperMapping(Map.empty), typing.DeltaMapping(Map.empty))
+    val emptyResult   = StatementDerivationResult(HyperMapping(Map.empty), DeltaMapping(Map.empty))
     val derivedResult = wrappedRules.foldLeft(emptyResult) { (acc, rule) =>
       rule.apply(context, acc, false).getStatementResult
     }
@@ -155,153 +196,6 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
 
 case class Rule(conditions: Seq[Condition], conclusions: Seq[Conclusion], name: RuleName = RuleName.empty) extends CollectVariables {
   override def variables: ScalaSet[Id] = conditions.flatMap(_.variables).toSet ++ conclusions.flatMap(_.variables).toSet
-}
-
-trait ConclusionInfo {
-  def isHyperTypeConclusion(): Boolean
-}
-
-trait CollectVariables {
-  def variables: scala.collection.immutable.Set[Id]
-}
-
-// Building Blocks for Condition and Conclusion
-trait Derivation
-trait Mapping extends ConclusionInfo with CollectVariables
-trait Set     extends ConclusionInfo with CollectVariables
-
-case class WithoutElement(set: Set, elem: Element) extends Set {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = set.variables ++ elem.variables
-}
-
-case class AssignedVariables(stmt: Id) extends Set {
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(stmt)
-}
-
-case class ProgramContext() extends Set {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-}
-
-case class Variables(content: Id) extends Set {
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(content)
-}
-
-case class AllVariables() extends Set {
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = false
-}
-
-case class AllParameters() extends Set {
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-}
-
-case class HyperTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Set with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
-
-}
-
-case class DeriveHyperType(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
-
-}
-
-case class DeriveDeltaType(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
-
-}
-
-case class InitializeDeltaMapping() extends Mapping with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty
-}
-
-case class InitializeGammaMapping() extends Mapping with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = true
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty
-}
-
-case class DeltaTypeCheck(expr: Id, gamma: Mapping, delta: Mapping) extends Mapping with Derivation {
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-  override def variables: immutable.Set[Id] = immutable.Set(expr) ++ gamma.variables ++ delta.variables
-}
-
-case class HyperCollectionResult() extends Set {
-
-  override def isHyperTypeConclusion(): Boolean = true
-  override def variables: immutable.Set[Id]     = immutable.Set.empty[Id]
-}
-case class MappingAccess(mapping: Mapping, id: Id) extends Set with Mapping {
-
-  override def isHyperTypeConclusion(): Boolean = mapping.isHyperTypeConclusion()
-  override def variables: immutable.Set[Id]     = scala.collection.immutable.Set(id) ++ mapping.variables
-}
-
-case class DeltaCollectionResult() extends Mapping {
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-}
-case class Gamma() extends Mapping {
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = true
-
-}
-
-case class Delta() extends Mapping {
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = false
-
-}
-
-case class GammaResult() extends Mapping {
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = true
-
-}
-
-case class DeltaResult() extends Mapping {
-
-  override def variables: immutable.Set[Id] = immutable.Set.empty[Id]
-
-  override def isHyperTypeConclusion(): Boolean = false
-
 }
 
 trait StmtPattern {}

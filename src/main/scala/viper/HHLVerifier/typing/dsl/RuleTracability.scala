@@ -1,9 +1,8 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.ast._
-import viper.HHLVerifier.typing.dsl.{AssignStmt => AssignStmtPattern, HavocStmt => HavocStmtPattern}
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.DeltaMapping
+import viper.HHLVerifier.ast.{Id, BinaryExpr, UnaryExpr, ImpliesExpr, LookupExpr, LengthExpr, CombExpr, Expr, Stmt}
+import viper.HHLVerifier.typing.dsl.ast.{AssignStmt => AssignStmtPattern, HavocStmt => HavocStmtPattern}
+import viper.HHLVerifier.typing.dsl.ast.{DerivationRule, ExpressionDerivationRule, StatementDerivationRule, CompStmt, IfStmt, InitStmt, MethodInitStmt}
 
 trait Tree
 

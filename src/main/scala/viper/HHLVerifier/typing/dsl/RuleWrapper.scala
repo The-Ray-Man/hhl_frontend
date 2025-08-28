@@ -2,15 +2,11 @@ package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.ast.Id
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
-import viper.HHLVerifier.typing.dsl
-import java.beans.Expression
-import viper.HHLVerifier.typing.dsl.TypeSystem
-import viper.HHLVerifier.ast.Stmt
-import scala.collection.immutable
+import viper.HHLVerifier.typing.dsl.ast.{Rule}
 
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
-abstract class RuleWrapper(rule: dsl.Rule) {
+abstract class RuleWrapper(rule: Rule) {
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
 
   def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression: Boolean): DerivationResult = {
@@ -30,7 +26,7 @@ abstract class RuleWrapper(rule: dsl.Rule) {
   }
 }
 
-case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
+case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(rule: Rule) {
 
   def orderedSubsets[A](set: Seq[A], n: Int): Seq[Seq[A]] = {
     set.permutations
@@ -52,7 +48,7 @@ case class ForanyVariableWrapper(numVars: Int, rule: dsl.Rule) extends RuleWrapp
     newResult
   }
 }
-case class EmptyWrapper(rule: dsl.Rule) extends RuleWrapper(rule: dsl.Rule) {
+case class EmptyWrapper(rule: Rule) extends RuleWrapper(rule: Rule) {
 
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
     val ruleCheckContext = RuleCheckContext(Map())

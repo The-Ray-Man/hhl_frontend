@@ -10,12 +10,7 @@ import viper.HHLVerifier.ast.ImpliesExpr
 import viper.HHLVerifier.ast.LengthExpr
 import viper.HHLVerifier.ast.LookupExpr
 import viper.HHLVerifier.typing.dsl.HyperType
-import viper.silver.parser.PKw.Spec
 import viper.HHLVerifier.typing.dsl.Parser.hyperType
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.DeltaCollection
 import viper.HHLVerifier.typing.dsl.Parser.setEquals
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.ast.Stmt
@@ -27,6 +22,7 @@ import viper.HHLVerifier.ast.MethodCallExpr
 import viper.HHLVerifier.ast.CombExpr
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
+import viper.HHLVerifier.typing.dsl.ast._
 import buildinfo.BuildInfo.name
 
 object SpecificationUtil {

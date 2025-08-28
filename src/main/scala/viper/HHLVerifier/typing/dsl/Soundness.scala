@@ -7,6 +7,7 @@ import viper.HHLVerifier.typing.TypeChecker
 import viper.HHLVerifier.generation.Generator
 import viper.HHLVerifier.management.{PrettyPrinter, ViperRunner}
 import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
+import viper.HHLVerifier.typing.dsl.ast._
 import viper.HHLVerifier.typing.dsl.RuleName.humanReadableRuleName
 
 object Soundness {

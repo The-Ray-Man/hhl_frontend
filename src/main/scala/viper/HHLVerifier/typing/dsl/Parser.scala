@@ -2,12 +2,10 @@ package viper.HHLVerifier.typing.dsl
 
 import fastparse._
 import fastparse.JavaWhitespace._
-import viper.HHLVerifier.typing.dsl.{Specification, DerivationRule}
+import viper.HHLVerifier.typing.dsl.ast._
 import viper.HHLVerifier.parsing.{Parser => HypraParser}
-import viper.HHLVerifier.ast.Id
-import viper.HHLVerifier.ast.Expr
-import viper.HHLVerifier.ast.UnaryExpr
-import viper.HHLVerifier.ast.Stmt
+import viper.HHLVerifier.ast.{Expr, Id, UnaryExpr}
+
 // import fastparse.MultiLineWhitespace
 
 object Parser {

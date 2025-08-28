@@ -1,4 +1,4 @@
-package viper.HHLVerifier.typing.dsl
+package viper.HHLVerifier.typing.dsl.ast
 
 import viper.HHLVerifier.typing.dsl._
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}

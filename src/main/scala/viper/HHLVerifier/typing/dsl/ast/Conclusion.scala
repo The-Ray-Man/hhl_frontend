@@ -1,16 +1,13 @@
-package viper.HHLVerifier.typing.dsl
+package viper.HHLVerifier.typing.dsl.ast
 
 import viper.HHLVerifier.ast.{Id, Num, BoolLit}
 import scala.collection.immutable.{Set => ScalaSet}
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.HyperMapping
 import viper.HHLVerifier.typing.dsl.Parser.set
 import viper.HHLVerifier.typing.dsl.Parser.mapping
-import viper.HHLVerifier.typing.DeltaCollection
+import viper.HHLVerifier.typing.dsl.{Context, DerivationResult, Element, ExpressionDerivationResult, HyperType, StatementDerivationResult, DeriveArgsUtils}
+import viper.HHLVerifier.typing.dsl.{CollectVariables, HyperMapping, DeltaMapping, HyperTypeCollection, DeltaCollection}
 
-trait Conclusion extends CollectVariables with ConclusionInfo {
-  def isHyperTypeConclusion(): Boolean
+trait Conclusion extends CollectVariables {
   def apply(context: Context, result: DerivationResult): DerivationResult
 }
 
@@ -67,15 +64,11 @@ case class AddToSet(elem: Element, set: Set) extends Conclusion {
   }
   override def variables: ScalaSet[Id] = elem.variables ++ set.variables
 
-  override def isHyperTypeConclusion(): Boolean = set.isHyperTypeConclusion()
-
 }
 
 case class ExtendSet(toAdd: Set, toExtend: Set) extends Conclusion {
 
   override def variables: ScalaSet[Id] = toAdd.variables ++ toExtend.variables
-
-  override def isHyperTypeConclusion(): Boolean = toAdd.isHyperTypeConclusion() && toExtend.isHyperTypeConclusion()
 
   def apply(context: Context, result: DerivationResult): DerivationResult = {
     val utils = DeriveArgsUtils(context)
@@ -187,15 +180,6 @@ case class SetEquals(set1: Set, set2: Set) extends Conclusion with Condition {
 
   override def variables: ScalaSet[Id] = set1.variables ++ set2.variables
 
-  override def isHyperTypeConclusion(): Boolean = {
-    val res1 = set1.isHyperTypeConclusion()
-    val res2 = set2.isHyperTypeConclusion()
-    if (res1 != res2) {
-      throw new Exception("SetEquals conclusion must have both sets of the same type")
-    }
-    res1
-  }
-
 }
 
 case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion with Condition {
@@ -297,7 +281,5 @@ case class MapEquals(mapping1: Mapping, mapping2: Mapping) extends Conclusion wi
   }
 
   override def variables: ScalaSet[Id] = mapping1.variables ++ mapping2.variables
-
-  override def isHyperTypeConclusion(): Boolean = mapping1.isHyperTypeConclusion() && mapping2.isHyperTypeConclusion()
 
 }

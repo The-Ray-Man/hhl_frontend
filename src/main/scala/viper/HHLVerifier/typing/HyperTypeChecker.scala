@@ -1,11 +1,8 @@
 package viper.HHLVerifier.typing
 
 import viper.HHLVerifier.ast._
-import viper.HHLVerifier.typing.dsl.TypeSystem
-import viper.HHLVerifier.typing.dsl.StmtPattern
-import viper.HHLVerifier.typing.dsl.CompStmt
-import viper.HHLVerifier.typing.dsl.InitStmt
-import viper.HHLVerifier.typing.dsl.MethodInitStmt
+import viper.HHLVerifier.typing.dsl.{TypeSystem, HyperTypeCollection}
+import viper.HHLVerifier.typing.dsl.ast.{StmtPattern, CompStmt => CompStmtPattern, InitStmt => InitStmtPattern, MethodInitStmt => MethodInitStmtPattern, AssignStmt => AssignStmtPattern, IfStmt => IfStmtPattern, HavocStmt => HavocStmtPattern}
 
 /** HyperTypeChecker - given a `HHLProgram` and a `typeSystem` it will check the program of the hypertype correctness. This checker does not check the basic types and neither performs any symbol checking.
   */
@@ -70,12 +67,12 @@ object HyperTypeChecker {
     */
   def getVariables(stmt: StmtPattern): Set[Id] = {
     stmt match {
-      case CompStmt(s1, s2)                         => Set(s1, s2)
-      case dsl.AssignStmt(left, right)              => Set(left, right)
-      case dsl.IfStmt(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
-      case InitStmt()                               => Set.empty
-      case dsl.HavocStmt(variable)                  => Set(variable)
-      case MethodInitStmt(variable)                 => Set(variable)
+      case CompStmtPattern(s1, s2)                     => Set(s1, s2)
+      case AssignStmtPattern(left, right)              => Set(left, right)
+      case IfStmtPattern(cond, thenBranch, elseBranch) => Set(cond, thenBranch, elseBranch)
+      case InitStmtPattern()                           => Set.empty
+      case HavocStmtPattern(variable)                  => Set(variable)
+      case MethodInitStmtPattern(variable)             => Set(variable)
     }
   }
 

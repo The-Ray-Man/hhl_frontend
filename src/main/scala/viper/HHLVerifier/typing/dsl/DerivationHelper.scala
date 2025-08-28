@@ -1,10 +1,6 @@
 package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.ast.{Expr, Stmt, Id}
-import viper.HHLVerifier.typing.HyperMapping
-import viper.HHLVerifier.typing.DeltaMapping
-import viper.HHLVerifier.typing.HyperTypeCollection
-import viper.HHLVerifier.typing.DeltaCollection
 import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl
