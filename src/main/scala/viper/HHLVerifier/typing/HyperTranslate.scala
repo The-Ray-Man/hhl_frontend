@@ -13,6 +13,8 @@ import viper.HHLVerifier.typing.dsl.TypeSystem
 import viper.HHLVerifier.ast.IfElseStmt
 import viper.HHLVerifier.ast.WhileLoopStmt
 
+/** `HyperTranslate` removes `fold` and `unfold` expression from a program and replaces them with a `hyperAssume` and `hyperAssert` statement. Since these new statements are not yet type checked one needs to run the typechecker afterwards.
+  */
 object HyperTranslate {
 
   def translateProgram(typeSystem: TypeSystem, program: HHLProgram): HHLProgram = {
