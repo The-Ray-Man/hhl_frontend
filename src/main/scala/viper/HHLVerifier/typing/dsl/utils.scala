@@ -449,7 +449,7 @@ case class DeriveArgsUtils(var context: Context) {
       case MappingAccess(DeriveDeltaType(id, gammaArg, deltaArg), indexId) => {
         val subStatement   = context.getStmtById(id)
         val (gamma, delta) = getArgs(gammaArg, deltaArg)
-        val deltaMapping   = context.typeSystem.deriveStatement(gamma, delta, subStatement, context.pc).deltaMapping
+        val deltaMapping   = context.typeSystem.deriveStatement(gamma, delta, subStatement).deltaMapping
         deltaMapping.collection.getOrElse(indexId.name, throw new Exception(s"Index $indexId not found in delta mapping"))
       }
       case MappingAccess(Delta(), id) => {
@@ -471,7 +471,7 @@ case class DeriveArgsUtils(var context: Context) {
         context.cache.get(newGamma, newDelta, stmt) match {
           case Some(result) => result.hyperTypeMapping
           case None         => {
-            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc)
+            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt)
             context.cache.add(newGamma, newDelta, stmt, res)
             res.hyperTypeMapping
           }
@@ -495,7 +495,7 @@ case class DeriveArgsUtils(var context: Context) {
         context.cache.get(newGamma, newDelta, stmt) match {
           case Some(result) => result.deltaMapping
           case None         => {
-            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt, context.pc)
+            val res = context.typeSystem.deriveStatement(newGamma, newDelta, stmt)
             context.cache.add(newGamma, newDelta, stmt, res)
             res.deltaMapping
           }
