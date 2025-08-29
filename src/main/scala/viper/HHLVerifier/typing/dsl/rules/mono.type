@@ -6,125 +6,125 @@ exp : MONODOWN[x] <=> forall <_s1>, <_s2> :: _s1[x] <= _s2[x] ==>  _s2[exp] <= _
 
 
 (Gamma, Delta) |- n :: [
-    x in AllParameters => MONOUP[x] addTo H,
+    x in AllParameters => MONOUP[x] addTo H
     x in AllParameters => MONODOWN[x] addTo H
-];
+]
 
 (Gamma, Delta) |- var :: [
     => Gamma(var) = H
-];
+]
 
 (Gamma, Delta) |- b :: [
-    => MONOUP[x] addTo H,
+    => MONOUP[x] addTo H
     => MONODOWN[x] addTo H
-];
+]
 
 /* ARITHMETIC OPERATIONS */
 (Gamma, Delta) |- e1 + e2 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
-];
-(Gamma, Delta) |- e1 % e2 :: [];
+]
+(Gamma, Delta) |- e1 % e2 :: []
 
 (Gamma, Delta) |- e1 * e2 :: [
-    POS in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H, 
-    NEG in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H, 
-    POS in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONOUP[x] in H[e1](Gamma, Delta) => MONOUP[x] addTo H, 
-    NEG in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H,
+    POS in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    NEG in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    POS in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONOUP[x] in H[e1](Gamma, Delta) => MONOUP[x] addTo H 
+    NEG in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H
 
-    POS in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H, 
-    NEG in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H, 
-    POS in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONODOWN[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H, 
+    POS in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    NEG in H[e1](Gamma, Delta) && LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    POS in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONODOWN[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H
     NEG in H[e2](Gamma, Delta) && LOW in H[e2](Gamma, Delta) && MONODOWN[x] in H[e1](Gamma, Delta) => MONOUP[x] addTo H
-];
+]
 
-(Gamma, Delta) |- e1 / e2 :: [];
+(Gamma, Delta) |- e1 / e2 :: []
 
 (Gamma, Delta) |- e1 - e2 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
     LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
-];
+]
 
 (Gamma, Delta) |- -e1 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) => MONOUP[X] addTo H 
-];
+]
 
 /* BOOLEAN OPERATIONS */
 (Gamma, Delta) |- e1 || e2 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) && MONODOWN[X] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
-];
-(Gamma, Delta) |- e1 == e2 :: [];
+]
+(Gamma, Delta) |- e1 == e2 :: []
 
 (Gamma, Delta) |- !e1 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) => MONODOWN[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) => MONOUP[x] addTo H 
-];
+]
 
 (Gamma, Delta) |- e1 && e2 :: [
-    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    MONOUP[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) && MONODOWN[X] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
-];
+]
 (Gamma, Delta) |- e1 > e2 :: [
-    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H,
-    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
+    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H
+    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
-];
+]
 
 (Gamma, Delta) |- e1 >= e2 :: [
-    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H,
-    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
+    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H
+    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
     MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
-];
+]
 
 
 (Gamma, Delta) |- e1 < e2 :: [
-    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H,
-    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONODOWN[x] addTo H
+    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
     MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
-];
+]
 
 
 (Gamma, Delta) |- e1 <= e2 :: [
-    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONOUP[x] addTo H,
-    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
-    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H,
-    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H,
+    LOW in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta)   => MONOUP[x] addTo H
+    LOW in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONOUP[x] addTo H
+    MONOUP[x] in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
+    MONODOWN[x] in H[e1](Gamma, Delta) && MONOUP[x] in H[e2](Gamma, Delta) => MONOUP[x] addTo H
     MONOUP[x] in H[e1](Gamma, Delta) && MONODOWN[x] in H[e2](Gamma, Delta) => MONODOWN[x] addTo H
-];
+]
 
 
-(Gamma, Delta) |- e1 ==> e2 :: [];
+(Gamma, Delta) |- e1 ==> e2 :: []
 
 
-(Gamma, Delta) |- e1 != e2 :: [];
+(Gamma, Delta) |- e1 != e2 :: []
 
 
 
 /* LIST/SET/MAP OPERATIONS */
 
 
-(Gamma, Delta) |- e1[e2] :: [];
-(Gamma, Delta) |- |e1|:: [];
-(Gamma, Delta) |- e1 ++ e2 :: [];
-(Gamma, Delta) |- e1 in e2 :: [];
-(Gamma, Delta) |- e1 setminus e2 :: [];
+(Gamma, Delta) |- e1[e2] :: []
+(Gamma, Delta) |- |e1|:: []
+(Gamma, Delta) |- e1 ++ e2 :: []
+(Gamma, Delta) |- e1 in e2 :: []
+(Gamma, Delta) |- e1 setminus e2 :: []
 (Gamma, Delta) |- e1 union e2 :: []
 

@@ -10,7 +10,7 @@ import viper.HHLVerifier.ast.{Expr, Id, UnaryExpr}
 
 object Parser {
   def specification[$: P]: P[Specification] =
-    P(Start ~ hyperTypeDeclaration.rep() ~ ws ~ derivationRule.rep(sep = ";") ~ ws ~ End)
+    P(Start ~ hyperTypeDeclaration.rep() ~ ws ~ derivationRule.rep() ~ ws ~ End)
       .map { case (declarations, rules) =>
         Specification(declarations, rules.toSeq)
       }
@@ -40,7 +40,7 @@ object Parser {
     "|-" ~ ws ~ "methodInit(" ~ HypraParser.progVar ~ ")" ~ ws ~ "::" ~ ws ~ expressionRules
   ).map { case (variable, rules) => StatementDerivationRule(MethodInitStmt(variable), rules) }
 
-  def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep(sep = ",") ~ ws ~ "]")
+  def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep() ~ ws ~ "]")
 
   def expressionRule[$: P]: P[Rule] = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
     Rule(conds, conclusion) // Placeholder, replace with actual rule creation logic
@@ -77,7 +77,7 @@ object Parser {
   def allVariables[$: P]: P[AllVariables]        = P("AllVariables").map(_ => AllVariables())
   def allParameters[$: P]: P[AllParameters]      = P("AllParameters").map(_ => AllParameters())
 
-  def condition[$: P]: P[Condition] = P(equal | setEquals | mapEquals | inDoubleMapping | inSet | inMapping | arithCondition | boolCondition | negatedCondition)
+  def condition[$: P]: P[Condition] = P(equal | setEquals | mapEquals | inDoubleMapping | inMapping | inSet | arithCondition | boolCondition | negatedCondition)
 
   def arithCondition[$: P]: P[ArithCondition] = P(
     variable ~ ws ~ comparator ~ ws ~ CharIn("0-9").rep(1).!.map(_.toInt)

@@ -5,68 +5,68 @@ exp : LOW <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp]
 
 (Gamma, Delta) |- n :: [
     => LOW addTo H
-];
+]
 
 (Gamma, Delta) |- var :: [
     => Gamma(var) = H
-];
+]
 
 (Gamma, Delta) |- b :: [
     => LOW addTo H
-];
+]
 
 /* ARITHMETIC OPERATIONS */
 (Gamma, Delta) |- e1 + e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 % e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 * e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 / e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 - e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 
 (Gamma, Delta) |- -e1 :: [
     LOW in H[e1](Gamma, Delta) => LOW addTo H
-];
+]
 
 /* BOOLEAN OPERATIONS */
 (Gamma, Delta) |- e1 || e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 == e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- !e1 :: [
     LOW in H[e1](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 && e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 > e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 >= e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 < e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 <= e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 ==> e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 != e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 
 
 
@@ -75,19 +75,19 @@ exp : LOW <=> forall <_s1>, <_s2> :: _s1[exp] == _s2[exp]
 
 (Gamma, Delta) |- e1[e2] :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- |e1|:: [
     LOW in H[e1](Gamma, Delta)  => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 ++ e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 in e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 setminus e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
-];
+]
 (Gamma, Delta) |- e1 union e2 :: [
     LOW in H[e1](Gamma, Delta) && LOW in H[e2](Gamma, Delta) => LOW addTo H
 ]
