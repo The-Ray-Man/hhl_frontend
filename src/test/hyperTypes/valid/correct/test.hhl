@@ -1,9 +1,13 @@
 
 
-method test(n : Int) returns (o: Int[MONOUP[n]])
+method test(k : Int[LOW], n : Int) returns (o: Int[MONOUP[n]])
 {
+    var ktmp : Int
     o := 0
-    while (o < n) {
+    ktmp := k
+
+    while (ktmp < n) {
         o := o + 1
+        ktmp := ktmp + 3
     }
 }

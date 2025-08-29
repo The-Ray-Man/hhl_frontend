@@ -1,0 +1,11 @@
+method testMixedControlLeak(s1: Int[LOW], s2: Int) returns (o : Int[LOW])
+{
+    var y : Int
+    y := s1
+    o := 0
+    if (s2 > 10) {
+        o := o + 2
+    } else {
+        o := o + 1
+    }
+}

@@ -33,6 +33,11 @@ object HyperTest {
   var failedLog: List[String] = List.empty
   var totalNum                = 0
 
+  def typeSystemNameToAbsPath(filename: String): String = {
+    val absFilePath = java.nio.file.Paths.get(".").toAbsolutePath
+    s"$absFilePath/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+  }
+
   def getDataForTestCase(testPath: String): String = {
     val programSource = scala.io.Source.fromFile(testPath)
     val program       = programSource.mkString
@@ -101,12 +106,12 @@ object HyperTest {
   def hyperTypeCheck(program: HHLProgram, test: (File, TestResult)): Unit = {
     val typeSystem = TypeSystem.loadTypeSystem(
       Seq(
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type",
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type",
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type",
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
-      )
+        "infFlow.type",
+        "value.type",
+        "deltaOnValue.type",
+        "stmt.type",
+        "mono.type"
+      ).map(typeSystemNameToAbsPath)
     )
     try {
       HyperTypeChecker.typeCheckProg(typeSystem, program)

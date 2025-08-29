@@ -1,0 +1,10 @@
+method value(a: Int, b: Int[LOW, POS]) returns (o : Int[MONOUP[a]])
+{
+    o := 0
+
+    if (a > 0) {
+        o := o + b
+    } else {
+        o := o - b
+    }
+}

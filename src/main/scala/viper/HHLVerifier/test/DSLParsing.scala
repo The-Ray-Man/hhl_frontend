@@ -1,8 +1,9 @@
 package viper.HHLVerifier.test
 
 import viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem
+import java.nio.file.Paths
 
-object DSLTests {
+object DSLParsingTests {
 
   def result(testName: String, res: fastparse.Parsed[Any]): Unit = {
     if (res.isSuccess) {
@@ -160,7 +161,6 @@ object DSLTests {
     val res47 = fastparse.parse("!(TRUE in H[b](Gamma, Delta))", viper.HHLVerifier.typing.dsl.Parser.condition(_))
     result("47", res47)
 
-
     val res49 = fastparse.parse("!(TRUE in H[b](Gamma, Delta)) => POS addTo Gamma'(x)", viper.HHLVerifier.typing.dsl.Parser.expressionRule(_))
     result("49", res49)
 
@@ -253,21 +253,20 @@ object DSLTests {
     val res79 = fastparse.parse("DH[s1](Gamma, InitDelta)(x)", viper.HHLVerifier.typing.dsl.Parser.set(_))
     result("79", res79)
   }
-  def loadingTypeSystemTest(filename: String): Unit = {
-    println("testing:", filename)
-    val path     = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
-    val stmtPath = s"/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
-    val ts       = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(path, stmtPath))
-    println("success", filename)
+  def loadingTypeSystemTest(filenames: Seq[String]): Unit = {
+    println("testing:", filenames)
+    val absFilePath = Paths.get(".").toAbsolutePath
+    val paths       = filenames.map(filename => s"$absFilePath/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename")
+    viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(paths)
+    println("success", filenames)
   }
 
   def main(args: Array[String]): Unit = {
     parsingTests()
-    loadingTypeSystemTest("stmt.type")
-    loadingTypeSystemTest("value.type")
-    loadingTypeSystemTest("infFlow.type")
-    loadingTypeSystemTest("deltaOnValue.type")
-    loadingTypeSystemTest("mono.type")
+    loadingTypeSystemTest(Seq("value.type", "stmt.type"))
+    loadingTypeSystemTest(Seq("infFlow.type", "stmt.type"))
+    loadingTypeSystemTest(Seq("deltaOnValue.type", "stmt.type"))
+    loadingTypeSystemTest(Seq("mono.type", "stmt.type"))
 
   }
 }

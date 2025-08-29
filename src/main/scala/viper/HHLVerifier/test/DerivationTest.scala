@@ -29,8 +29,13 @@ object DerivationTests {
 
   }
 
+  def typeSystemNameToAbsPath(filename: String): String = {
+    val absFilePath = java.nio.file.Paths.get(".").toAbsolutePath
+    s"$absFilePath/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+  }
+
   def runTest(typeSystem: TypeSystem, expression: Expr, gamma: HyperMapping, delta: DeltaMapping, expectedHT: Option[HyperTypeCollection], expectedHTDT: Option[DeltaCollection]) = {
-    val result = typeSystem.deriveExpression(gamma, delta, expression, Map())
+    val result = typeSystem.deriveExpression(gamma, delta, expression)
     println(s"$expression |- {${result.hyperTypeCollection}} {${result.deltaCollection}}")
 
     if (expectedHT.isDefined) {
@@ -83,8 +88,8 @@ object DerivationTests {
   }
 
   def valueTests(): Unit = {
-    val valuePath  = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val stmtPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val valuePath  = typeSystemNameToAbsPath("value.type")
+    val stmtPath   = typeSystemNameToAbsPath("stmt.type")
     val typeSystem = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath))
 
     val mapping      = HyperMapping(Map())
@@ -120,8 +125,8 @@ object DerivationTests {
   }
 
   def infFlowTests(): Unit = {
-    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val infFlowPath = typeSystemNameToAbsPath("infFlow.type")
+    val stmtPath    = typeSystemNameToAbsPath("stmt.type")
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath, stmtPath))
 
     val mappingXLow      = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"))))))
@@ -143,11 +148,11 @@ object DerivationTests {
   }
 
   def monoTest(): Unit = {
-    val infFlowPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val stmtPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
-    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
-    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val infFlowPath   = typeSystemNameToAbsPath("infFlow.type")
+    val stmtPath      = typeSystemNameToAbsPath("stmt.type")
+    val valuePath     = typeSystemNameToAbsPath("value.type")
+    val monoPath      = typeSystemNameToAbsPath("mono.type")
+    val deltaOnValues = typeSystemNameToAbsPath("deltaOnValue.type")
     val typeSystem    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
 // n -> MONOUP[n], j -> LOW, MONOUP[k], i -> LOW, ZERO,
     typeSystem.allVariables = Set(Id("n"), Id("i"), Id("j"))
@@ -164,9 +169,9 @@ object DerivationTests {
   }
 
   def valueInfFlowTests(): Unit = {
-    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val infFlowPath = typeSystemNameToAbsPath("infFlow.type")
+    val valuePath   = typeSystemNameToAbsPath("value.type")
+    val stmtPath    = typeSystemNameToAbsPath("stmt.type")
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath, valuePath, stmtPath))
 
     val mapping     = HyperMapping(Map(("x", HyperTypeCollection(Set(SimpleHyperType("LOW"), SimpleHyperType("POS"))))))
@@ -181,10 +186,10 @@ object DerivationTests {
   }
 
   def deltaTests(): Unit = {
-    val deltaPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
-    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val valuePath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val deltaPath   = typeSystemNameToAbsPath("deltaOnValue.type")
+    val infFlowPath = typeSystemNameToAbsPath("infFlow.type")
+    val valuePath   = typeSystemNameToAbsPath("value.type")
+    val stmtPath    = typeSystemNameToAbsPath("stmt.type")
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(deltaPath, infFlowPath, valuePath, stmtPath))
     typeSystem.allVariables = Set(Id("x"))
 
@@ -202,8 +207,8 @@ object DerivationTests {
 
   def statementTests(): Unit = {
     Generator.autoSelectRules = true
-    val infFlowPath = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val stmtPath    = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
+    val infFlowPath = typeSystemNameToAbsPath("infFlow.type")
+    val stmtPath    = typeSystemNameToAbsPath("stmt.type")
     val typeSystem  = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(infFlowPath, stmtPath))
     typeSystem.allVariables = Set(Id("x"), Id("y"))
 
@@ -215,9 +220,9 @@ object DerivationTests {
     println("program2")
     runTest(typeSystem, program2, false)
 
-    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
-    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val valuePath     = typeSystemNameToAbsPath("value.type")
+    val monoPath      = typeSystemNameToAbsPath("mono.type")
+    val deltaOnValues = typeSystemNameToAbsPath("deltaOnValue.type")
     val typeSystem2   = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
 
     println("program3")
@@ -236,11 +241,11 @@ object DerivationTests {
 
   def test(): Unit = {
 
-    val infFlowPath   = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type"
-    val stmtPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/stmt.type"
-    val valuePath     = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-    val monoPath      = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/mono.type"
-    val deltaOnValues = "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
+    val infFlowPath   = typeSystemNameToAbsPath("infFlow.type")
+    val stmtPath      = typeSystemNameToAbsPath("stmt.type")
+    val valuePath     = typeSystemNameToAbsPath("value.type")
+    val monoPath      = typeSystemNameToAbsPath("mono.type")
+    val deltaOnValues = typeSystemNameToAbsPath("deltaOnValue.type")
     val typeSystem    = viper.HHLVerifier.typing.dsl.TypeSystem.loadTypeSystem(Seq(valuePath, stmtPath, infFlowPath, monoPath, deltaOnValues))
     typeSystem.allVariables = Set(Id("o"))
     val delta  = DeltaMapping(Map("o" -> DeltaCollection(Map("o" -> HyperTypeCollection(Set(SimpleHyperType("ZERO"), SimpleHyperType("LOW")))))))
@@ -253,12 +258,12 @@ object DerivationTests {
 
   def main(args: Array[String]): Unit = {
     test()
-    // deltaTests()
-    // infFlowTests()
-    // valueTests()
-    // valueInfFlowTests()
-    // statementTests()
-    // monoTest()
+    deltaTests()
+    infFlowTests()
+    valueTests()
+    valueInfFlowTests()
+    statementTests()
+    monoTest()
     println("all tests passed")
   }
 }

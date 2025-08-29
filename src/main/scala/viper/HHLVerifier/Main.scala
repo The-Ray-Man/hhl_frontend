@@ -13,7 +13,6 @@ import viper.silver.verifier.{Failure => ResFailure, Success => ResSuccess}
 import viper.HHLVerifier.typing.{HyperTypeChecker}
 import viper.HHLVerifier.test.HyperTest
 import viper.HHLVerifier.typing.HyperTranslate
-import viper.HHLVerifier.test.RuleSoundnessTests
 
 /** Main Method */
 object Main {
