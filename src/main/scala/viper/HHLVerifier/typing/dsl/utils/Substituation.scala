@@ -5,93 +5,106 @@ import viper.HHLVerifier.typing.dsl.{HyperType, Element, SimpleHyperType, HyperT
 import viper.HHLVerifier.typing.dsl.ast._
 import viper.HHLVerifier.typing.dsl.HyperTypeCollection
 
-object Substitution {
+/** Utility class to substitute some variables with others. Given the mapping, every occurence of the key is replaced with the value.
+  */
+case class Substitution(mapping: Map[Id, Id]) {
 
-  def apply(mapping: Map[Id, Id], wrapper: Rule): Rule = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(wrapper: Rule): Rule = {
     Rule(
-      conditions = wrapper.conditions.map(cond => apply(mapping, cond)),
-      conclusions = wrapper.conclusions.map(concl => apply(mapping, concl)),
+      conditions = wrapper.conditions.map(cond => apply(cond)),
+      conclusions = wrapper.conclusions.map(concl => apply(concl)),
       name = wrapper.name
     )
   }
 
-  def apply(mapping: Map[Id, Id], cond: Condition): Condition = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(cond: Condition): Condition = {
     cond match {
-      case euqalCond: Equal          => Equal(apply(mapping, euqalCond.lhs), apply(mapping, euqalCond.rhs))
-      case arithCond: ArithCondition => ArithCondition(apply(mapping, arithCond.variable), arithCond.op, arithCond.right)
-      case boolCond: BoolCondition   => BoolCondition(apply(mapping, boolCond.variable))
-      case inSetCond: InSet          => InSet(apply(mapping, inSetCond.elem), apply(mapping, inSetCond.set))
-      case notOperator: NotOperator  => NotOperator(apply(mapping, notOperator.condition))
-      case setEquals: SetEquals      => SetEquals(apply(mapping, setEquals.set1), apply(mapping, setEquals.set2))
-      case mapEquals: MapEquals      => MapEquals(apply(mapping, mapEquals.mapping1), apply(mapping, mapEquals.mapping2))
-      case inMappingCond: InMapping  => InMapping(apply(mapping, inMappingCond.elem), apply(mapping, inMappingCond.mapping))
+      case euqalCond: Equal          => Equal(apply(euqalCond.lhs), apply(euqalCond.rhs))
+      case arithCond: ArithCondition => ArithCondition(apply(arithCond.variable), arithCond.op, arithCond.right)
+      case boolCond: BoolCondition   => BoolCondition(apply(boolCond.variable))
+      case inSetCond: InSet          => InSet(apply(inSetCond.elem), apply(inSetCond.set))
+      case notOperator: NotOperator  => NotOperator(apply(notOperator.condition))
+      case setEquals: SetEquals      => SetEquals(apply(setEquals.set1), apply(setEquals.set2))
+      case mapEquals: MapEquals      => MapEquals(apply(mapEquals.mapping1), apply(mapEquals.mapping2))
+      case inMappingCond: InMapping  => InMapping(apply(inMappingCond.elem), apply(inMappingCond.mapping))
     }
   }
 
-  def apply(mapping: Map[Id, Id], conclusion: Conclusion): Conclusion = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(conclusion: Conclusion): Conclusion = {
     conclusion match {
-      case AddToSet(elem, set)           => AddToSet(apply(mapping, elem), apply(mapping, set))
-      case SetEquals(set1, set2)         => SetEquals(apply(mapping, set1), apply(mapping, set2))
-      case MapEquals(mapping1, mapping2) => MapEquals(apply(mapping, mapping1), apply(mapping, mapping2))
-      case ExtendSet(toAdd, toExtend)    => ExtendSet(apply(mapping, toAdd), apply(mapping, toExtend))
+      case AddToSet(elem, set)           => AddToSet(apply(elem), apply(set))
+      case SetEquals(set1, set2)         => SetEquals(apply(set1), apply(set2))
+      case MapEquals(mapping1, mapping2) => MapEquals(apply(mapping1), apply(mapping2))
+      case ExtendSet(toAdd, toExtend)    => ExtendSet(apply(toAdd), apply(toExtend))
     }
   }
 
-  def apply(mapping: Map[Id, Id], variable: Id): Id = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(variable: Id): Id = {
     mapping.getOrElse(variable, variable)
   }
 
-  def apply(mapping: Map[Id, Id], set: Set): Set = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(set: Set): Set = {
     set match {
       case HyperCollectionResult()            => HyperCollectionResult()
-      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
-      case MappingAccess(subMapping, id)      => MappingAccess(apply(mapping, subMapping), apply(mapping, id))
-      case WithoutElement(set, elem)          => WithoutElement(apply(mapping, set), apply(mapping, elem))
-      case Variables(content)                 => Variables(apply(mapping, content))
-      case AssignedVariables(stmt)            => AssignedVariables(apply(mapping, stmt))
+      case HyperTypeCheck(expr, gamma, delta) => HyperTypeCheck(apply(expr), apply(gamma), apply(delta))
+      case MappingAccess(subMapping, id)      => MappingAccess(apply(subMapping), apply(id))
+      case WithoutElement(set, elem)          => WithoutElement(apply(set), apply(elem))
+      case Variables(content)                 => Variables(apply(content))
+      case AssignedVariables(stmt)            => AssignedVariables(apply(stmt))
       case AllParameters()                    => AllParameters()
       case AllVariables()                     => AllVariables()
       case _                                  => throw new Exception("Unsupported set type for indexing: " + set.getClass.getSimpleName)
     }
   }
 
-  def apply(mapping: Map[Id, Id], map: Mapping): Mapping = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(map: Mapping): Mapping = {
     map match {
       case Gamma()                             => Gamma()
       case Delta()                             => Delta()
       case DeltaCollectionResult()             => DeltaCollectionResult()
-      case DeltaTypeCheck(expr, gamma, delta)  => DeltaTypeCheck(apply(mapping, expr), gamma, delta)
+      case DeltaTypeCheck(expr, gamma, delta)  => DeltaTypeCheck(apply(expr), gamma, delta)
       case GammaResult()                       => GammaResult()
       case DeltaResult()                       => DeltaResult()
       case DeriveHyperType(expr, gamma, delta) =>
-        DeriveHyperType(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
+        DeriveHyperType(apply(expr), apply(gamma), apply(delta))
       case DeriveDeltaType(expr, gamma, delta) =>
-        DeriveDeltaType(apply(mapping, expr), apply(mapping, gamma), apply(mapping, delta))
-      case MappingAccess(subMapping, id) => MappingAccess(apply(mapping, subMapping), apply(mapping, id))
+        DeriveDeltaType(apply(expr), apply(gamma), apply(delta))
+      case MappingAccess(subMapping, id) => MappingAccess(apply(subMapping), apply(id))
       case InitializeDeltaMapping()      => InitializeDeltaMapping()
       case _: Mapping                    => throw new Exception("Unsupported mapping type for indexing: " + map.getClass.getSimpleName)
     }
   }
 
-  def apply(mapping: Map[Id, Id], elem: Element): Element = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(elem: Element): Element = {
     elem match {
-      case id @ Id(name)  => mapping.getOrElse(id, id)
-      case hty: HyperType => apply(mapping, hty)
+      case id @ Id(_)     => apply(id)
+      case hty: HyperType => apply(hty)
     }
   }
-  def apply(mapping: Map[Id, Id], hty: HyperType): HyperType = {
+
+  /** Creates a new object where the substitution is applied. */
+  def apply(hty: HyperType): HyperType = {
     hty match {
-      case SimpleHyperType(name)             => hty
-      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => apply(mapping, arg)))
-      case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => apply(mapping, arg)))
+      case SimpleHyperType(name)             => SimpleHyperType(name)
+      case HyperTypeWithListArgs(name, args) => HyperTypeWithListArgs(name, args.map(arg => apply(arg)))
+      case HyperTypeWithSetArgs(name, args)  => HyperTypeWithSetArgs(name, args.map(arg => apply(arg)))
     }
   }
-  def apply(mapping: Map[Id, Id], expr: Expr): Expr = {
+
+  /** Creates a new object where the substitution is applied. */
+  def apply(expr: Expr): Expr = {
     expr match {
       case BinaryExpr(left, op, right) =>
-        BinaryExpr(apply(mapping, left), op, apply(mapping, right))
+        BinaryExpr(apply(left), op, apply(right))
       case UnaryExpr(op, inner) =>
-        UnaryExpr(op, apply(mapping, inner))
+        UnaryExpr(op, apply(inner))
       case Id(name) =>
         mapping.getOrElse(Id(name), Id(name))
       case Num(value) =>
@@ -99,31 +112,33 @@ object Substitution {
       case BoolLit(value) =>
         BoolLit(value)
       case ImpliesExpr(left, right) =>
-        ImpliesExpr(apply(mapping, left), apply(mapping, right))
+        ImpliesExpr(apply(left), apply(right))
       case MethodCallExpr(methodName, args) =>
-        MethodCallExpr(methodName, args.map(arg => apply(mapping, arg).asInstanceOf[Id]))
+        MethodCallExpr(methodName, args.map(arg => apply(arg).asInstanceOf[Id]))
       case LookupExpr(dataStructure, index) =>
-        LookupExpr(apply(mapping, dataStructure), apply(mapping, index))
+        LookupExpr(apply(dataStructure), apply(index))
       case LengthExpr(dataStructure) =>
-        LengthExpr(apply(mapping, dataStructure))
+        LengthExpr(apply(dataStructure))
       case CombExpr(lhs, rhs, op) =>
-        CombExpr(apply(mapping, lhs), apply(mapping, rhs), op)
+        CombExpr(apply(lhs), apply(rhs), op)
       case _ => throw new Exception(s"Unsupported expression type for indexing: $expr")
     }
   }
 
-  def apply(mapping: Map[Id, Id], stmt: StmtPattern): StmtPattern = {
+  /** Creates a new object where the substitution is applied. */
+  def apply(stmt: StmtPattern): StmtPattern = {
     stmt match {
-      case AssignStmt(variable, value)               => AssignStmt(apply(mapping, variable), apply(mapping, value))
-      case CompStmt(first, second)                   => CompStmt(apply(mapping, first), apply(mapping, second))
-      case IfStmt(condition, thenBranch, elseBranch) => IfStmt(apply(mapping, condition), apply(mapping, thenBranch), apply(mapping, elseBranch))
+      case AssignStmt(variable, value)               => AssignStmt(apply(variable), apply(value))
+      case CompStmt(first, second)                   => CompStmt(apply(first), apply(second))
+      case IfStmt(condition, thenBranch, elseBranch) => IfStmt(apply(condition), apply(thenBranch), apply(elseBranch))
       case InitStmt()                                => InitStmt()
-      case HavocStmt(variable)                       => HavocStmt(apply(mapping, variable))
-      case MethodInitStmt(variable)                  => MethodInitStmt(apply(mapping, variable))
+      case HavocStmt(variable)                       => HavocStmt(apply(variable))
+      case MethodInitStmt(variable)                  => MethodInitStmt(apply(variable))
     }
   }
 
-  def apply(mapping: Map[Id, Id], collection: HyperTypeCollection): HyperTypeCollection = {
-    HyperTypeCollection(collection.hypertypes.map(ht => apply(mapping, ht)))
+  /** Creates a new object where the substitution is applied. */
+  def apply(collection: HyperTypeCollection): HyperTypeCollection = {
+    HyperTypeCollection(collection.hypertypes.map(ht => apply(ht)))
   }
 }

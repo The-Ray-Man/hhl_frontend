@@ -12,14 +12,23 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getAssignedVariables
 import viper.HHLVerifier.typing.dsl.HyperType
 import viper.HHLVerifier.typing.dsl.DeltaCollection
 
+/** Utility class to evaluate the collections (derivations, mapping access etc.) from the DSL to the concrete sets and maps.
+  *
+  * @param context
+  *   The context of the derivation.
+  */
 case class EvaluateCollection(var context: Context) {
 
+  /** Evaluates the hypertype and delta collections for the given gamma and delta mappings.
+    */
   def getArgs(gamma: Mapping, delta: Mapping): (HyperMapping, DeltaMapping) = {
     val newGamma = getHyperMapping(gamma)
     val newDelta = getDeltaMapping(delta)
     (newGamma, newDelta)
   }
 
+  /** Transforms a set to a hypertypecollection. If this can not be done an exception is thrown.
+    */
   def getHyperTypeCollection(collection: Set): HyperTypeCollection = {
     collection match {
       case HyperTypeCheck(expr, gammaArg, deltaArg) => {
@@ -28,7 +37,7 @@ case class EvaluateCollection(var context: Context) {
         context.cache.get(gamma, delta, subExpression) match {
           case Some(result) => result.hyperTypeCollection
           case None         => {
-            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression, Map())
+            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression)
             context.cache.add(gamma, delta, subExpression, res)
             res.hyperTypeCollection
           }
@@ -47,6 +56,8 @@ case class EvaluateCollection(var context: Context) {
     }
   }
 
+  /** Transforms a set to a delta type collection. If this can not be done an exception is thrown.
+    */
   def getDeltaTypes(set: Set): HyperTypeCollection = {
     set match {
       case MappingAccess(mapping, id) => {
@@ -54,9 +65,12 @@ case class EvaluateCollection(var context: Context) {
         val deltaCollection = getDeltaCollection(mapping)
         deltaCollection.mapping.getOrElse(idIndexed.name, throw new Exception(s"Index $idIndexed not found in delta mapping"))
       }
+      case _ => throw new Exception("Unsupported set type for DeltaTypeCollection retrieval: " + set.getClass.getSimpleName)
     }
   }
 
+  /** Transforms a mapping to a delta collection. If this can not be done an exception is thrown.
+    */
   def getDeltaCollection(mapping: Mapping): DeltaCollection = {
     mapping match {
       case DeltaTypeCheck(id, gammaArg, deltaArg) => {
@@ -65,7 +79,7 @@ case class EvaluateCollection(var context: Context) {
         context.cache.get(gamma, delta, subExpression) match {
           case Some(result) => result.deltaCollection
           case None         => {
-            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression, Map())
+            val res = context.typeSystem.deriveExpression(gamma, delta, subExpression)
             context.cache.add(gamma, delta, subExpression, res)
             res.deltaCollection
 
@@ -87,6 +101,8 @@ case class EvaluateCollection(var context: Context) {
     }
   }
 
+  /** Transforms a mapping to a hypertype collection. If this can not be done an exception is thrown.
+    */
   def getHyperMapping(mapping: Mapping): HyperMapping = {
 
     mapping match {
@@ -112,6 +128,8 @@ case class EvaluateCollection(var context: Context) {
 
   }
 
+  /** Transforms a mapping to a delta mapping. If this can not be done an exception is thrown.
+    */
   def getDeltaMapping(mapping: Mapping): DeltaMapping = {
     mapping match {
       case DeriveDeltaType(id, gammaArg, deltaArg) => {
@@ -136,6 +154,8 @@ case class EvaluateCollection(var context: Context) {
     }
   }
 
+  /** Transforms a set collection to a Set of Ids. If this can not be done an exception is thrown.
+    */
   def getVariableSet(varSet: Set): ScalaSet[Id] = {
     varSet match {
       case Variables(content) => {

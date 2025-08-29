@@ -1,16 +1,18 @@
 package viper.HHLVerifier.typing.dsl
 
-import viper.HHLVerifier.ast.{Id, BinaryExpr, UnaryExpr, ImpliesExpr, LookupExpr, LengthExpr, CombExpr, Expr, Stmt}
+import viper.HHLVerifier.ast.{Id, BinaryExpr, UnaryExpr, ImpliesExpr, LookupExpr, LengthExpr, CombExpr}
 import viper.HHLVerifier.typing.dsl.ast.{AssignStmt => AssignStmtPattern, HavocStmt => HavocStmtPattern}
 import viper.HHLVerifier.typing.dsl.ast.{DerivationRule, ExpressionDerivationRule, StatementDerivationRule, CompStmt, IfStmt, InitStmt, MethodInitStmt}
 
-trait Tree
-
-case class EmptyTree()                                                                                                                                              extends Tree
-case class ExprTree(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, result: ExpressionDerivationResult, appliedRules: Seq[RuleName], premises: Seq[ExprTree]) extends Tree
-
-case class StmtTree(gamma: HyperMapping, delta: DeltaMapping, stmt: Stmt, result: StatementDerivationResult, appliedRules: Seq[RuleName], premises: Seq[Tree]) extends Tree
-
+/** Holding information to identify a specific rule.
+  *
+  * @param filePath
+  *   the path to the file containing the rule
+  * @param op
+  *   a human readable representation of the rule's operator
+  * @param index
+  *   the index of the rule
+  */
 case class RuleName(filePath: String, op: String, index: Int) {
 
   val shortFileName               = filePath.split("/").lastOption.getOrElse(filePath).split("\\.").headOption.getOrElse("unnamed")
@@ -18,6 +20,8 @@ case class RuleName(filePath: String, op: String, index: Int) {
   def toStringLong(): String      = s"$filePath::$op::$index"
 }
 
+/** Utilities for working with rule names.
+  */
 object RuleName {
   def empty: RuleName                                                                = RuleName("unnamed", "unnamed", -1)
   def create(filePath: String, derivationRule: DerivationRule, index: Int): RuleName = {
@@ -25,7 +29,8 @@ object RuleName {
     RuleName(filePath, operatorName, index)
   }
 
-  // -------- Human-readable rule names --------------------------------------
+  /** Gives a human readable representation of the rule's name.
+    */
   def humanReadableRuleName(dr: DerivationRule): String = dr match {
     case er: ExpressionDerivationRule =>
       er.expr match {

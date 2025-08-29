@@ -69,8 +69,9 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
   def renameVariables(rule: ExpressionDerivationRule): ExpressionDerivationRule = {
     val allVariables     = HyperTypeChecker.getVariables(rule.expr) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
-    val renamedRules     = rule.rules.map(rule => Substitution.apply(renamedVariables, rule))
-    val renamedExpr      = Substitution.apply(renamedVariables, rule.expr)
+    val substitution     = Substitution(renamedVariables)
+    val renamedRules     = rule.rules.map(substitution.apply)
+    val renamedExpr      = substitution.apply(rule.expr)
     ExpressionDerivationRule(renamedExpr, renamedRules)
   }
 
@@ -82,8 +83,9 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
   def renameVariables(rule: StatementDerivationRule): StatementDerivationRule = {
     val allVariables     = HyperTypeChecker.getVariables(rule.statement) ++ rule.rules.flatMap(_.variables).toSet
     val renamedVariables = allVariables.map { case id => id -> Id(s"VAR'${id.name}'") }.toMap
-    val renamedRules     = rule.rules.map(rule => Substitution.apply(renamedVariables, rule))
-    val renamedStmt      = Substitution.apply(renamedVariables, rule.statement)
+    val substitution     = Substitution(renamedVariables)
+    val renamedRules     = rule.rules.map(substitution.apply)
+    val renamedStmt      = substitution.apply(rule.statement)
     StatementDerivationRule(renamedStmt, renamedRules)
   }
 
@@ -148,7 +150,8 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
     val capturedVariables   = typing.HyperTypeChecker.getVariables(expr).toSet
     val freeVariables       = allVariables -- capturedVariables
     val freeVariableMapping = freeVariables.zipWithIndex.map { case (id, index) => id -> Id(s"<$index>") }.toMap
-    val indexedRule         = Substitution.apply(freeVariableMapping, rule)
+    val substitution        = Substitution(freeVariableMapping)
+    val indexedRule         = substitution.apply(rule)
     if (freeVariables.isEmpty) {
       EmptyWrapper(indexedRule)
     } else {
@@ -157,7 +160,7 @@ case class ExpressionDerivationRule(expr: Expr, rules: Seq[Rule]) extends Deriva
   }
 
   def derive(typeSystem: TypeSystem, gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
-    val context     = ExpressionDerivationContext(typeSystem, expr, typeSystem.allVariables, gamma, delta, variableMapping, new Cache())
+    val context     = ExpressionDerivationContext(typeSystem, expr, gamma, delta, variableMapping, new Cache())
     val emptyResult = ExpressionDerivationResult(HyperTypeCollection(Set.empty), DeltaCollection(Map.empty))
     wrappedRules
       .foldLeft(emptyResult) { (acc, rule) =>
@@ -177,7 +180,8 @@ case class StatementDerivationRule(statement: StmtPattern, rules: Seq[Rule]) ext
     val capturedVariables   = HyperTypeChecker.getVariables(statement).toSet
     val freeVariables       = allVariables -- capturedVariables
     val freeVariableMapping = freeVariables.zipWithIndex.map { case (id, index) => id -> Id(s"<$index>") }.toMap
-    val indexedRule         = Substitution.apply(freeVariableMapping, rule)
+    val substitution        = Substitution(freeVariableMapping)
+    val indexedRule         = substitution.apply(rule)
     if (freeVariables.isEmpty) {
       EmptyWrapper(indexedRule)
     } else {

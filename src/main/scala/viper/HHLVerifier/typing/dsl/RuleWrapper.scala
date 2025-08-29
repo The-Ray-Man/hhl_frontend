@@ -5,13 +5,11 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl.ast.{Rule}
 import viper.HHLVerifier.typing.dsl.utils.Substitution
 
-/**
-  * Context for checking rules. The context contains a mapping from free variables to actual program variables.
+/** Context for checking rules. The context contains a mapping from free variables to actual program variables.
   */
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
-/**
-  * Abstract wrapper for rules. These wrappers are used to assign program variables to free variables in the rule.
+/** Abstract wrapper for rules. These wrappers are used to assign program variables to free variables in the rule.
   *
   * @param rule
   */
@@ -19,7 +17,8 @@ abstract class RuleWrapper(rule: Rule) {
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
 
   def checkAndApply(context: Context, ruleCheckContext: RuleCheckContext, result: DerivationResult, expression: Boolean): DerivationResult = {
-    val appliedIndexedRule = Substitution.apply(ruleCheckContext.variables, rule)
+    val substitution       = Substitution(ruleCheckContext.variables)
+    val appliedIndexedRule = substitution.apply(rule)
     //  println("\n\n", rule)
     val conditionHolds = appliedIndexedRule.conditions.forall(condition => { condition.check(context, expression) })
 
@@ -35,11 +34,10 @@ abstract class RuleWrapper(rule: Rule) {
   }
 }
 
-
-/**
-  * This wrapper assignes every possible combination of program variables to the free variables. it applies all the different rules one after each other.
+/** This wrapper assignes every possible combination of program variables to the free variables. it applies all the different rules one after each other.
   *
-  * @param numVars number of unique free variables in the rule.
+  * @param numVars
+  *   number of unique free variables in the rule.
   */
 case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(rule: Rule) {
 
@@ -64,8 +62,7 @@ case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(r
   }
 }
 
-/**
-  * This wrapper is used if there are no free variables in the rule. The wrapper does nothing.
+/** This wrapper is used if there are no free variables in the rule. The wrapper does nothing.
   */
 case class EmptyWrapper(rule: Rule) extends RuleWrapper(rule: Rule) {
 

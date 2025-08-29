@@ -4,16 +4,27 @@ import viper.HHLVerifier.management.PrettyPrinter
 import viper.HHLVerifier.ast.{Id, Expr}
 import scala.collection.immutable.{Set => ScalaSet}
 
+/** Element represents a basic building block of a type.
+  */
 trait Element extends CollectVariables {}
 
+/** Represents a hypertype in the type system.
+  */
 abstract class HyperType extends Element {
   override def equals(obj: Any): Boolean
+
+  /** Given the `id` and the typesystem it lookus up the hyper-type and assigns builds the semantic expression for it.
+    */
   def semantics(ts: TypeSystem, id: Id): Expr = {
     Soundness.currentTypeSystem = ts
     Soundness.buildExpression(id, this)
   }
+
+  override def toString(): String = PrettyPrinter.formatHyperType(this)
 }
 
+/** This hypertype does not contain any variables. It is just a name.
+  */
 case class SimpleHyperType(name: String) extends HyperType {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -23,9 +34,10 @@ case class SimpleHyperType(name: String) extends HyperType {
 
   override def variables: ScalaSet[Id] = ScalaSet.empty[Id]
 
-  override def toString: String = name
-
 }
+
+/** This hypertype contains multiple arguments for which the order does not matter.
+  */
 case class HyperTypeWithSetArgs(name: SimpleHyperType, args: ScalaSet[Element]) extends HyperType {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -34,11 +46,10 @@ case class HyperTypeWithSetArgs(name: SimpleHyperType, args: ScalaSet[Element]) 
   }
 
   override def variables: ScalaSet[Id] = args.flatMap(_.variables)
-
-  override def toString: String = {
-    s"${name.toString()}{${args.map(a => a.toString()).mkString(", ")}}"
-  }
 }
+
+/** This hypertype contains multiple arguments for which the order does matter.
+  */
 case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) extends HyperType {
 
   override def equals(obj: Any): Boolean = obj match {
@@ -48,11 +59,10 @@ case class HyperTypeWithListArgs(name: SimpleHyperType, args: Seq[Element]) exte
 
   override def variables: ScalaSet[Id] = args.flatMap(_.variables).toSet
 
-  override def toString: String = {
-    s"${name.toString()}[${args.map(a => a.toString()).mkString(", ")}]"
-  }
 }
 
+/** This object provides utility functions for working with hypertype collections.
+  */
 object HyperTypeCollection {
 
   def fromSeq(seq: Seq[HyperType]): HyperTypeCollection = {
@@ -99,6 +109,8 @@ case class HyperTypeCollection(
   }
 }
 
+/** Represents a mapping from variable names to hypertype collections.
+  */
 case class HyperMapping(val mapping: Map[String, HyperTypeCollection]) {
   override def equals(other: Any): Boolean = {
     other match {
@@ -108,12 +120,16 @@ case class HyperMapping(val mapping: Map[String, HyperTypeCollection]) {
     }
   }
 
+  /** Sets the hypertype collection for a given variable. If this variable already has a mapping, then it is replaced.
+    */
   def set(key: String, value: HyperTypeCollection): HyperMapping = {
     val newMapping = mapping + (key -> value)
     val result     = new HyperMapping(newMapping)
     result
   }
 
+  /** Lookup a the hypertype collection given a name. If the name does not exist in the mapping, the empty set is returned.
+    */
   def get(key: String): HyperTypeCollection = {
     mapping.get(key) match {
       case Some(value) => value

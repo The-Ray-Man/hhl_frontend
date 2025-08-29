@@ -2,7 +2,6 @@ package viper.HHLVerifier.typing.dsl
 
 import viper.HHLVerifier.typing.dsl.utils.{SpecificationUtil, Substitution}
 import viper.HHLVerifier.typing.dsl.ast.{HyperTypeDeclaration, ExpressionDerivationRule, MethodInitStmt, AssignStmt, CompStmt, IfStmt, Specification, StatementDerivationRule, Rule}
-import viper.HHLVerifier.typing.dsl
 import viper.HHLVerifier.typing.dsl.ast.{HavocStmt => HavocStmtPattern, StmtPattern}
 import viper.HHLVerifier.ast.Expr
 import viper.HHLVerifier.ast.Id
@@ -52,7 +51,7 @@ case class TypeSystem(
     *   StatementDerivationResult containing the derived hypermapping and deltamapping.
     */
   def init(gamma: HyperMapping, delta: DeltaMapping): StatementDerivationResult = {
-    val context = StatementDerivationContext(this, null, allVariables, gamma, delta, Map.empty, Map.empty, new Cache())
+    val context = StatementDerivationContext(this, null, gamma, delta, Map.empty, Map.empty, new Cache())
     statementTypeSystem.initRule.derive(context)
   }
 
@@ -71,7 +70,6 @@ case class TypeSystem(
         val emptyContext = StatementDerivationContext(
           typeSystem = this,
           stmt = null,
-          allVars = allVariables,
           gamma = new HyperMapping(Map.empty),
           delta = DeltaMapping(Map.empty),
           varStmtMapping = Map.empty,
@@ -157,12 +155,13 @@ case class TypeSystem(
     }
     // Some hypertypes are related to method parameters. Hence we need to rename them
     val renameMapping = expr.method.params.zip(expr.args).toMap
+    val substitution  = Substitution(renameMapping)
 
     if (argsCorrect) {
       val returnTypes = expr.method.res.map(id => HyperTypeCollection(id.hyperType.getOrElse(Seq()).toSet))
       returnTypes.map(rt =>
         ExpressionDerivationResult(
-          hyperTypeCollection = Substitution.apply(renameMapping, rt),
+          hyperTypeCollection = substitution.apply(rt),
           deltaCollection = DeltaCollection(Map())
         )
       )
@@ -187,7 +186,7 @@ case class TypeSystem(
     val res = s match {
       case ast.AssignStmt(left, right) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.assignRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
-        val context                      = StatementDerivationContext(this, s, allVariables, gamma, delta, stmtMatching, exprMatching, new Cache())
+        val context                      = StatementDerivationContext(this, s, gamma, delta, stmtMatching, exprMatching, new Cache())
         statementTypeSystem.assignRule.derive(context)
       }
       case CompositeStmt(stmts) => {
@@ -197,13 +196,13 @@ case class TypeSystem(
           deriveStatement(gamma, delta, stmts.head)
         } else {
           val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.compositionRule.statement).getOrElse(throw new Exception(s"Statement $s does not match assign pattern"))
-          val context                      = StatementDerivationContext(this, s, allVariables, gamma, delta, stmtMatching, exprMatching, new Cache())
+          val context                      = StatementDerivationContext(this, s, gamma, delta, stmtMatching, exprMatching, new Cache())
           statementTypeSystem.compositionRule.derive(context)
         }
       }
       case IfElseStmt(cond, ifStmt, elseStmt) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.branchRule.statement).getOrElse(throw new Exception(s"Statement $s does not match branch pattern"))
-        val context                      = StatementDerivationContext(this, s, allVariables, gamma, delta, stmtMatching, exprMatching, new Cache())
+        val context                      = StatementDerivationContext(this, s, gamma, delta, stmtMatching, exprMatching, new Cache())
         val derivedResult                = statementTypeSystem.branchRule.derive(context)
         derivedResult
       }
@@ -243,7 +242,7 @@ case class TypeSystem(
       }
       case HavocStmt(id, _) => {
         val (stmtMatching, exprMatching) = statementMatchesPattern(s, statementTypeSystem.havocRule.statement).getOrElse(throw new Exception(s"Statement $s does not match havoc pattern"))
-        val context                      = StatementDerivationContext(this, s, allVariables, gamma, delta, stmtMatching, exprMatching, new Cache())
+        val context                      = StatementDerivationContext(this, s, gamma, delta, stmtMatching, exprMatching, new Cache())
         val derivedResult                = statementTypeSystem.havocRule.derive(context)
         derivedResult
       }

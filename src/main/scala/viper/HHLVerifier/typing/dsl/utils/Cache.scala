@@ -3,6 +3,8 @@ package viper.HHLVerifier.typing.dsl.utils
 import viper.HHLVerifier.ast.{Expr, Stmt}
 import viper.HHLVerifier.typing.dsl.{HyperMapping, DeltaMapping, ExpressionDerivationResult, StatementDerivationResult}
 
+/** The cache stores the results of expression and statement derivations. A derivation is uniquely identified by the expression/statement, the used HyperMapping and DeltaMapping.
+  */
 class Cache() {
   var expressionCache: Map[(Expr, HyperMapping, DeltaMapping), ExpressionDerivationResult] = Map()
   var statementCache: Map[(Stmt, HyperMapping, DeltaMapping), StatementDerivationResult]   = Map()

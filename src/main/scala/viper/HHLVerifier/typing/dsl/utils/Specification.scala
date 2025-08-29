@@ -4,8 +4,12 @@ import viper.HHLVerifier.typing.dsl.ast.{ExpressionDerivationRule, Specification
 import viper.HHLVerifier.ast.{Id, BinaryExpr, ImpliesExpr, LengthExpr, LookupExpr, UnaryExpr}
 import viper.HHLVerifier.typing.dsl.ast.{AssignStmt, IfStmt, CompStmt}
 
+/** Util object to help with combining the specifications if multiple files are given. To merge multiple specifications use `combineSpecifications`
+  */
 object SpecificationUtil {
 
+  /** Combines multiple specifications into one.
+    */
   def combineSpecifications(specifications: Seq[Specification]): Specification = {
 
     val specificationCombined = specifications.reduce((acc, spec) => {
@@ -14,6 +18,8 @@ object SpecificationUtil {
     specificationCombined
   }
 
+  /** Merges two specifications into one.
+    */
   def mergeSpecification(spec1: Specification, spec2: Specification): Specification = {
     val hyperTypeDeclarations = spec1.hypertypeDeclaration ++ spec2.hypertypeDeclaration
 
@@ -26,6 +32,8 @@ object SpecificationUtil {
     )
   }
 
+  /** Combines a list of derivation rules
+    */
   def combineDerivationRules(rules: Seq[DerivationRule]): Seq[DerivationRule] = {
     var expressionRules = Set[ExpressionDerivationRule]()
     var statementRules  = Set[StatementDerivationRule]()
@@ -55,28 +63,37 @@ object SpecificationUtil {
     expressionRules.toSeq ++ statementRules.toSeq
   }
 
+  /** Tries to combine two expression derivation rules. If they are of different operators, None is returned. Otherwhise the new expression derivation rule is returned.
+    */
   def combineExpressionDerivationRules(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[ExpressionDerivationRule] = {
     canBeCombined(rule1, rule2) match {
       case None                => None
       case Some(mappingIdtoId) => {
-        val adaptedRules = rule2.rules.map(rule => Substitution.apply(mappingIdtoId, rule))
-        val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
+        val substituation = Substitution(mappingIdtoId)
+        val adaptedRules  = rule2.rules.map(substituation.apply(_))
+        val allRules      = (rule1.rules ++ adaptedRules).toSet.toSeq
         Some(ExpressionDerivationRule(rule1.expr, allRules))
       }
     }
   }
 
+  /** Tries to combine two statement derivation rules. If they are for different operators, None is returned. Otherwise the new statement derivation rule is returned.
+    */
+
   def combineStatementDerivationRules(rule1: StatementDerivationRule, rule2: StatementDerivationRule): Option[StatementDerivationRule] = {
     canBeCombined(rule1, rule2) match {
       case None                => None
       case Some(mappingIdtoId) => {
-        val adaptedRules = rule2.rules.map(rule => Substitution.apply(mappingIdtoId, rule))
-        val allRules     = (rule1.rules ++ adaptedRules).toSet.toSeq
+        val substituation = Substitution(mappingIdtoId)
+        val adaptedRules  = rule2.rules.map(substituation.apply(_))
+        val allRules      = (rule1.rules ++ adaptedRules).toSet.toSeq
         Some(StatementDerivationRule(rule1.statement, allRules))
       }
     }
   }
 
+  /** Checks if two expression derivation rules can be combined. If it is possible a mapping, which maps the variables of the first rule to the second is returned.
+    */
   def canBeCombined(rule1: ExpressionDerivationRule, rule2: ExpressionDerivationRule): Option[Map[Id, Id]] = {
     (rule1.expr, rule2.expr) match {
       case (Id(name1), Id(name2)) if name1 == name2                                                                               => Some(Map(Id(name1) -> Id(name2)))
@@ -89,6 +106,8 @@ object SpecificationUtil {
     }
   }
 
+  /** Checks if two statement derivation rules can be combined. If it is possible a mapping, which maps the variables of the first rule to the second is returned.
+    */
   def canBeCombined(rule1: StatementDerivationRule, rule2: StatementDerivationRule): Option[Map[Id, Id]] = {
     (rule1.statement, rule2.statement) match {
       case (AssignStmt(var1, value1), AssignStmt(var2, value2))                               => Some(Map(var1 -> var2, value1 -> value2))
