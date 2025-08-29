@@ -5,8 +5,16 @@ import viper.HHLVerifier.typing.HyperTypeChecker.getVariables
 import viper.HHLVerifier.typing.dsl.ast.{Rule}
 import viper.HHLVerifier.typing.dsl.utils.Substitution
 
+/**
+  * Context for checking rules. The context contains a mapping from free variables to actual program variables.
+  */
 case class RuleCheckContext(variables: Map[Id, Id]) {}
 
+/**
+  * Abstract wrapper for rules. These wrappers are used to assign program variables to free variables in the rule.
+  *
+  * @param rule
+  */
 abstract class RuleWrapper(rule: Rule) {
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult
 
@@ -27,6 +35,12 @@ abstract class RuleWrapper(rule: Rule) {
   }
 }
 
+
+/**
+  * This wrapper assignes every possible combination of program variables to the free variables. it applies all the different rules one after each other.
+  *
+  * @param numVars number of unique free variables in the rule.
+  */
 case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(rule: Rule) {
 
   def orderedSubsets[A](set: Seq[A], n: Int): Seq[Seq[A]] = {
@@ -49,6 +63,10 @@ case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(r
     newResult
   }
 }
+
+/**
+  * This wrapper is used if there are no free variables in the rule. The wrapper does nothing.
+  */
 case class EmptyWrapper(rule: Rule) extends RuleWrapper(rule: Rule) {
 
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
