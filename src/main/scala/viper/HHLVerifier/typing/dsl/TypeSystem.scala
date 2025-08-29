@@ -32,22 +32,38 @@ import scala.collection.immutable.{Set => ScalaSet}
 import viper.HHLVerifier.typing.HyperTypeChecker.getParameter
 import viper.HHLVerifier.typing.dsl.utils.Cache
 
+/** Type system for the DSL
+  */
 case class TypeSystem(
-    statementTypeSystem: StatementTypeSystem = null,
-    expressionTypeSystem: Seq[ExpressionDerivationRule] = null,
+    statementTypeSystem: StatementTypeSystem,
+    expressionTypeSystem: Seq[ExpressionDerivationRule],
     hyperTypeDeclaration: Seq[HyperTypeDeclaration] = Seq.empty[HyperTypeDeclaration]
 ) {
 
   var allVariables: ScalaSet[Id] = Set.empty
   var allParams: ScalaSet[Id]    = Set.empty
 
-  def checkSoundness(): Boolean = {
-    false
+  /** This function executes the `init` rule. The function accepts a `gamma` and `delta` because they may exists when one wants to initialize for a if-else branch.
+    * @param gamma
+    *   The hypermapping for the current context.
+    * @param delta
+    *   The deltamapping for the current context.
+    * @return
+    *   StatementDerivationResult containing the derived hypermapping and deltamapping.
+    */
+  def init(gamma: HyperMapping, delta: DeltaMapping): StatementDerivationResult = {
+    val context = StatementDerivationContext(this, null, allVariables, gamma, delta, Map.empty, Map.empty, new Cache())
+    statementTypeSystem.initRule.derive(context)
   }
 
+  /** This function executes the `methodInit` rule, given in the DSL to all variables.
+    * @param method
+    *   The method to initialize.
+    * @return
+    *   StatementDerivationResult containing the derived hypermapping and deltamapping.
+    */
   def initializeMethod(method: ast.Method): StatementDerivationResult = {
-    val allVars = getVariables(method)
-    allVariables = allVars
+    allVariables = getVariables(method)
     allParams = getParameter(method)
 
     val result = allVariables
@@ -85,10 +101,21 @@ case class TypeSystem(
     )
   }
 
-  def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr, variableMapping: Map[Id, Expr]): ExpressionDerivationResult = {
+  /** This function derives the type information for a given expression.
+    * @param gamma
+    *   The hypermapping for the current context.
+    * @param delta
+    *   The deltamapping for the current context.
+    * @param expr
+    *   The expression to derive the type information for.
+    *
+    * @return
+    *   ExpressionDerivationResult containing the derived hypercollection and deltacollection.
+    */
+  def deriveExpression(gamma: HyperMapping, delta: DeltaMapping, expr: Expr): ExpressionDerivationResult = {
     println("start with:", expr)
     if (expr.isInstanceOf[ast.MethodCallExpr]) {
-      val results = deriveMethodCallExpr(gamma, delta, expr.asInstanceOf[ast.MethodCallExpr], variableMapping)
+      val results = deriveMethodCallExpr(gamma, delta, expr.asInstanceOf[ast.MethodCallExpr])
       if (results.size == 0) {
         return ExpressionDerivationResult(
           hyperTypeCollection = HyperTypeCollection(Set()),
@@ -111,7 +138,18 @@ case class TypeSystem(
     result
   }
 
-  def deriveMethodCallExpr(gamma: HyperMapping, delta: DeltaMapping, expr: ast.MethodCallExpr, variableMapping: Map[Id, Expr]): Seq[ExpressionDerivationResult] = {
+  /** Derives the type information for a method call expression. For every parameter of the function call it is checked if the variable has the right types.
+    *
+    * @param gamma
+    *   The hypermapping for the current context.
+    * @param delta
+    *   The deltamapping for the current context.
+    * @param expr
+    *   The method call expression to derive the type information for.
+    * @return
+    *   A sequence of ExpressionDerivationResult containing the derived hypercollection and deltacollection.
+    */
+  def deriveMethodCallExpr(gamma: HyperMapping, delta: DeltaMapping, expr: ast.MethodCallExpr): Seq[ExpressionDerivationResult] = {
     val argsCorrect = expr.args.zip(expr.method.params).forall { case (arg, param) =>
       val argHyperType   = gamma.get(arg.name)
       val paramHyperType = HyperTypeCollection(param.hyperType.getOrElse(Seq()).toSet)
@@ -133,10 +171,16 @@ case class TypeSystem(
     }
   }
 
-  def init(gamma: HyperMapping, delta: DeltaMapping): StatementDerivationResult = {
-    val context = StatementDerivationContext(this, null, allVariables, gamma, delta, Map.empty, Map.empty, new Cache())
-    statementTypeSystem.initRule.derive(context)
-  }
+  /** Derives the type information for a statement.
+    * @param gamma
+    *   The hypermapping for the current context.
+    * @param delta
+    *   The deltamapping for the current context.
+    * @param s
+    *   The statement to derive the type information for.
+    * @return
+    *   A StatementDerivationResult containing the derived hypermapping and deltamapping.
+    */
 
   def deriveStatement(gamma: HyperMapping, delta: DeltaMapping, s: Stmt): StatementDerivationResult = {
     println("start with: ", s)
@@ -216,6 +260,15 @@ case class TypeSystem(
     res
   }
 
+  /** Checks if a statement matches a given pattern. If it matches a mapping is returned.
+    *
+    * @param stmt
+    *   The statement to check.
+    * @param pattern
+    *   The pattern to match against.
+    * @return
+    *   if the statement matches, a mapping of IDs to statements and another mapping from IDs to Expr are returned
+    */
   def statementMatchesPattern(stmt: Stmt, pattern: StmtPattern): Option[(Map[Id, Stmt], Map[Id, Expr])] = {
     (pattern, stmt) match {
       case (AssignStmt(left, right), ast.AssignStmt(leftCheck, rightCheck)) =>
@@ -237,9 +290,19 @@ case class TypeSystem(
   }
 }
 
+/** Wrapper for statement type system rules.
+  */
 case class StatementTypeSystem(assignRule: StatementDerivationRule, compositionRule: StatementDerivationRule, branchRule: StatementDerivationRule, initRule: StatementDerivationRule, methodInitRule: StatementDerivationRule, havocRule: StatementDerivationRule) {}
 
 object TypeSystem {
+
+  /** Reads the type system from the specified paths.
+    *
+    * @param paths
+    *   The paths to the type system files.
+    * @return
+    *   The loaded type system.
+    */
   def loadTypeSystem(paths: Seq[String]): TypeSystem = {
     val specifications = paths.map(path => {
       val fileContent = scala.io.Source.fromFile(path).getLines().mkString("\n")
@@ -253,6 +316,8 @@ object TypeSystem {
     SpecificationUtil.combineSpecifications(specifications).toTypeSystem()
   }
 
+  /** Gives every rule a name for tracking purposes. The name consists of the filename, the rule and the index of the rule.
+    */
   def nameRules(spec: Specification, filepath: String): Specification = {
 
     spec.copy(derivationRules =
