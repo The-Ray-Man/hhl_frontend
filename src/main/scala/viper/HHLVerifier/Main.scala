@@ -29,13 +29,12 @@ object Main {
     verified = 0
 
     // [DOC] Read Files
-    // if (args.length == 0) {
-    //   new Logger("Please provide the program to verify.", Logger.ERR).addTitle("Invalid Arguments").log()
-    //   sys.exit(1)
-    // }
+    if (args.length == 0) {
+      new Logger("Please provide the program to verify.", Logger.ERR).addTitle("Invalid Arguments").log()
+      sys.exit(1)
+    }
 
-    val programAbsPath = "/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/invalid/leak.hhl"
-    // var programAbsPath = args(0)
+    var programAbsPath = args(0)
     Logger.setFilePath(programAbsPath)
     val programSource = scala.io.Source.fromFile(programAbsPath)
     val program       = programSource.mkString
@@ -59,17 +58,12 @@ object Main {
     new Logger(f"The input program is read from $programAbsPath.").log()
 
     val hyperTypeSystem = if (args.contains("--typeSystem")) {
-      typing.dsl.TypeSystem.loadTypeSystem(Seq(args(args.indexOf("--typeSystem") + 1)))
+      val startIndex = args.indexOf("--typeSystem") + 1
+      val endIndex   = args.zipWithIndex.find { case (arg, index) => arg.startsWith("--") && index > startIndex }.map(_._2).getOrElse(args.length)
+      typing.dsl.TypeSystem.loadTypeSystem(Seq(args.slice(startIndex, endIndex): _*))
     } else {
-      typing.dsl.TypeSystem.loadTypeSystem(
-        Seq(
-          "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/infFlow.type",
-          "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-          // "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/deltaOnValue.type"
-        )
-      )
+      typing.dsl.TypeSystem.defaultTypeSystem
     }
-
     try {
       // [DOC] parse program
       val t0  = System.nanoTime()

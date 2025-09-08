@@ -30,23 +30,38 @@ case class Specification(hypertypeDeclaration: Seq[HyperTypeDeclaration], deriva
 
   /** Converts the specification to a type system.
     *
+    * @param mustHaveAllStmtRules
+    *   if this is set to false, then the missing statement rules will just be set to null.
     * @return
     *   The typesystem defined by the specification.
     * @throws Exception
     *   - if a hypertype has multiple declarations (even if they are the same) or
     *   - if not all statement derivation rules are defined
     */
-  def toTypeSystem(): TypeSystem = {
+  def toTypeSystem(mustHaveAllStmtRules: Boolean = true): TypeSystem = {
     val expressionRules = derivationRules.filter(_.isInstanceOf[ExpressionDerivationRule]).map(rule => renameVariables(rule.asInstanceOf[ExpressionDerivationRule]))
     val statementRules  = derivationRules.filter(_.isInstanceOf[StatementDerivationRule]).map(rule => renameVariables(rule.asInstanceOf[StatementDerivationRule]))
-    val typeSystem      = TypeSystem(
+
+    def handleFindResult(rules: Option[StatementDerivationRule]): StatementDerivationRule = {
+      rules match {
+        case Some(rule) => rule
+        case None       => {
+          if (mustHaveAllStmtRules) {
+            throw new Exception(s"One stmt rule could not be found.")
+          } else {
+            null
+          }
+        }
+      }
+    }
+    val typeSystem = TypeSystem(
       statementTypeSystem = StatementTypeSystem(
-        assignRule = statementRules.find(rule => rule.statement.isInstanceOf[AssignStmt]).getOrElse(throw new Exception("No assign rule found")),
-        branchRule = statementRules.find(rule => rule.statement.isInstanceOf[IfStmt]).getOrElse(throw new Exception("No branch rule found")),
-        compositionRule = statementRules.find(rule => rule.statement.isInstanceOf[CompStmt]).getOrElse(throw new Exception("No composition rule found")),
-        initRule = statementRules.find(rule => rule.statement.isInstanceOf[InitStmt]).getOrElse(throw new Exception("No init rule found")),
-        havocRule = statementRules.find(rule => rule.statement.isInstanceOf[HavocStmt]).getOrElse(throw new Exception("No havoc rule found")),
-        methodInitRule = statementRules.find(rule => rule.statement.isInstanceOf[MethodInitStmt]).getOrElse(throw new Exception("No method init rule found"))
+        assignRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[AssignStmt])),
+        branchRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[IfStmt])),
+        compositionRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[CompStmt])),
+        initRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[InitStmt])),
+        havocRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[HavocStmt])),
+        methodInitRule = handleFindResult(statementRules.find(_.statement.isInstanceOf[MethodInitStmt]))
       ),
       expressionTypeSystem = expressionRules,
       hyperTypeDeclaration = hypertypeDeclaration

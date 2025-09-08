@@ -14,28 +14,26 @@ object Soundness {
   // Current type system (used by expression builders)
   var currentTypeSystem: TypeSystem = null
 
-  // Report of rule soundness: ruleName -> (index -> status)
-  var report: Map[String, Map[Int, String]] = Map.empty
+  // Report of rule soundness
+  var report: Map[RuleName, String] = Map.empty
 
   // -------- Entry points ----------------------------------------------------
 
   def main(args: Array[String]): Unit = {
     report = Map.empty
-    val ts = TypeSystem.loadTypeSystem(
-      Seq(
-        "/home/ramon/ETH/SP/hypra_fork/src/main/scala/viper/HHLVerifier/typing/dsl/rules/value.type"
-      )
-    )
+    // read the filename from args
+    val typeSystemFiles = args.toSeq
+
+    val ts = TypeSystem.loadTypeSystem(typeSystemFiles, false)
     check(ts)
     generateReport()
   }
 
   /** Prints the aggregated report to stdout. */
   def generateReport(): Unit = {
-    report.foreach { case (ruleName, indices) =>
-      println(s"Rule ${ruleName.stripSuffix("_")}")
-      indices.toSeq.sortBy(_._1).foreach { case (idx, status) =>
-        println(s"  $idx: $status")
+    report.toSeq.sortBy(_._1.toString()).foreach {
+      case (ruleName, status) => {
+        println(s"${ruleName.toString()}: $status")
       }
     }
   }
@@ -44,16 +42,16 @@ object Soundness {
   def check(ts: TypeSystem): Unit = {
     currentTypeSystem = ts
 
-    val generated: Seq[(String, Seq[(Int, Option[HHLProgram])])] =
-      ts.expressionTypeSystem.map(generateProgramsForExpressionRule)
+    val generated =
+      ts.expressionTypeSystem.flatMap(generateProgramsForExpressionRule)
 
-    generated.foreach { case (ruleName, indexedPrograms) =>
-      indexedPrograms.foreach {
-        case (i, Some(program)) =>
-          val ok = verifyProgram(s"${ruleName}$i", program)
-          updateReport(ruleName, i, if (ok) "sound" else "might be unsound")
-        case (i, None) =>
-          updateReport(ruleName, i, "notChecked")
+    generated.foreach { case (ruleName, program) =>
+      program match {
+        case Some(program) =>
+          val ok = verifyProgram(ruleName, program)
+          updateReport(ruleName, if (ok) "sound" else "might be unsound")
+        case None =>
+          updateReport(ruleName, "notChecked")
       }
     }
   }
@@ -79,7 +77,7 @@ object Soundness {
   }
 
   /** Runs the full Viper pipeline and returns true if verification succeeds. */
-  private def verifyProgram(name: String, program: HHLProgram): Boolean = {
+  private def verifyProgram(name: RuleName, program: HHLProgram): Boolean = {
     writeProgramToFile(s"$name.hhl", program)
 
     SymbolChecker.reset()
@@ -107,31 +105,26 @@ object Soundness {
 
   // -------- Reporting helpers ----------------------------------------------
 
-  private def updateReport(ruleName: String, idx: Int, status: String): Unit = {
-    val inner = report.getOrElse(ruleName, Map.empty).updated(idx, status)
-    report = report.updated(ruleName, inner)
+  private def updateReport(rule: RuleName, status: String): Unit = {
+    report = report.updated(rule, status)
   }
 
   // -------- Rule -> Program generation -------------------------------------
 
   private def generateProgramsForExpressionRule(
       exprRule: ExpressionDerivationRule
-  ): (String, Seq[(Int, Option[HHLProgram])]) = {
-    val ruleName = humanReadableRuleName(exprRule)
-    report += (ruleName -> Map.empty)
+  ): Seq[(RuleName, Option[HHLProgram])] = {
 
     exprRule.expr match {
       case bin: BinaryExpr                        => buildForBinaryExpr(bin, exprRule)
       case un: UnaryExpr                          => buildForUnaryExpr(un, exprRule)
       case Id(name) if name == "n" || name == "b" => buildForConst(Id(name), exprRule)
       case ImpliesExpr(left, right)               => buildForBinaryExpr(BinaryExpr(left, "==>", right), exprRule)
-      case _                                      =>
-        // Not a supported expression head: mark all rules as not checkable.
-        ruleName -> exprRule.rules.zipWithIndex.map { case (_, i) => i -> None }
+      case _                                      => exprRule.rules.map(r => (r.name, None)) // unsupported expression
     }
   }
 
-  private def buildForConst(constId: Id, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+  private def buildForConst(constId: Id, exprRule: ExpressionDerivationRule): Seq[(RuleName, Option[HHLProgram])] = {
     val (inputName, inputType) = constId.name match {
       case "n" => ("input", IntType())
       case "b" => ("input", BoolType())
@@ -143,12 +136,11 @@ object Soundness {
     val mapping      = Map(constId -> input)
     val rulesWithIdx = exprRule.rules.zipWithIndex
     val prePost      = rulesToTriples(rulesWithIdx, mapping, input)
-    val ruleName     = humanReadableRuleName(exprRule)
-    val programs     = triplesToPrograms(ruleName, Seq(input), prePost)
-    ruleName -> programs
+    val programs     = triplesToPrograms(Seq(input), prePost)
+    programs
   }
 
-  private def buildForUnaryExpr(un: UnaryExpr, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+  private def buildForUnaryExpr(un: UnaryExpr, exprRule: ExpressionDerivationRule): Seq[(RuleName, Option[HHLProgram])] = {
     val (inT, outT) = un.op match {
       case "!" => (BoolType(), BoolType())
       case "-" => (IntType(), IntType())
@@ -162,13 +154,12 @@ object Soundness {
     val resultExpr   = UnaryExpr(un.op, input)
 
     val prePost  = rulesToTriples(rulesWithIdx, mapping, resultExpr)
-    val ruleName = humanReadableRuleName(exprRule)
-    val programs = triplesToPrograms(ruleName, Seq(input), prePost)
+    val programs = triplesToPrograms(Seq(input), prePost)
 
-    ruleName -> programs
+    programs
   }
 
-  private def buildForBinaryExpr(bin: BinaryExpr, exprRule: ExpressionDerivationRule): (String, Seq[(Int, Option[HHLProgram])]) = {
+  private def buildForBinaryExpr(bin: BinaryExpr, exprRule: ExpressionDerivationRule): Seq[(RuleName, Option[HHLProgram])] = {
     val (leftT, rightT, resT) = bin.op match {
       case "+" | "-" | "*" | "/" | "%"           => (IntType(), IntType(), IntType())
       case "<" | "<=" | ">" | ">=" | "==" | "!=" => (IntType(), IntType(), BoolType())
@@ -188,22 +179,20 @@ object Soundness {
     }
 
     val prePost  = rulesToTriples(rulesWithIdx, mapping, resultExpr)
-    val ruleName = humanReadableRuleName(exprRule)
-    val programs = triplesToPrograms(ruleName, Seq(left, right), prePost)
+    val programs = triplesToPrograms(Seq(left, right), prePost)
 
-    ruleName -> programs
+    programs
   }
 
   /** Convert (conditions, conclusions, stmts) triples to complete HHL programs. */
   private def triplesToPrograms(
-      ruleName: String,
       args: Seq[Id],
-      triples: Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])]
-  ): Seq[(Int, Option[HHLProgram])] = {
+      triples: Seq[(RuleName, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])]
+  ): Seq[(RuleName, Option[HHLProgram])] = {
     triples.map {
-      case (i, Some((pres, posts, stmts))) =>
-        i -> Some(HHLProgram(Seq(Method(s"${ruleName}$i", args, Seq.empty, pres, posts, CompositeStmt(stmts)))))
-      case (i, None) => i -> None
+      case (name, Some((pres, posts, stmts))) =>
+        (name, Some(HHLProgram(Seq(Method(s"${name.shortFileName}", args, Seq.empty, pres, posts, CompositeStmt(stmts))))))
+      case (name, None) => (name, None)
     }
   }
 
@@ -217,7 +206,7 @@ object Soundness {
       rulesWithIdx: Seq[(Rule, Int)],
       templateToIds: Map[Id, Id],
       resultExpr: Expr
-  ): Seq[(Int, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])] = {
+  ): Seq[(RuleName, Option[(Seq[Expr], Seq[Expr], Seq[Stmt])])] = {
     rulesWithIdx.map { case (rule, idx) =>
       var pres         = Seq.empty[Expr]
       var asserts      = Seq.empty[Stmt]
@@ -239,8 +228,8 @@ object Soundness {
         }
       }
 
-      if (notCheckable) idx -> None
-      else idx              -> Some((pres, posts, asserts))
+      if (notCheckable) (rule.name, None)
+      else (rule.name, Some((pres, posts, asserts)))
     }
   }
 

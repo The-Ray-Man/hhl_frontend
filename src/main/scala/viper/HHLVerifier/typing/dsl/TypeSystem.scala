@@ -302,7 +302,7 @@ object TypeSystem {
     * @return
     *   The loaded type system.
     */
-  def loadTypeSystem(paths: Seq[String]): TypeSystem = {
+  def loadTypeSystem(paths: Seq[String], mustHaveAllStmtRules: Boolean = true): TypeSystem = {
     val specifications = paths.map(path => {
       val fileContent = scala.io.Source.fromFile(path).getLines().mkString("\n")
       val res         = fastparse.parse(fileContent, viper.HHLVerifier.typing.dsl.Parser.specification(_))
@@ -312,7 +312,21 @@ object TypeSystem {
       }
     })
 
-    SpecificationUtil.combineSpecifications(specifications).toTypeSystem()
+    SpecificationUtil.combineSpecifications(specifications).toTypeSystem(mustHaveAllStmtRules)
+  }
+
+  private def typeSystemNameToAbsPath(filename: String): String = {
+    val absFilePath = java.nio.file.Paths.get(".").toAbsolutePath
+    s"$absFilePath/src/main/scala/viper/HHLVerifier/typing/dsl/rules/$filename"
+  }
+
+  def defaultTypeSystem: TypeSystem = {
+    val infFlow       = typeSystemNameToAbsPath("infFlow.type")
+    val mono          = typeSystemNameToAbsPath("mono.type")
+    val stmt          = typeSystemNameToAbsPath("stmt.type")
+    val value         = typeSystemNameToAbsPath("value.type")
+    val deltaOnValues = typeSystemNameToAbsPath("deltaOnValue.type")
+    loadTypeSystem(Seq(infFlow, mono, stmt, value, deltaOnValues))
   }
 
   /** Gives every rule a name for tracking purposes. The name consists of the filename, the rule and the index of the rule.
