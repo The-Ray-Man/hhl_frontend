@@ -43,20 +43,20 @@ object Parser {
   def expressionRules[$: P]: P[Seq[Rule]] = P("[" ~ expressionRule.rep() ~ ws ~ "]")
 
   def expressionRule[$: P]: P[Rule] = P((ws ~ condition ~ ws).rep(sep = "&&") ~ ws ~ "=>" ~ (ws ~ conclusion ~ ws).rep(1, sep = "&&")).map { case (conds, conclusion) =>
-    Rule(conds, conclusion) // Placeholder, replace with actual rule creation logic
+    Rule(conds, conclusion)
   }
 
   def hyperCollectionResult[$: P]: P[HyperCollectionResult] = P("H").map(_ => HyperCollectionResult())
   def deltaCollectionResult[$: P]: P[DeltaCollectionResult] = P("D").map(_ => DeltaCollectionResult())
   def gamma[$: P]: P[Gamma]                                 = P("Gamma").map(_ => Gamma())
   def delta[$: P]: P[Delta]                                 = P("Delta").map(_ => Delta())
-  def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta").map { case varSet => InitializeDeltaMapping() }
-  def initializeGamma[$: P]: P[InitializeGammaMapping]      = P("InitGamma").map { case varSet => InitializeGammaMapping() }
+  def initializeDelta[$: P]: P[InitializeDeltaMapping]      = P("InitDelta").map(_ => InitializeDeltaMapping())
+  def initializeGamma[$: P]: P[InitializeGammaMapping]      = P("InitGamma").map(_ => InitializeGammaMapping())
   def gammaResult[$: P]: P[GammaResult]                     = P("Gamma'").map(_ => GammaResult())
   def deltaResult[$: P]: P[DeltaResult]                     = P("Delta'").map(_ => DeltaResult())
   def assignedVars[$: P]: P[AssignedVariables]              = P("Assigned[" ~ HypraParser.progVar ~ "]").map { case id => AssignedVariables(id) }
 
-  def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma)
+  def hyperTypeMapping[$: P]: P[Mapping] = P(deriveHyperType | gamma | initializeGamma)
   def deltaTypeMapping[$: P]: P[Mapping] = P(deriveDeltaType | delta | initializeDelta)
 
   def set[$: P]: P[Set]               = P(setWithoutElement | mappingAccess | hyperTypeCheck | assignedVars | hyperCollectionResult | allVariables | allParameters | variablesInExpression | assignedVars | setWithoutElement)
@@ -91,13 +91,13 @@ object Parser {
     "!" ~ ws ~ "(" ~ condition ~ ")"
   ).map { case cond => NotOperator(cond) }
 
-  def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "==" | "!=").!
+  def comparator[$: P]: P[String] = P(">" | "<" | ">=" | "<=" | "=" | "!=").!
 
   def inSet[$: P]: P[InSet]               = P(element ~ ws ~ "in" ~ ws ~ set).map { case (elem, set) => InSet(elem, set) }
   def inMapping[$: P]: P[InMapping]       = P(((doubleMappingAccess | mapping) ~ ws ~ "hasKey" ~ ws ~ element)).map { case (mapping, elem) => InMapping(elem, mapping) }
   def inDoubleMapping[$: P]: P[InMapping] = P(doubleMapping ~ ws ~ "hasKey" ~ ws ~ element).map { case (mapping, elem) => InMapping(elem, mapping) }
   def element[$: P]: P[Element]           = P(variable | hyperType)
-  def equal[$: P]: P[Equal]               = P(element ~ ws ~ "==" ~ ws ~ element).map { case (lhs, rhs) => Equal(lhs, rhs) }
+  def equal[$: P]: P[Equal]               = P(element ~ ws ~ "=" ~ ws ~ element).map { case (lhs, rhs) => Equal(lhs, rhs) }
 
   def variable[_: P]: P[Id] = {
     import fastparse.NoWhitespace._

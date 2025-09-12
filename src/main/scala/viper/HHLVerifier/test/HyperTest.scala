@@ -153,7 +153,7 @@ object HyperTest {
   def main(args: Array[String]): Unit = {
     val pathOfHyperTests = "src/test/hyperTypes"
     var typeTests        = getAllTestFiles(pathOfHyperTests)
-    typeTests = typeTests.filter(test => (test._1.getAbsolutePath().endsWith("/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/method1.hhl"))) // Temporary ignore while loops
+    // typeTests = typeTests.filter(test => (test._1.getAbsolutePath().endsWith("/home/ramon/ETH/SP/hypra_fork/src/test/hyperTypes/valid/correct/method1.hhl"))) // Temporary ignore while loops
 
     typeTests = typeTests.filter(test => !(test._1.getAbsolutePath().endsWith("est/hyperTypes/invalid/While2.hhl") || test._1.getAbsolutePath().endsWith("est/hyperTypes/invalid/WhileIfElse.hhl"))) // Temporary ignore while loops
 

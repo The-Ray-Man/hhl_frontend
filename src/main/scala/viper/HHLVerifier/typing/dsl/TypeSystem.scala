@@ -252,8 +252,7 @@ case class TypeSystem(
         }
         deriveStatement(gamma, delta, ast.AssignStmt(ids.head, expr))
       }
-      case MethodCallStmt(_, _)                                                                                                                                                                => throw new Exception("Method calls are not yet supported in the type system")
-      case AssumeStmt(_) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
+      case AssumeStmt(_) | MethodCallStmt(_, _) | UseHintStmt(_) | HyperAssumeStmt(_) | PVarDecl(_, _) | DeclareStmt(_, _) | HyperAssertStmt(_) | ProofVarDecl(_, _) | ReuseStmt(_) | AssertStmt(_) | FrameStmt(_, _) => StatementDerivationResult(gamma, delta)
     }
     println(s"{${gamma.toString()}} {${delta.toString()}}} |- ${s.toString()} :: {${res.hyperTypeMapping.toString()}} {${res.deltaMapping.toString()}}| ${res.appliedRules.mkString(", ")}")
     res

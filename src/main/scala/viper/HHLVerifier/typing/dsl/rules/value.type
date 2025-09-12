@@ -9,7 +9,7 @@ exp : FALSE <=> forall <_s1> :: !_s1[exp]
 
 
 (Gamma, Delta) |- n :: [
-   n == 0 => ZERO addTo H
+   n = 0 => ZERO addTo H
    n > 0 => POS addTo H
    n < 0 => NEG addTo H
 ]

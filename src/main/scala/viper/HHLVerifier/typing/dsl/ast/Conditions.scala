@@ -130,7 +130,7 @@ case class ArithCondition(variable: Id, op: String, right: Int) extends Conditio
           case "<"  => value < right
           case ">=" => value >= right
           case "<=" => value <= right
-          case "==" => value == right
+          case "="  => value == right
           case "!=" => value != right
           case _    => throw new Exception("Unsupported comparator: " + op)
         }

@@ -15,8 +15,8 @@
 
 (Gamma, Delta) |- var := e :: [
     => H[e](Gamma, Delta) = Gamma'(var)
-    !(x == var) => Gamma(x) addTo Gamma'(x)
-    !(x == var) && Delta hasKey x => Delta(x) = Delta'(x)
+    !(x = var) => Gamma(x) addTo Gamma'(x)
+    !(x = var) && Delta hasKey x => Delta(x) = Delta'(x)
     NULL in Gamma(var) => ZERO addTo Delta'(var)(var) && LOW addTo Delta'(var)(var)
     Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && POS in  D[e](Gamma, Delta)(var) => POS  addTo Delta'(var)(x)
     Delta hasKey var && Delta(var) hasKey x  && ZERO in Delta(var)(x) && !(D[e](Gamma, Delta) hasKey x) && D[e](Gamma, Delta) hasKey var && NEG in  D[e](Gamma, Delta)(var) => NEG  addTo Delta'(var)(x)
@@ -78,5 +78,5 @@
 ]
 
 (Gamma, Delta) |- havoc x :: [
-    !(y == x) => Gamma'(y) = Gamma(y) && Delta'(y) = Delta(y)
+    !(y = x) => Gamma'(y) = Gamma(y) && Delta'(y) = Delta(y)
 ]

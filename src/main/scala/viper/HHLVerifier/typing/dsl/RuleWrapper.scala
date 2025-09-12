@@ -41,16 +41,18 @@ abstract class RuleWrapper(rule: Rule) {
   */
 case class ForanyVariableWrapper(numVars: Int, rule: Rule) extends RuleWrapper(rule: Rule) {
 
-  def orderedSubsets[A](set: Seq[A], n: Int): Seq[Seq[A]] = {
-    set.permutations
-      .flatMap(_.sliding(n, 1)) // take consecutive chunks of length n
-      .filter(_.length == n)
-      .toSeq
-      .distinct // remove duplicates if input has duplicates
+  def assignments[A](elems: Seq[A], n: Int): Seq[Seq[A]] = {
+    if (n == 0) Seq(Seq())
+    else {
+      for {
+        e    <- elems
+        rest <- assignments(elems, n - 1)
+      } yield e +: rest
+    }
   }
 
   def apply(context: Context, result: DerivationResult, expression: Boolean): DerivationResult = {
-    val allRuleContext = orderedSubsets(context.allVars.toSeq, numVars).map { subset =>
+    val allRuleContext = assignments(context.allVars.toSeq, numVars).map { subset =>
       val mapping = (subset.zipWithIndex.map { case (id, index) => Id(s"<$index>") -> id }.toMap)
       RuleCheckContext(mapping)
     }
