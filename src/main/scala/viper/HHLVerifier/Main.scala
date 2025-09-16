@@ -76,10 +76,8 @@ object Main {
         HyperTypeChecker.typeCheckProg(hyperTypeSystem, parsedProgram)
 
         new Logger("HyperType checking successful.").log()
-        if (args.contains("--hypraToHypra")) {
-          println("Translating HyperTypes to HypraAssume/Assert statements.")
-          parsedProgram = HyperTranslate.translateProgram(hyperTypeSystem, parsedProgram)
-        }
+
+        parsedProgram = HyperTranslate.translateProgram(hyperTypeSystem, parsedProgram)
 
         // Symbol table
         SymbolChecker.checkSymbolsProg(parsedProgram)
